@@ -26,50 +26,52 @@ const Login = () => {
   };
 
   return (
-    <div className="relative flex flex-col min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 items-center justify-center p-4">
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 sm:p-12 w-full max-w-sm shadow-2xl flex flex-col items-center">
-        <img src="/JW.jpg" alt="JW Logo" className="w-24 h-24 rounded-2xl object-cover shadow-md mb-6" />
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 sm:p-12 w-full max-w-sm shadow-2xl flex flex-col items-center">
+          <img src="/JW.jpg" alt="JW Logo" className="w-24 h-24 rounded-2xl object-cover shadow-md mb-6" />
 
-        <h1 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
-          Gestión Territorial
-        </h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
+            Gestión Territorial
+          </h1>
 
-        {error && (
-          <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-6 w-full text-sm text-center">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="bg-red-50 text-red-800 p-3 rounded-lg mb-6 w-full text-sm text-center">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleLogin}>
-          <div className="form-group mb-5">
-            <label className="form-label text-gray-500">Usuario</label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Ej. hermano_juan"
-            />
-          </div>
+          <form onSubmit={handleLogin} className="w-full">
+            <div className="form-group mb-5">
+              <label className="form-label text-gray-500">Usuario</label>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Ej. hermano_juan"
+              />
+            </div>
 
-          <div className="form-group mb-8">
-            <label className="form-label text-gray-500">Contraseña</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
+            <div className="form-group mb-8">
+              <label className="form-label text-gray-500">Contraseña</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
 
-          <button type="submit" className="w-full py-3.5 text-base font-semibold btn btn-primary" disabled={loading}>
-            {loading ? 'Entrando...' : 'Iniciar Sesión'}
-          </button>
-        </form>
+            <button type="submit" className="w-full py-3.5 text-base font-semibold btn btn-primary" disabled={loading}>
+              {loading ? 'Entrando...' : 'Iniciar Sesión'}
+            </button>
+          </form>
+        </div>
       </div>
 
-      <div className="mt-8 text-gray-400 text-xs text-center">
+      <div className="py-4 text-gray-400 text-xs text-center">
         Desarrollado por <strong>Master Engenering EA</strong>
       </div>
     </div>
