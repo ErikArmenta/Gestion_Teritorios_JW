@@ -58,7 +58,7 @@ const HousesList = () => {
 
       {/* Tabla — solo desktop */}
       <div className="hidden md:block">
-        <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+        <div className="card overflow-x-auto p-0">
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="bg-[var(--bg-primary)] border-b border-[var(--border-color)]">
