@@ -38,15 +38,15 @@ const HousesList = () => {
       <h1 className="text-2xl font-semibold mb-6">Lista de Casas</h1>
 
       {/* Filtros */}
-      <div className="card mb-6 flex flex-wrap gap-4">
-        <div className="form-group flex-1 min-w-0 w-full m-0">
+      <div className="card mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="form-group flex-1 min-w-0 m-0">
           <input
             placeholder="Buscar por dirección o contacto..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="form-group flex-1 min-w-0 w-full m-0">
+        <div className="form-group flex-1 min-w-0 m-0">
           <select value={filterTerritory} onChange={e => setFilterTerritory(e.target.value)}>
             <option value="Todos">Todos los territorios</option>
             {territorios.map(t => (
