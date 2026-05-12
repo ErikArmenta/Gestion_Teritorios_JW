@@ -28,7 +28,7 @@ const AppLayout = () => {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 p-8 overflow-y-auto h-screen flex flex-col">
+      <main className="flex-1 p-4 pt-16 md:p-8 overflow-y-auto h-screen flex flex-col">
         <Routes>
           <Route path="/" element={<TerritoriesMap />} />
           <Route path="/register" element={<RegisterHouse />} />
