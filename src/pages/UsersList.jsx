@@ -75,7 +75,7 @@ const UsersList = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <h1 className="text-2xl font-semibold m-0">Gestión de Usuarios</h1>
         <button className="btn btn-primary" onClick={() => {
           setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null });
@@ -177,7 +177,7 @@ const UsersList = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-md">
+          <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="mb-6 text-lg font-semibold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
