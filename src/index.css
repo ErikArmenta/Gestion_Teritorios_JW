@@ -1,6 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2563EB;
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+  --color-neutral: #6B7280;
+  --color-surface: #FFFFFF;
+  --color-bg-primary: #F8FAFC;
+  --color-border-custom: #E2E8F0;
+  --color-text-custom-primary: #0F172A;
+  --color-text-custom-secondary: #64748B;
+}
 
 :root {
   --bg-primary: #F8FAFC;
