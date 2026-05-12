@@ -70,8 +70,14 @@ p {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-  padding: 1.5rem;
+  padding: 1rem;
   transition: box-shadow 0.2s ease-in-out;
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 1.5rem;
+  }
 }
 
 .card:hover {
