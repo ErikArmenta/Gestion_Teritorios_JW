@@ -157,7 +157,7 @@ const TerritoriesMap = () => {
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Mapa Principal y Territorios</h1>
-          <p>Dibuja polígonos para crear nuevos territorios y visualiza las casas registradas.</p>
+          <p className="hidden sm:block">Dibuja polígonos para crear nuevos territorios y visualiza las casas registradas.</p>
         </div>
       </div>
 
@@ -204,7 +204,7 @@ const TerritoriesMap = () => {
                   icon={createCustomIcon(c.estado)}
                 >
                   <Popup className="ficha-tecnica">
-                    <div className="min-w-[220px] max-w-[280px]">
+                    <div className="min-w-[180px] max-w-[260px]">
                       {c.foto_url ? (
                         <div className="w-full h-36 mb-3 rounded-md overflow-hidden">
                           <img src={c.foto_url} alt="Casa" className="w-full h-full object-cover" />
