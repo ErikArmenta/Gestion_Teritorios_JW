@@ -152,11 +152,11 @@ const RegisterHouse = () => {
 
   return (
     <div>
-      <h1 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Registrar Nueva Casa</h1>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <h1 className="text-2xl font-semibold mb-6">Registrar Nueva Casa</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="card">
-          <h3 style={{ marginBottom: '1rem' }}>Datos Generales</h3>
+          <h3 className="mb-4">Datos Generales</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">Territorio</label>
@@ -172,40 +172,38 @@ const RegisterHouse = () => {
               <input required value={formData.direccion} onChange={e => setFormData({...formData, direccion: e.target.value})} placeholder="Ej: Calle Principal 123" />
             </div>
             
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="form-label">Estado de Visita</label>
-                <select value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})}>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Atendido">Atendido</option>
-                  <option value="No atendió">No atendió</option>
-                  <option value="No tocar">No tocar</option>
-                  <option value="Solo fines de semana">Solo fines de semana</option>
-                </select>
-              </div>
+            <div className="form-group">
+              <label className="form-label">Estado de Visita</label>
+              <select value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})}>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Atendido">Atendido</option>
+                <option value="No atendió">No atendió</option>
+                <option value="No tocar">No tocar</option>
+                <option value="Solo fines de semana">Solo fines de semana</option>
+              </select>
             </div>
 
-            <h3 style={{ margin: '1.5rem 0 1rem' }}>Residentes y Casos</h3>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div className="form-group" style={{ flex: 1 }}>
+            <h3 className="mt-6 mb-4">Residentes y Casos</h3>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="form-group flex-1">
                 <label className="form-label">Nombre del Contacto</label>
                 <input value={formData.nombre_contacto} onChange={e => setFormData({...formData, nombre_contacto: e.target.value})} placeholder="Opcional" />
               </div>
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group flex-1">
                 <label className="form-label">Teléfono</label>
                 <input value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} placeholder="Opcional" />
               </div>
             </div>
 
             <div className="form-group">
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                <input type="checkbox" style={{ width: 'auto' }} checked={formData.tiene_caso_especial} onChange={e => setFormData({...formData, tiene_caso_especial: e.target.checked})} />
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input type="checkbox" className="w-auto" checked={formData.tiene_caso_especial} onChange={e => setFormData({...formData, tiene_caso_especial: e.target.checked})} />
                 Marcar como caso especial
               </label>
             </div>
 
             {formData.tiene_caso_especial && (
-              <div style={{ padding: '1rem', backgroundColor: '#FEF2F2', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
+              <div className="p-4 bg-red-50 rounded-lg mb-4">
                 <div className="form-group">
                   <label className="form-label">Tipo de Caso</label>
                   <select value={formData.tipo_caso} onChange={e => setFormData({...formData, tipo_caso: e.target.value})}>
@@ -228,39 +226,39 @@ const RegisterHouse = () => {
               <textarea value={formData.notas} onChange={e => setFormData({...formData, notas: e.target.value})} />
             </div>
 
-            <h3 style={{ margin: '1.5rem 0 1rem' }}>Evidencia Fotográfica</h3>
+            <h3 className="mt-6 mb-4">Evidencia Fotográfica</h3>
             <div className="form-group">
-              <input 
+              <input
                 id="photoInput"
-                type="file" 
-                accept="image/*" 
+                type="file"
+                accept="image/*"
                 onChange={(e) => setPhotoFile(e.target.files[0])}
-                style={{ border: '2px dashed var(--border-color)', padding: '1rem', textAlign: 'center', cursor: 'pointer', backgroundColor: '#f9fafb' }}
+                className="border-2 border-dashed border-gray-200 p-4 text-center cursor-pointer bg-gray-50 w-full rounded-lg"
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" disabled={isUploading} style={{ width: '100%', marginTop: '1rem' }}>
+            <button type="submit" className="btn btn-primary w-full mt-4" disabled={isUploading}>
               {isUploading ? 'Subiendo datos y foto...' : 'Guardar Casa'}
             </button>
           </form>
         </div>
 
-        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ marginBottom: '1rem' }}>Geolocalización</h3>
-          <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>Haz clic en el mapa para posicionar la casa.</p>
-          
+        <div className="card flex flex-col">
+          <h3 className="mb-4">Geolocalización</h3>
+          <p className="text-sm mb-4">Haz clic en el mapa para posicionar la casa.</p>
+
           {insideTerritory === true && (
-            <div style={{ padding: '0.5rem', backgroundColor: '#ECFDF5', color: '#065F46', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.875rem' }}>
+            <div className="p-2 bg-emerald-50 text-emerald-800 rounded-lg mb-4 text-sm">
               ✓ Ubicación correcta dentro del territorio seleccionado.
             </div>
           )}
           {insideTerritory === false && formData.territorio_id && (
-            <div style={{ padding: '0.5rem', backgroundColor: '#FEF2F2', color: '#991B1B', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.875rem' }}>
+            <div className="p-2 bg-red-50 text-red-800 rounded-lg mb-4 text-sm">
               ⚠️ Ubicación fuera del territorio seleccionado.
             </div>
           )}
 
-          <div style={{ flex: 1, minHeight: '400px', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+          <div className="flex-1 min-h-64 sm:min-h-96 rounded-lg overflow-hidden">
             <MapContainer center={[31.7619, -106.4850]} zoom={14} style={{ height: '100%', width: '100%' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <LocationMarker position={position} setPosition={setPosition} />
