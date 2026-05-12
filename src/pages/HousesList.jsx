@@ -87,8 +87,7 @@ const HousesList = () => {
                   <td className="px-4 py-3 text-sm text-right">
                     <button
                       onClick={() => handleDelete(c.id)}
-                      className="btn btn-danger"
-                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                      className="btn btn-danger py-1.5 px-3 text-xs"
                     >
                       Eliminar
                     </button>
@@ -127,8 +126,7 @@ const HousesList = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => handleDelete(c.id)}
-                className="btn btn-danger"
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                className="btn btn-danger py-1.5 px-3 text-xs"
               >
                 Eliminar
               </button>
