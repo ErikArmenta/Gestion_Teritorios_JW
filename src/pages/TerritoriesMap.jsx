@@ -153,17 +153,17 @@ const TerritoriesMap = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="flex flex-col h-full">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <div>
-          <h1 style={{ fontSize: '1.5rem' }}>Mapa Principal y Territorios</h1>
+          <h1 className="text-2xl font-semibold">Mapa Principal y Territorios</h1>
           <p>Dibuja polígonos para crear nuevos territorios y visualiza las casas registradas.</p>
         </div>
       </div>
 
-      <div className="card" style={{ flex: 1, padding: 0, overflow: 'hidden', position: 'relative' }}>
+      <div className="card flex-1 p-0 overflow-hidden relative">
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando datos...</div>
+          <div className="p-8 text-center">Cargando datos...</div>
         ) : (
           <MapContainer center={[31.7619, -106.4850]} zoom={13} style={{ height: '100%', width: '100%' }}>
             <TileLayer
@@ -187,10 +187,10 @@ const TerritoriesMap = () => {
                 }}
               >
                 <Popup>
-                  <div style={{ padding: '0.5rem' }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: t.color }}>{t.nombre}</h4>
-                    <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem' }}><strong>Responsable:</strong> {t.responsable}</p>
-                    <p style={{ margin: 0, fontSize: '0.875rem' }}>{t.descripcion}</p>
+                  <div className="p-2">
+                    <h4 className="mb-2 font-semibold" style={{ color: t.color }}>{t.nombre}</h4>
+                    <p className="mb-1 text-sm"><strong>Responsable:</strong> {t.responsable}</p>
+                    <p className="text-sm">{t.descripcion}</p>
                   </div>
                 </Popup>
               </Polygon>
@@ -204,33 +204,33 @@ const TerritoriesMap = () => {
                   icon={createCustomIcon(c.estado)}
                 >
                   <Popup className="ficha-tecnica">
-                    <div style={{ minWidth: '220px', maxWidth: '280px' }}>
+                    <div className="min-w-[220px] max-w-[280px]">
                       {c.foto_url ? (
-                        <div style={{ width: '100%', height: '140px', marginBottom: '0.75rem', borderRadius: '6px', overflow: 'hidden' }}>
-                          <img src={c.foto_url} alt="Casa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div className="w-full h-36 mb-3 rounded-md overflow-hidden">
+                          <img src={c.foto_url} alt="Casa" className="w-full h-full object-cover" />
                         </div>
                       ) : (
-                        <div style={{ width: '100%', height: '40px', backgroundColor: '#F3F4F6', borderRadius: '6px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: '0.75rem' }}>
+                        <div className="w-full h-10 bg-gray-100 rounded-md mb-3 flex items-center justify-center text-gray-400 text-xs">
                           Sin foto adjunta
                         </div>
                       )}
-                      
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', fontWeight: 600 }}>{c.direccion}</h4>
-                      
-                      <div style={{ marginBottom: '0.75rem' }}>
+
+                      <h4 className="mb-2 text-[1.1rem] font-semibold">{c.direccion}</h4>
+
+                      <div className="mb-3">
                         <span className="badge" style={{ backgroundColor: getStatusColor(c.estado).bg, color: getStatusColor(c.estado).text }}>
                           {c.estado}
                         </span>
                       </div>
-                      
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                        <p style={{ margin: '0 0 0.25rem 0' }}><strong>Contacto:</strong> {c.nombre_contacto || 'N/A'}</p>
-                        <p style={{ margin: '0 0 0.25rem 0' }}><strong>Tel:</strong> {c.telefono || 'N/A'}</p>
-                        <p style={{ margin: 0 }}><strong>Zona:</strong> {c.territorio_nombre}</p>
+
+                      <div className="text-sm text-[var(--text-secondary)]">
+                        <p className="mb-1"><strong>Contacto:</strong> {c.nombre_contacto || 'N/A'}</p>
+                        <p className="mb-1"><strong>Tel:</strong> {c.telefono || 'N/A'}</p>
+                        <p><strong>Zona:</strong> {c.territorio_nombre}</p>
                       </div>
 
                       {c.tiene_caso_especial && (
-                        <div style={{ marginTop: '0.75rem', padding: '0.5rem', backgroundColor: '#FEF2F2', borderRadius: '4px', fontSize: '0.75rem', color: '#991B1B' }}>
+                        <div className="mt-3 p-2 bg-red-50 rounded text-xs text-red-800">
                           <strong>⚠️ Especial ({c.tipo_caso}):</strong> {c.detalles_caso}
                         </div>
                       )}
@@ -244,13 +244,9 @@ const TerritoriesMap = () => {
       </div>
 
       {showModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <div className="card" style={{ width: '400px', maxWidth: '90%' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Nuevo Territorio</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+          <div className="card w-full max-w-lg max-h-screen overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-6">Nuevo Territorio</h3>
             <form onSubmit={handleSave}>
               <div className="form-group">
                 <label className="form-label">Nombre</label>
@@ -266,11 +262,11 @@ const TerritoriesMap = () => {
               </div>
               <div className="form-group">
                 <label className="form-label">Color</label>
-                <input type="color" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} style={{ height: '40px', padding: '0.2rem' }} />
+                <input type="color" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} className="h-10 p-1 w-full" />
               </div>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)} style={{ flex: 1 }}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Guardar</button>
+              <div className="flex gap-4 mt-6">
+                <button type="button" className="btn btn-outline flex-1" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary flex-1">Guardar</button>
               </div>
             </form>
           </div>
