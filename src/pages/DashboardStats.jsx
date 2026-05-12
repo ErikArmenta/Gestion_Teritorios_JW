@@ -303,21 +303,21 @@ const DashboardStats = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Total Casas</h3>
-          <p className="text-2xl sm:text-4xl font-bold text-gray-900 m-0">{totalCasas}</p>
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide">Total Casas</h3>
+          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 m-0">{totalCasas}</p>
         </div>
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Atendidos</h3>
-          <p className="text-2xl sm:text-4xl font-bold text-emerald-500 m-0">{atendidos}</p>
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide">Atendidos</h3>
+          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-emerald-500 m-0">{atendidos}</p>
           <span className="badge mt-2 bg-emerald-50 text-emerald-800">{porcAtendidos}%</span>
         </div>
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">No Atendieron</h3>
-          <p className="text-2xl sm:text-4xl font-bold text-red-500 m-0">{noAtendidos}</p>
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide truncate w-full text-center">No Atendieron</h3>
+          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-red-500 m-0">{noAtendidos}</p>
         </div>
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Casos Especiales</h3>
-          <p className="text-2xl sm:text-4xl font-bold text-amber-500 m-0">{especiales}</p>
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide">Casos Especiales</h3>
+          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-amber-500 m-0">{especiales}</p>
         </div>
       </div>
 
