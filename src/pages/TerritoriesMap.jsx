@@ -154,9 +154,9 @@ const TerritoriesMap = () => {
 
   return (
     <div className="flex flex-col h-full min-h-[60vh]">
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-3 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-semibold">Mapa Principal y Territorios</h1>
+          <h1 className="text-lg sm:text-2xl font-semibold">Mapa Principal y Territorios</h1>
           <p className="hidden sm:block">Dibuja polígonos para crear nuevos territorios y visualiza las casas registradas.</p>
         </div>
       </div>
