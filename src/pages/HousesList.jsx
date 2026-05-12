@@ -35,7 +35,7 @@ const HousesList = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Lista de Casas</h1>
+      <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Lista de Casas</h1>
 
       {/* Filtros */}
       <div className="card mb-6 flex flex-col sm:flex-row gap-4">

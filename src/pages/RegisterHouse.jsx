@@ -152,7 +152,7 @@ const RegisterHouse = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Registrar Nueva Casa</h1>
+      <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Registrar Nueva Casa</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         <div className="card">

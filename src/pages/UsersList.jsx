@@ -75,8 +75,8 @@ const UsersList = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-wrap gap-2 items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold m-0">Gestión de Usuarios</h1>
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold m-0">Gestión de Usuarios</h1>
         <button className="btn btn-primary" onClick={() => {
           setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null });
           setPhotoFile(null);

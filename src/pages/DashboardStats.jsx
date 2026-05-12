@@ -288,8 +288,8 @@ const DashboardStats = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl font-semibold m-0">Estadísticas del Territorio</h1>
+      <div className="flex flex-wrap justify-between items-center mb-4 sm:mb-6 gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold m-0">Estadísticas del Territorio</h1>
         <div className="flex flex-col sm:flex-row gap-3">
           <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2 w-full md:w-auto">
             <FileText size={16} /> Descargar PDF
