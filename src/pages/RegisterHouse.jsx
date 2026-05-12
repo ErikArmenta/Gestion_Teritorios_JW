@@ -258,7 +258,7 @@ const RegisterHouse = () => {
             </div>
           )}
 
-          <div className="flex-1 min-h-64 sm:min-h-96 rounded-lg overflow-hidden">
+          <div className="flex-1 min-h-72 sm:min-h-96 rounded-lg overflow-hidden">
             <MapContainer center={[31.7619, -106.4850]} zoom={14} style={{ height: '100%', width: '100%' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <LocationMarker position={position} setPosition={setPosition} />
