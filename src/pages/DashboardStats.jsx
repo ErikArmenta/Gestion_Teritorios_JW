@@ -26,7 +26,7 @@ const DashboardStats = () => {
   const { user } = useAuth();
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando estadísticas...</div>;
+    return <div className="p-8 text-center">Cargando estadísticas...</div>;
   }
 
   const totalCasas = casas.length;
@@ -287,92 +287,86 @@ const DashboardStats = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Estadísticas del Territorio</h1>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button onClick={generatePDF} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl font-semibold m-0">Estadísticas del Territorio</h1>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
             <FileText size={16} /> Descargar PDF
           </button>
-          <button onClick={generateExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--border-color)' }}>
+          <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2">
             <Table size={16} /> Descargar Excel
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s', cursor: 'default' }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <h3 style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Casas</h3>
-          <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>{totalCasas}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-8">
+        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Total Casas</h3>
+          <p className="text-4xl font-bold text-gray-900 m-0">{totalCasas}</p>
         </div>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s', cursor: 'default' }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <h3 style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Atendidos</h3>
-          <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#10B981', margin: 0 }}>{atendidos}</p>
-          <span className="badge" style={{ backgroundColor: '#ECFDF5', color: '#065F46', marginTop: '0.5rem' }}>{porcAtendidos}%</span>
+        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Atendidos</h3>
+          <p className="text-4xl font-bold text-emerald-500 m-0">{atendidos}</p>
+          <span className="badge mt-2 bg-emerald-50 text-emerald-800">{porcAtendidos}%</span>
         </div>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s', cursor: 'default' }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <h3 style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>No Atendieron</h3>
-          <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#EF4444', margin: 0 }}>{noAtendidos}</p>
+        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">No Atendieron</h3>
+          <p className="text-4xl font-bold text-red-500 m-0">{noAtendidos}</p>
         </div>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s', cursor: 'default' }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <h3 style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Casos Especiales</h3>
-          <p style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#F59E0B', margin: 0 }}>{especiales}</p>
+        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
+          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Casos Especiales</h3>
+          <p className="text-4xl font-bold text-amber-500 m-0">{especiales}</p>
         </div>
       </div>
 
       {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="card">
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1rem' }}>Distribución por Estado</h3>
-          <div style={{ height: '320px', position: 'relative' }}>
+          <h3 className="text-base font-medium mb-6">Distribución por Estado</h3>
+          <div className="relative h-80">
             {totalCasas > 0 ? <Doughnut data={donutData} options={donutOptions} /> :
-              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', paddingTop: '5rem' }}>Sin datos</p>}
+              <p className="text-center text-gray-500 pt-20">Sin datos</p>}
           </div>
         </div>
 
         <div className="card">
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1rem' }}>Actividad por Territorio</h3>
-          <div style={{ height: '320px', position: 'relative' }}>
+          <h3 className="text-base font-medium mb-6">Actividad por Territorio</h3>
+          <div className="relative h-80">
             {terrData.length > 0 ? <Bar data={barData} options={barOptions} /> :
-              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', paddingTop: '5rem' }}>Sin territorios</p>}
+              <p className="text-center text-gray-500 pt-20">Sin territorios</p>}
           </div>
         </div>
       </div>
 
       {/* Territory Detail Cards */}
       <div className="card">
-        <h3 style={{ marginBottom: '1.5rem', fontSize: '1rem' }}>Detalle por Territorio</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+        <h3 className="text-base font-medium mb-6">Detalle por Territorio</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {terrData.map((t, i) => (
-            <div key={i} style={{ padding: '1.25rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'default' }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <div key={i} className="p-5 border border-gray-200 rounded-lg hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-default">
+              <div className="flex justify-between items-center mb-3">
                 <strong>{t.nombre}</strong>
-                <span className="badge" style={{ backgroundColor: 'var(--bg-primary)' }}>{t.total} casas</span>
+                <span className="badge bg-gray-100">{t.total} casas</span>
               </div>
-              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10B981' }}></div>{t.atendidos}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }}></div>{t.noAtendidos}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#F59E0B' }}></div>{t.pendientes}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }}></div>⚠️ {t.especiales}</span>
+              <div className="flex gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>{t.atendidos}
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>{t.noAtendidos}
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>{t.pendientes}
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>⚠️ {t.especiales}
+                </span>
               </div>
             </div>
           ))}
-          {terrData.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No hay territorios registrados.</p>}
+          {terrData.length === 0 && <p className="text-gray-500">No hay territorios registrados.</p>}
         </div>
       </div>
     </div>
