@@ -32,11 +32,11 @@ const Sidebar = () => {
   const SidebarContent = ({ onNavClick }) => (
     <>
       {/* Logo + título */}
-      <div className="flex flex-col items-center mb-10 gap-4">
+      <div className="flex flex-col items-center mb-6 gap-4">
         <img
           src="/JW.jpg"
           alt="JW Logo"
-          className="w-32 h-32 rounded-xl object-cover shadow-md"
+          className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover shadow-md"
         />
         <h2 className="text-xl font-semibold text-gray-900 text-center m-0">
           Gestión Territorial
