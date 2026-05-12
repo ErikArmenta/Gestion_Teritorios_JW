@@ -154,7 +154,7 @@ const RegisterHouse = () => {
     <div>
       <h1 className="text-2xl font-semibold mb-6">Registrar Nueva Casa</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         <div className="card">
           <h3 className="mb-4">Datos Generales</h3>
           <form onSubmit={handleSubmit}>
@@ -183,7 +183,7 @@ const RegisterHouse = () => {
               </select>
             </div>
 
-            <h3 className="mt-6 mb-4">Residentes y Casos</h3>
+            <h3 className="border-t border-gray-100 pt-4 mt-4 mb-4">Residentes y Casos</h3>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="form-group flex-1">
                 <label className="form-label">Nombre del Contacto</label>
@@ -226,7 +226,7 @@ const RegisterHouse = () => {
               <textarea value={formData.notas} onChange={e => setFormData({...formData, notas: e.target.value})} />
             </div>
 
-            <h3 className="mt-6 mb-4">Evidencia Fotográfica</h3>
+            <h3 className="border-t border-gray-100 pt-4 mt-4 mb-4">Evidencia Fotográfica</h3>
             <div className="form-group">
               <input
                 id="photoInput"
