@@ -40,7 +40,7 @@ const UsersList = () => {
           activo: formData.activo,
           foto_url: fotoUrl
         }).eq('id', formData.id);
-        
+
         if (error) alert("Error al actualizar");
         else { setShowModal(false); setPhotoFile(null); fetchUsuarios(); }
       } else {
@@ -52,7 +52,7 @@ const UsersList = () => {
           activo: true,
           foto_url: fotoUrl
         }]);
-        
+
         if (error) alert("Error al crear usuario. Tal vez el nombre de usuario ya existe.");
         else { setShowModal(false); setPhotoFile(null); fetchUsuarios(); }
       }
@@ -69,14 +69,15 @@ const UsersList = () => {
   };
 
   if (user?.rol !== 'Admin Principal') {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>Acceso denegado. Módulo exclusivo para Administradores.</div>;
+    return <div className="p-8 text-center text-red-500">Acceso denegado. Módulo exclusivo para Administradores.</div>;
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Gestión de Usuarios</h1>
-        <button className="btn btn-primary" onClick={() => { 
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold m-0">Gestión de Usuarios</h1>
+        <button className="btn btn-primary" onClick={() => {
           setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null });
           setPhotoFile(null);
           setShowModal(true);
@@ -85,47 +86,48 @@ const UsersList = () => {
         </button>
       </div>
 
-      <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      {/* Tabla — solo desktop */}
+      <div className="hidden md:block card overflow-x-auto p-0">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr style={{ backgroundColor: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)' }}>
-              <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600 }}>Foto</th>
-              <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600 }}>Nombre</th>
-              <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600 }}>Usuario</th>
-              <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600 }}>Contraseña</th>
-              <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600 }}>Rol</th>
-              <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600 }}>Estado</th>
-              <th style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: 600, textAlign: 'right' }}>Acciones</th>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="px-4 py-3 text-sm font-semibold">Foto</th>
+              <th className="px-4 py-3 text-sm font-semibold">Nombre</th>
+              <th className="px-4 py-3 text-sm font-semibold">Usuario</th>
+              <th className="px-4 py-3 text-sm font-semibold">Contraseña</th>
+              <th className="px-4 py-3 text-sm font-semibold">Rol</th>
+              <th className="px-4 py-3 text-sm font-semibold">Estado</th>
+              <th className="px-4 py-3 text-sm font-semibold text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {usuarios.map(u => (
-              <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <td style={{ padding: '1rem' }}>
+              <tr key={u.id} className="border-b border-gray-200">
+                <td className="px-4 py-3">
                   {u.foto_url ? (
-                    <img src={u.foto_url} alt={u.nombre} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }} />
+                    <img src={u.foto_url} alt={u.nombre} className="w-9 h-9 rounded-full object-cover border-2 border-gray-200" />
                   ) : (
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 600, color: '#6B7280' }}>
+                    <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500">
                       {u.nombre ? u.nombre.charAt(0).toUpperCase() : '?'}
                     </div>
                   )}
                 </td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>{u.nombre}</td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem' }}><strong>{u.usuario}</strong></td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem', fontFamily: 'monospace' }}>{u.password}</td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
-                  <span className="badge" style={{ backgroundColor: u.rol === 'Admin Principal' ? '#EFF6FF' : '#F3F4F6', color: u.rol === 'Admin Principal' ? '#1E40AF' : '#374151' }}>
+                <td className="px-4 py-3 text-sm">{u.nombre}</td>
+                <td className="px-4 py-3 text-sm"><strong>{u.usuario}</strong></td>
+                <td className="px-4 py-3 text-sm font-mono">{u.password}</td>
+                <td className="px-4 py-3 text-sm">
+                  <span className={`badge ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
                     {u.rol}
                   </span>
                 </td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
-                  <span className="badge" style={{ backgroundColor: u.activo ? '#ECFDF5' : '#FEF2F2', color: u.activo ? '#065F46' : '#991B1B' }}>
+                <td className="px-4 py-3 text-sm">
+                  <span className={`badge ${u.activo ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
                     {u.activo ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>
-                <td style={{ padding: '1rem', fontSize: '0.875rem', textAlign: 'right' }}>
-                  <button onClick={() => { setFormData(u); setPhotoFile(null); setShowModal(true); }} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', marginRight: '0.5rem' }}>Editar</button>
-                  <button onClick={() => handleDelete(u.id)} className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>Eliminar</button>
+                <td className="px-4 py-3 text-sm text-right">
+                  <button onClick={() => { setFormData(u); setPhotoFile(null); setShowModal(true); }} className="btn btn-secondary py-1 px-2 text-xs mr-2">Editar</button>
+                  <button onClick={() => handleDelete(u.id)} className="btn btn-danger py-1 px-2 text-xs">Eliminar</button>
                 </td>
               </tr>
             ))}
@@ -133,10 +135,50 @@ const UsersList = () => {
         </table>
       </div>
 
+      {/* Cards — solo móvil */}
+      <div className="md:hidden space-y-3">
+        {usuarios.map(u => (
+          <div key={u.id} className="card p-4">
+            {/* Fila superior: avatar + info */}
+            <div className="flex items-center gap-3 mb-3">
+              {u.foto_url ? (
+                <img src={u.foto_url} alt={u.nombre} className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500 flex-shrink-0">
+                  {u.nombre ? u.nombre.charAt(0).toUpperCase() : '?'}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-gray-900 truncate">{u.nombre}</p>
+                <p className="text-xs text-gray-500 truncate"><strong>{u.usuario}</strong></p>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`badge text-xs ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                  {u.rol}
+                </span>
+                <span className={`badge text-xs ${u.activo ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                  {u.activo ? 'Activo' : 'Inactivo'}
+                </span>
+              </div>
+            </div>
+
+            {/* Contraseña */}
+            <p className="text-xs text-gray-400 font-mono mb-3">Pass: {u.password}</p>
+
+            {/* Fila inferior: botones */}
+            <div className="flex gap-2">
+              <button onClick={() => { setFormData(u); setPhotoFile(null); setShowModal(true); }} className="btn btn-secondary py-1 px-3 text-xs flex-1">Editar</button>
+              <button onClick={() => handleDelete(u.id)} className="btn btn-danger py-1 px-3 text-xs flex-1">Eliminar</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div className="card" style={{ width: '100%', maxWidth: '400px', margin: '1rem' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-md">
+            <h3 className="mb-6 text-lg font-semibold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">Nombre Completo</label>
@@ -163,33 +205,34 @@ const UsersList = () => {
               <div className="form-group">
                 <label className="form-label">Foto de Perfil</label>
                 {(formData.foto_url || photoFile) && (
-                  <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
-                    <img 
-                      src={photoFile ? URL.createObjectURL(photoFile) : formData.foto_url} 
-                      alt="Preview" 
-                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary-color)' }} 
+                  <div className="flex justify-center mb-2">
+                    <img
+                      src={photoFile ? URL.createObjectURL(photoFile) : formData.foto_url}
+                      alt="Preview"
+                      className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
                     />
                   </div>
                 )}
-                <input 
-                  type="file" 
-                  accept="image/*" 
+                <input
+                  type="file"
+                  accept="image/*"
                   onChange={(e) => setPhotoFile(e.target.files[0])}
-                  style={{ border: '2px dashed var(--border-color)', padding: '0.75rem', backgroundColor: '#f9fafb', cursor: 'pointer' }}
+                  className="border-2 border-dashed border-gray-200 p-3 bg-gray-50 cursor-pointer w-full rounded-lg"
                 />
               </div>
 
               {formData.id && (
                 <div className="form-group">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <input type="checkbox" style={{ width: 'auto' }} checked={formData.activo} onChange={e => setFormData({...formData, activo: e.target.checked})} />
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-auto" checked={formData.activo} onChange={e => setFormData({...formData, activo: e.target.checked})} />
                     Permitir acceso al sistema (Activo)
                   </label>
                 </div>
               )}
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Guardar</button>
+
+              <div className="flex gap-4 mt-6">
+                <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary flex-1">Cancelar</button>
+                <button type="submit" className="btn btn-primary flex-1">Guardar</button>
               </div>
             </form>
           </div>
