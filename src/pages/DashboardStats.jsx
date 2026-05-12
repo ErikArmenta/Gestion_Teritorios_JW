@@ -291,10 +291,10 @@ const DashboardStats = () => {
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-semibold m-0">Estadísticas del Territorio</h1>
         <div className="flex gap-3 flex-wrap">
-          <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
+          <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2 w-full sm:w-auto">
             <FileText size={16} /> Descargar PDF
           </button>
-          <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2">
+          <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2 w-full sm:w-auto">
             <Table size={16} /> Descargar Excel
           </button>
         </div>
@@ -304,20 +304,20 @@ const DashboardStats = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-8">
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
           <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Total Casas</h3>
-          <p className="text-4xl font-bold text-gray-900 m-0">{totalCasas}</p>
+          <p className="text-2xl sm:text-4xl font-bold text-gray-900 m-0">{totalCasas}</p>
         </div>
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
           <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Atendidos</h3>
-          <p className="text-4xl font-bold text-emerald-500 m-0">{atendidos}</p>
+          <p className="text-2xl sm:text-4xl font-bold text-emerald-500 m-0">{atendidos}</p>
           <span className="badge mt-2 bg-emerald-50 text-emerald-800">{porcAtendidos}%</span>
         </div>
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
           <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">No Atendieron</h3>
-          <p className="text-4xl font-bold text-red-500 m-0">{noAtendidos}</p>
+          <p className="text-2xl sm:text-4xl font-bold text-red-500 m-0">{noAtendidos}</p>
         </div>
         <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
           <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-wide">Casos Especiales</h3>
-          <p className="text-4xl font-bold text-amber-500 m-0">{especiales}</p>
+          <p className="text-2xl sm:text-4xl font-bold text-amber-500 m-0">{especiales}</p>
         </div>
       </div>
 
