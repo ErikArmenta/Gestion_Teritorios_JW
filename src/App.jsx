@@ -26,9 +26,9 @@ const AppLayout = () => {
   if (!user) return <Navigate to="/login" replace />;
   
   return (
-    <div className="app-container">
+    <div className="flex min-h-screen">
       <Sidebar />
-      <main className="main-content">
+      <main className="flex-1 p-8 overflow-y-auto h-screen flex flex-col">
         <Routes>
           <Route path="/" element={<TerritoriesMap />} />
           <Route path="/register" element={<RegisterHouse />} />

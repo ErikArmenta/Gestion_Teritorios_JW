@@ -51,20 +51,6 @@ p {
   color: var(--text-secondary);
 }
 
-/* Layout */
-.app-container {
-  display: flex;
-  min-height: 100vh;
-}
-
-.main-content {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
 
 /* Cards & Surfaces */
 .card {
@@ -169,17 +155,6 @@ input:focus, select:focus, textarea:focus {
   font-weight: 500;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
-  
-  .main-content {
-    padding: 1rem;
-    height: calc(100vh - 60px);
-  }
-}
 
 /* Custom Map Markers & Hover Effects */
 .custom-marker-wrapper {
