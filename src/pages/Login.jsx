@@ -40,28 +40,26 @@ const Login = () => {
           </div>
         )}
 
-        <form onSubmit={handleLogin} style={{ width: '100%' }}>
-          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label className="form-label" style={{ color: 'var(--text-secondary)' }}>Usuario</label>
+        <form onSubmit={handleLogin}>
+          <div className="form-group mb-5">
+            <label className="form-label text-gray-500">Usuario</label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Ej. hermano_juan"
-              style={{ backgroundColor: 'white' }}
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: '2rem' }}>
-            <label className="form-label" style={{ color: 'var(--text-secondary)' }}>Contraseña</label>
+          <div className="form-group mb-8">
+            <label className="form-label text-gray-500">Contraseña</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              style={{ backgroundColor: 'white' }}
             />
           </div>
 
