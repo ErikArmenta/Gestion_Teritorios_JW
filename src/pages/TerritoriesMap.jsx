@@ -153,7 +153,7 @@ const TerritoriesMap = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-[60vh]">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Mapa Principal y Territorios</h1>
@@ -161,7 +161,7 @@ const TerritoriesMap = () => {
         </div>
       </div>
 
-      <div className="card flex-1 p-0 overflow-hidden relative">
+      <div className="card flex-1 min-h-0 p-0 overflow-hidden relative">
         {loading ? (
           <div className="p-8 text-center">Cargando datos...</div>
         ) : (
@@ -245,7 +245,7 @@ const TerritoriesMap = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-          <div className="card w-full max-w-lg max-h-screen overflow-y-auto">
+          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-6">Nuevo Territorio</h3>
             <form onSubmit={handleSave}>
               <div className="form-group">
