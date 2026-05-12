@@ -350,7 +350,7 @@ const DashboardStats = () => {
                 <strong>{t.nombre}</strong>
                 <span className="badge bg-gray-100">{t.total} casas</span>
               </div>
-              <div className="flex gap-4 text-xs text-gray-500">
+              <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-500">
                 <span className="flex items-center gap-1">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>{t.atendidos}
                 </span>
