@@ -9,7 +9,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { FileText, Table } from 'lucide-react';
+import { FileText, Table, Home, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title);
 
@@ -26,7 +26,16 @@ const DashboardStats = () => {
   const { user } = useAuth();
 
   if (loading) {
-    return <div className="p-8 text-center">Cargando estadísticas...</div>;
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-80 rounded-2xl" />)}
+        </div>
+      </div>
+    );
   }
 
   const totalCasas = casas.length;
@@ -36,7 +45,6 @@ const DashboardStats = () => {
   const especiales = casas.filter(c => c.tiene_caso_especial).length;
   const porcAtendidos = totalCasas > 0 ? ((atendidos / totalCasas) * 100).toFixed(1) : 0;
 
-  // Status counts
   const statusCounts = casas.reduce((acc, c) => {
     acc[c.estado] = (acc[c.estado] || 0) + 1;
     return acc;
@@ -45,7 +53,6 @@ const DashboardStats = () => {
   const statusLabels = Object.keys(statusCounts);
   const statusValues = Object.values(statusCounts);
 
-  // Per-territory data
   const terrData = territorios.map(t => {
     const c = casas.filter(h => String(h.territorio_id) === String(t.id));
     return {
@@ -75,7 +82,7 @@ const DashboardStats = () => {
     plugins: {
       legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 12, font: { size: 13, family: 'Inter' } } },
       tooltip: {
-        backgroundColor: '#1F2937', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 13, family: 'Inter' }, padding: 12, cornerRadius: 8,
+        backgroundColor: '#1F2937', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 13, family: 'Inter' }, padding: 12, cornerRadius: 10,
         callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw / totalCasas) * 100).toFixed(1)}%)` }
       }
     }
@@ -94,12 +101,12 @@ const DashboardStats = () => {
     responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { position: 'top', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 12, font: { size: 13, family: 'Inter' } } },
-      tooltip: { backgroundColor: '#1F2937', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 13, family: 'Inter' }, padding: 12, cornerRadius: 8 },
+      tooltip: { backgroundColor: '#1F2937', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 13, family: 'Inter' }, padding: 12, cornerRadius: 10 },
       title: { display: false }
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 12, family: 'Inter' } } },
-      y: { beginAtZero: true, grid: { color: '#F3F4F6' }, ticks: { font: { size: 12, family: 'Inter' }, stepSize: 1 } }
+      y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { font: { size: 12, family: 'Inter' }, stepSize: 1 } }
     }
   };
 
@@ -109,7 +116,6 @@ const DashboardStats = () => {
     const pageW = doc.internal.pageSize.getWidth();
     let y = 20;
 
-    // Header
     doc.setFillColor(31, 41, 55);
     doc.rect(0, 0, pageW, 42, 'F');
     doc.setTextColor(255);
@@ -121,10 +127,8 @@ const DashboardStats = () => {
     doc.text('Reporte Ejecutivo de Cobertura y Actividad', pageW / 2, 27, { align: 'center' });
     doc.setFontSize(9);
     doc.text(`Generado: ${new Date().toLocaleString('es-MX')}  |  Usuario: ${user?.nombre || 'N/A'}`, pageW / 2, 36, { align: 'center' });
-
     y = 52;
 
-    // Section 1: Resumen Ejecutivo
     doc.setTextColor(31, 41, 55);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
@@ -142,15 +146,12 @@ const DashboardStats = () => {
       doc.text(split, 14, y);
       y += split.length * 5 + 2;
     });
-
     y += 4;
 
-    // KPI Table
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('2. Indicadores Clave de Desempeño (KPIs)', 14, y);
     y += 6;
-
     autoTable(doc, {
       startY: y,
       head: [['Indicador', 'Valor', 'Detalle']],
@@ -168,15 +169,12 @@ const DashboardStats = () => {
       margin: { left: 14, right: 14 },
       styles: { cellPadding: 4 }
     });
-
     y = doc.lastAutoTable.finalY + 10;
 
-    // Section 3: Desglose por Territorio
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('3. Desglose por Territorio', 14, y);
     y += 6;
-
     autoTable(doc, {
       startY: y,
       head: [['Territorio', 'Total', 'Atendidos', 'No Atendió', 'Pendientes', 'Especiales']],
@@ -187,15 +185,12 @@ const DashboardStats = () => {
       margin: { left: 14, right: 14 },
       styles: { cellPadding: 4 }
     });
-
     y = doc.lastAutoTable.finalY + 10;
 
-    // Section 4: Distribución por Estado
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('4. Distribución por Estado de Visita', 14, y);
     y += 6;
-
     autoTable(doc, {
       startY: y,
       head: [['Estado', 'Cantidad', 'Porcentaje']],
@@ -206,10 +201,8 @@ const DashboardStats = () => {
       margin: { left: 14, right: 14 },
       styles: { cellPadding: 4 }
     });
-
     y = doc.lastAutoTable.finalY + 10;
 
-    // Section 5: Detalle de Casos Especiales
     const casosEsp = casas.filter(c => c.tiene_caso_especial);
     if (casosEsp.length > 0) {
       if (y > 230) { doc.addPage(); y = 20; }
@@ -217,7 +210,6 @@ const DashboardStats = () => {
       doc.setFont('helvetica', 'bold');
       doc.text('5. Detalle de Casos Especiales', 14, y);
       y += 6;
-
       autoTable(doc, {
         startY: y,
         head: [['Dirección', 'Territorio', 'Tipo', 'Detalles']],
@@ -231,7 +223,6 @@ const DashboardStats = () => {
       });
     }
 
-    // Footer on every page
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
@@ -240,15 +231,12 @@ const DashboardStats = () => {
       doc.text('Gestión Territorial JW  |  Desarrollado por Master Engenering EA', pageW / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
       doc.text(`Página ${i} de ${totalPages}`, pageW - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
     }
-
     doc.save(`Reporte_Territorial_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   // --- Excel Generation ---
   const generateExcel = () => {
     const wb = XLSX.utils.book_new();
-
-    // Sheet 1: Resumen
     const resumenData = [
       ['Indicador', 'Valor'],
       ['Total de Viviendas', totalCasas],
@@ -263,7 +251,6 @@ const DashboardStats = () => {
     ws1['!cols'] = [{ wch: 25 }, { wch: 15 }];
     XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
 
-    // Sheet 2: Detalle de Casas
     const headers = ['Dirección', 'Territorio', 'Estado', 'Contacto', 'Teléfono', 'Caso Especial', 'Tipo Caso', 'Detalles', 'Notas', 'Latitud', 'Longitud'];
     const rows = casas.map(c => [
       c.direccion, c.territorio_nombre, c.estado, c.nombre_contacto || '',
@@ -275,7 +262,6 @@ const DashboardStats = () => {
     ws2['!cols'] = headers.map(() => ({ wch: 18 }));
     XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Casas');
 
-    // Sheet 3: Por Territorio
     const terrHeaders = ['Territorio', 'Total', 'Atendidos', 'No Atendió', 'Pendientes', 'Especiales'];
     const terrRows = terrData.map(t => [t.nombre, t.total, t.atendidos, t.noAtendidos, t.pendientes, t.especiales]);
     const ws3 = XLSX.utils.aoa_to_sheet([terrHeaders, ...terrRows]);
@@ -285,88 +271,132 @@ const DashboardStats = () => {
     XLSX.writeFile(wb, `Datos_Territorial_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
+  const kpiCards = [
+    {
+      label: 'Total Casas',
+      value: totalCasas,
+      sub: `${territorios.length} territorios`,
+      icon: <Home size={22} className="text-white/70" />,
+      gradient: 'linear-gradient(135deg, #334155 0%, #1E293B 100%)',
+      shadow: '0 8px 24px rgba(30,41,59,0.4)',
+    },
+    {
+      label: 'Atendidos',
+      value: atendidos,
+      sub: `${porcAtendidos}% del total`,
+      icon: <CheckCircle size={22} className="text-white/70" />,
+      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+      shadow: '0 8px 24px rgba(16,185,129,0.35)',
+    },
+    {
+      label: 'No Atendieron',
+      value: noAtendidos,
+      sub: 'Sin contacto',
+      icon: <XCircle size={22} className="text-white/70" />,
+      gradient: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+      shadow: '0 8px 24px rgba(239,68,68,0.35)',
+    },
+    {
+      label: 'Casos Especiales',
+      value: especiales,
+      sub: 'Atención diferenciada',
+      icon: <AlertTriangle size={22} className="text-white/70" />,
+      gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+      shadow: '0 8px 24px rgba(245,158,11,0.35)',
+    },
+  ];
+
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-4 sm:mb-6 gap-4">
-        <h1 className="text-xl sm:text-2xl font-semibold m-0">Estadísticas del Territorio</h1>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2 w-full md:w-auto">
-            <FileText size={16} /> Descargar PDF
+      <div className="flex flex-wrap justify-between items-center mb-5 sm:mb-7 gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold m-0">Estadísticas del Territorio</h1>
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
+            <FileText size={15} /> Descargar PDF
           </button>
-          <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2 w-full md:w-auto">
-            <Table size={16} /> Descargar Excel
+          <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2">
+            <Table size={15} /> Descargar Excel
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide">Total Casas</h3>
-          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-gray-900 m-0">{totalCasas}</p>
-        </div>
-        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide">Atendidos</h3>
-          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-emerald-500 m-0">{atendidos}</p>
-          <span className="badge mt-2 bg-emerald-50 text-emerald-800">{porcAtendidos}%</span>
-        </div>
-        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide truncate w-full text-center">No Atendieron</h3>
-          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-red-500 m-0">{noAtendidos}</p>
-        </div>
-        <div className="card flex flex-col items-center justify-center hover:-translate-y-1 transition-transform duration-200 cursor-default">
-          <h3 className="text-gray-500 text-xs mb-2 uppercase tracking-normal sm:tracking-wide">Casos Especiales</h3>
-          <p className="text-xl sm:text-2xl md:text-4xl font-bold text-amber-500 m-0">{especiales}</p>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        {kpiCards.map((k, i) => (
+          <div
+            key={i}
+            className="rounded-2xl p-4 sm:p-5 text-white cursor-default transition-transform duration-200 hover:-translate-y-0.5"
+            style={{ background: k.gradient, boxShadow: k.shadow }}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                {k.label}
+              </p>
+              {k.icon}
+            </div>
+            <p className="text-3xl sm:text-4xl font-bold leading-none mb-1">{k.value}</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{k.sub}</p>
+          </div>
+        ))}
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
         <div className="card">
-          <h3 className="text-base font-medium mb-6">Distribución por Estado</h3>
-          <div className="relative h-80">
-            {totalCasas > 0 ? <Doughnut data={donutData} options={donutOptions} /> :
-              <p className="text-center text-gray-500 pt-20">Sin datos</p>}
+          <h3 className="text-base font-bold mb-5">Distribución por Estado</h3>
+          <div className="relative h-72">
+            {totalCasas > 0
+              ? <Doughnut data={donutData} options={donutOptions} />
+              : <p className="text-center text-gray-400 pt-20 text-sm">Sin datos registrados</p>}
           </div>
         </div>
-
         <div className="card">
-          <h3 className="text-base font-medium mb-6">Actividad por Territorio</h3>
-          <div className="relative h-80">
-            {terrData.length > 0 ? <Bar data={barData} options={barOptions} /> :
-              <p className="text-center text-gray-500 pt-20">Sin territorios</p>}
+          <h3 className="text-base font-bold mb-5">Actividad por Territorio</h3>
+          <div className="relative h-72">
+            {terrData.length > 0
+              ? <Bar data={barData} options={barOptions} />
+              : <p className="text-center text-gray-400 pt-20 text-sm">Sin territorios registrados</p>}
           </div>
         </div>
       </div>
 
       {/* Territory Detail Cards */}
       <div className="card">
-        <h3 className="text-base font-medium mb-6">Detalle por Territorio</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <h3 className="text-base font-bold mb-5">Detalle por Territorio</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {terrData.map((t, i) => (
-            <div key={i} className="p-5 border border-gray-200 rounded-lg hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-default">
+            <div
+              key={i}
+              className="p-4 border border-gray-100 rounded-xl bg-gray-50/60 hover:bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-default"
+            >
               <div className="flex justify-between items-center mb-3">
-                <strong>{t.nombre}</strong>
-                <span className="badge bg-gray-100">{t.total} casas</span>
+                <strong className="text-sm font-bold text-gray-800 truncate mr-2">{t.nombre}</strong>
+                <span className="badge bg-slate-100 text-slate-700 shrink-0">{t.total}</span>
               </div>
-              <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>{t.atendidos}
+              <div className="grid grid-cols-2 gap-y-1.5 text-xs text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  Atendidos: <strong className="text-gray-700">{t.atendidos}</strong>
                 </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>{t.noAtendidos}
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                  Sin contacto: <strong className="text-gray-700">{t.noAtendidos}</strong>
                 </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>{t.pendientes}
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                  Pendientes: <strong className="text-gray-700">{t.pendientes}</strong>
                 </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>⚠️ {t.especiales}
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+                  Especiales: <strong className="text-gray-700">{t.especiales}</strong>
                 </span>
               </div>
             </div>
           ))}
-          {terrData.length === 0 && <p className="text-gray-500">No hay territorios registrados.</p>}
+          {terrData.length === 0 && (
+            <p className="text-gray-400 text-sm col-span-3">No hay territorios registrados.</p>
+          )}
         </div>
       </div>
     </div>

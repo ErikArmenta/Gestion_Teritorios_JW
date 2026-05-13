@@ -3,7 +3,7 @@ import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import { MapContainer, TileLayer, Marker, useMapEvents, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import * as turf from '@turf/turf';
-import { Locate, Upload, X } from 'lucide-react';
+import { Locate, Upload, X, MapPin } from 'lucide-react';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 
 import L from 'leaflet';
@@ -38,14 +38,13 @@ const RegisterHouse = () => {
   const toast = useToast();
   const photoInputRef = useRef(null);
 
-  const [position, setPosition]     = useState({ lat: 31.7619, lng: -106.4850 });
-  const [photoFile, setPhotoFile]   = useState(null);
+  const [position, setPosition]       = useState({ lat: 31.7619, lng: -106.4850 });
+  const [photoFile, setPhotoFile]     = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [locating, setLocating]     = useState(false);
-  const [formData, setFormData]     = useState(EMPTY_FORM);
+  const [locating, setLocating]       = useState(false);
+  const [formData, setFormData]       = useState(EMPTY_FORM);
 
-  // Genera preview al seleccionar foto
   useEffect(() => {
     if (!photoFile) { setPhotoPreview(null); return; }
     const url = URL.createObjectURL(photoFile);
@@ -93,7 +92,6 @@ const RegisterHouse = () => {
     e.preventDefault();
 
     if (insideTerritory === false) {
-      // Usamos confirm propio — advertencia no destructiva
       const ok = window.confirm('La ubicación seleccionada NO está dentro del territorio. ¿Guardar de todos modos?');
       if (!ok) return;
     }
@@ -104,18 +102,18 @@ const RegisterHouse = () => {
       const foto_url = photoFile ? await uploadPhoto(photoFile) : null;
 
       await addCasa({
-        territorio_id:     parseInt(formData.territorio_id, 10),
-        direccion:         formData.direccion,
-        estado:            formData.estado,
-        nombre_contacto:   formData.nombre_contacto,
-        telefono:          formData.telefono,
+        territorio_id:       parseInt(formData.territorio_id, 10),
+        direccion:           formData.direccion,
+        estado:              formData.estado,
+        nombre_contacto:     formData.nombre_contacto,
+        telefono:            formData.telefono,
         tiene_caso_especial: formData.tiene_caso_especial,
-        tipo_caso:         formData.tipo_caso,
-        detalles_caso:     formData.detalles_caso,
-        notas:             formData.notas,
-        territorio_nombre: territorio?.nombre || '',
-        latitud:           position.lat,
-        longitud:          position.lng,
+        tipo_caso:           formData.tipo_caso,
+        detalles_caso:       formData.detalles_caso,
+        notas:               formData.notas,
+        territorio_nombre:   territorio?.nombre || '',
+        latitud:             position.lat,
+        longitud:            position.lng,
         foto_url,
       });
 
@@ -132,12 +130,15 @@ const RegisterHouse = () => {
 
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Registrar Nueva Casa</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-5 sm:mb-6">Registrar Nueva Casa</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
         {/* ── Formulario ── */}
         <div className="card">
-          <h3 className="mb-4">Datos Generales</h3>
+          <h3 className="mb-5 text-base font-bold flex items-center gap-2">
+            <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span>
+            Datos Generales
+          </h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">Territorio *</label>
@@ -159,7 +160,13 @@ const RegisterHouse = () => {
               </select>
             </div>
 
-            <h3 className="border-t border-gray-100 pt-4 mt-2 mb-4">Residentes y Casos</h3>
+            <div className="border-t border-gray-100 pt-4 mt-2 mb-4">
+              <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span>
+                Residentes y Casos
+              </h3>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="form-group flex-1">
                 <label className="form-label">Nombre del Contacto</label>
@@ -167,12 +174,12 @@ const RegisterHouse = () => {
               </div>
               <div className="form-group flex-1">
                 <label className="form-label">Teléfono</label>
-                <input value={formData.telefono} onChange={e => setFormData(f => ({ ...f, telefono: e.target.value }))} placeholder="Opcional" />
+                <input value={formData.telefono} onChange={e => setFormData(f => ({ ...f, telefono: e.target.value }))} placeholder="Opcional" type="tel" />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="flex items-center gap-2 cursor-pointer text-sm select-none">
+              <label className="flex items-center gap-2 cursor-pointer text-sm select-none font-medium text-gray-700">
                 <input
                   type="checkbox"
                   className="w-auto accent-blue-500"
@@ -184,7 +191,7 @@ const RegisterHouse = () => {
             </div>
 
             {formData.tiene_caso_especial && (
-              <div className="p-4 bg-red-50 border border-red-100 rounded-lg mb-4 space-y-3">
+              <div className="p-4 bg-red-50 border border-red-100 rounded-xl mb-4 space-y-3">
                 <div className="form-group mb-0">
                   <label className="form-label">Tipo de Caso</label>
                   <select value={formData.tipo_caso} onChange={e => setFormData(f => ({ ...f, tipo_caso: e.target.value }))}>
@@ -208,22 +215,28 @@ const RegisterHouse = () => {
             </div>
 
             {/* Foto */}
-            <h3 className="border-t border-gray-100 pt-4 mt-2 mb-4">Evidencia Fotográfica</h3>
+            <div className="border-t border-gray-100 pt-4 mt-2 mb-4">
+              <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</span>
+                Evidencia Fotográfica
+              </h3>
+            </div>
+
             {photoPreview && (
-              <div className="relative w-full h-40 mb-3 rounded-lg overflow-hidden border border-gray-200">
+              <div className="relative w-full h-40 mb-3 rounded-xl overflow-hidden border border-gray-200">
                 <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => { setPhotoFile(null); if (photoInputRef.current) photoInputRef.current.value = ''; }}
-                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors"
+                  className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80 transition-colors"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               </div>
             )}
-            <label className="flex flex-col items-center gap-2 border-2 border-dashed border-gray-200 p-4 rounded-lg cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors text-sm text-gray-500">
-              <Upload size={20} className="text-gray-400" />
-              {photoFile ? photoFile.name : 'Toca para adjuntar foto (opcional)'}
+            <label className="flex flex-col items-center gap-2 border-2 border-dashed border-gray-200 p-4 rounded-xl cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors text-sm text-gray-400">
+              <Upload size={20} className="text-gray-300" />
+              {photoFile ? <span className="text-blue-600 font-medium text-xs">{photoFile.name}</span> : 'Toca para adjuntar foto (opcional)'}
               <input
                 ref={photoInputRef}
                 type="file"
@@ -234,7 +247,15 @@ const RegisterHouse = () => {
             </label>
 
             <button type="submit" className="btn btn-primary w-full mt-5" disabled={isUploading}>
-              {isUploading ? 'Guardando...' : 'Guardar Casa'}
+              {isUploading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Guardando...
+                </span>
+              ) : 'Guardar Casa'}
             </button>
           </form>
         </div>
@@ -242,31 +263,33 @@ const RegisterHouse = () => {
         {/* ── Mapa ── */}
         <div className="card flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="m-0">Geolocalización</h3>
+            <h3 className="m-0 text-base font-bold flex items-center gap-2">
+              <MapPin size={16} className="text-blue-500" /> Geolocalización
+            </h3>
             <button
               type="button"
               onClick={handleLocate}
               disabled={locating}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 font-medium"
             >
-              <Locate size={14} />
+              <Locate size={13} />
               {locating ? 'Obteniendo GPS...' : 'Usar mi ubicación'}
             </button>
           </div>
           <p className="text-xs text-gray-400 mb-3">Haz clic en el mapa para posicionar la casa.</p>
 
           {insideTerritory === true && (
-            <div className="p-2.5 bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-lg mb-3 text-xs">
+            <div className="p-2.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl mb-3 text-xs font-medium">
               Ubicación correcta dentro del territorio seleccionado.
             </div>
           )}
           {insideTerritory === false && formData.territorio_id && (
-            <div className="p-2.5 bg-amber-50 text-amber-800 border border-amber-100 rounded-lg mb-3 text-xs">
+            <div className="p-2.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-xl mb-3 text-xs font-medium">
               Ubicación fuera del territorio seleccionado. Puedes guardar de todos modos.
             </div>
           )}
 
-          <div className="flex-1 rounded-lg overflow-hidden" style={{ minHeight: '380px' }}>
+          <div className="flex-1 rounded-xl overflow-hidden" style={{ minHeight: '380px' }}>
             <MapContainer center={[position.lat, position.lng]} zoom={14} style={{ height: '100%', width: '100%', minHeight: '380px' }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <LocationMarker position={position} setPosition={setPosition} />

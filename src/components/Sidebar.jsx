@@ -20,40 +20,41 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    { path: '/', name: 'Mapa Principal', icon: <Map size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-    { path: '/register', name: 'Registrar Casa', icon: <Home size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-    { path: '/stats', name: 'Estadísticas', icon: <BarChart2 size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/list', name: 'Lista de Casas', icon: <List size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/users', name: 'Usuarios', icon: <Users size={20} />, roles: ['Admin Principal'] },
+    { path: '/', name: 'Mapa Principal', icon: <Map size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+    { path: '/register', name: 'Registrar Casa', icon: <Home size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+    { path: '/stats', name: 'Estadísticas', icon: <BarChart2 size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
+    { path: '/list', name: 'Lista de Casas', icon: <List size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
+    { path: '/users', name: 'Usuarios', icon: <Users size={18} />, roles: ['Admin Principal'] },
   ];
 
   const visibleMenu = menuItems.filter(item => item.roles.includes(user.rol));
 
   const SidebarContent = ({ onNavClick }) => (
-    <>
-      {/* Logo + título */}
-      <div className="flex flex-col items-center mb-6 gap-4">
-        <img
-          src="/JW.jpg"
-          alt="JW Logo"
-          className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover shadow-md"
-        />
-        <h2 className="text-xl font-semibold text-gray-900 text-center m-0">
+    <div className="flex flex-col h-full">
+      {/* Logo section */}
+      <div className="flex flex-col items-center pt-8 pb-5 px-4">
+        <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg mb-3" style={{ boxShadow: '0 0 0 2px rgba(59,130,246,0.45), 0 4px 16px rgba(0,0,0,0.4)' }}>
+          <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
+        </div>
+        <h2 className="text-sm font-bold text-white/90 text-center leading-snug tracking-tight">
           Gestión Territorial
         </h2>
+        <span className="text-xs text-white/35 mt-0.5 font-medium">JW</span>
       </div>
 
+      {/* Divider */}
+      <div className="mx-5 h-px bg-white/10 mb-3" />
+
       {/* Nav links */}
-      <nav className="flex flex-col gap-2 flex-1">
+      <nav className="flex flex-col gap-0.5 flex-1 px-3">
         {visibleMenu.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.path === '/'}
             onClick={onNavClick}
             className={({ isActive }) =>
-              isActive
-                ? 'flex items-center gap-3 px-4 py-3 rounded-lg no-underline font-semibold text-blue-500 bg-blue-50'
-                : 'flex items-center gap-3 px-4 py-3 rounded-lg no-underline font-medium text-gray-500 bg-transparent hover:bg-gray-50 transition-colors duration-200'
+              `sidebar-nav-item${isActive ? ' active' : ''}`
             }
           >
             {item.icon}
@@ -63,75 +64,89 @@ const Sidebar = () => {
       </nav>
 
       {/* User info + logout */}
-      <div className="mt-auto pt-4 border-t border-gray-200 flex flex-col gap-4">
-        <div className="flex items-center gap-3 px-2">
+      <div className="px-3 pb-6 pt-3">
+        <div className="h-px bg-white/10 mb-4" />
+        <div className="flex items-center gap-3 px-2 mb-3">
           {user.foto_url ? (
             <img
               src={user.foto_url}
               alt={user.nombre}
-              className="w-10 h-10 rounded-full object-cover border-2 border-blue-500 shrink-0"
+              className="w-9 h-9 rounded-full object-cover shrink-0"
+              style={{ boxShadow: '0 0 0 2px rgba(59,130,246,0.5)' }}
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
-              <User size={20} />
+            <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+              <User size={16} className="text-white" />
             </div>
           )}
           <div className="flex-1 overflow-hidden">
-            <div className="text-sm font-semibold text-gray-900 truncate">{user.nombre}</div>
-            <div className="text-xs text-gray-500">{user.rol}</div>
+            <div className="text-sm font-semibold text-white/90 truncate">{user.nombre}</div>
+            <div className="text-xs text-white/40 truncate">{user.rol}</div>
           </div>
         </div>
-
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-800 border border-red-300 btn"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 transition-colors duration-200 border border-red-500/15"
         >
-          <LogOut size={16} /> Cerrar Sesión
+          <LogOut size={15} /> Cerrar Sesión
         </button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
-      {/* Botón hamburger — solo móvil */}
+      {/* Botón hamburger animado — solo móvil */}
       <button
-        onClick={() => setIsOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden p-2 bg-white rounded-lg shadow-md border border-gray-200"
-        aria-label="Abrir menú"
+        onClick={() => setIsOpen(o => !o)}
+        className="fixed top-3 left-3 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-xl shadow-lg border border-white/10 transition-colors duration-200"
+        style={{ backgroundColor: '#0F172A' }}
+        aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
       >
-        <Menu size={22} />
+        <div className="relative w-[18px] h-[18px]">
+          <Menu
+            size={18}
+            className="absolute inset-0 text-white transition-all duration-300"
+            style={{ opacity: isOpen ? 0 : 1, transform: isOpen ? 'rotate(90deg) scale(0.7)' : 'rotate(0deg) scale(1)' }}
+          />
+          <X
+            size={18}
+            className="absolute inset-0 text-white transition-all duration-300"
+            style={{ opacity: isOpen ? 1 : 0, transform: isOpen ? 'rotate(0deg) scale(1)' : 'rotate(-90deg) scale(0.7)' }}
+          />
+        </div>
       </button>
 
-      {/* Overlay — solo móvil, visible cuando isOpen */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 z-30 md:hidden transition-all duration-300"
+        style={{
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: isOpen ? 'blur(4px)' : 'none',
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? 'auto' : 'none',
+        }}
+        onClick={() => setIsOpen(false)}
+        aria-hidden="true"
+      />
 
       {/* Drawer móvil */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col p-6 transform transition-transform duration-300 ease-in-out md:hidden ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className="fixed inset-y-0 left-0 z-40 w-64 flex flex-col md:hidden transition-transform duration-300 ease-out"
+        style={{
+          backgroundColor: '#0F172A',
+          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
-        {/* Botón cerrar */}
-        <button
-          onClick={() => setIsOpen(false)}
-          className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600"
-          aria-label="Cerrar menú"
-        >
-          <X size={20} />
-        </button>
-
         <SidebarContent onNavClick={handleNavClick} />
       </div>
 
       {/* Sidebar desktop */}
-      <div className="hidden md:flex md:flex-col md:w-64 md:sticky md:top-0 md:h-screen bg-white border-r border-gray-200 p-6 shrink-0">
+      <div
+        className="hidden md:flex md:flex-col md:w-64 md:sticky md:top-0 md:h-screen shrink-0"
+        style={{ backgroundColor: '#0F172A', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <SidebarContent onNavClick={() => {}} />
       </div>
     </>

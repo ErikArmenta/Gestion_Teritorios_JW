@@ -3,19 +3,18 @@ import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
-import { Trash2, ChevronDown, ImageOff, ZoomIn, X } from 'lucide-react';
+import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search } from 'lucide-react';
 
 const HousesList = () => {
   const { casas, territorios, deleteCasa, updateCasa, loading } = useData();
   const toast = useToast();
 
-  const [searchTerm, setSearchTerm]         = useState('');
+  const [searchTerm, setSearchTerm]           = useState('');
   const [filterTerritory, setFilterTerritory] = useState('Todos');
-  const [filterStatus, setFilterStatus]     = useState('Todos');
-
-  const [deleteTarget, setDeleteTarget]     = useState(null);
-  const [editStatusId, setEditStatusId]     = useState(null);
-  const [lightboxUrl, setLightboxUrl]       = useState(null);
+  const [filterStatus, setFilterStatus]       = useState('Todos');
+  const [deleteTarget, setDeleteTarget]       = useState(null);
+  const [editStatusId, setEditStatusId]       = useState(null);
+  const [lightboxUrl, setLightboxUrl]         = useState(null);
 
   if (loading) {
     return (
@@ -59,29 +58,35 @@ const HousesList = () => {
 
   return (
     <div>
-      <div className="flex flex-wrap justify-between items-center mb-4 sm:mb-6 gap-2">
-        <h1 className="text-xl sm:text-2xl font-semibold">Lista de Casas</h1>
-        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center mb-5 sm:mb-6 gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold">Lista de Casas</h1>
+        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
           {filteredCasas.length} de {casas.length} casas
         </span>
       </div>
 
       {/* Filtros */}
-      <div className="card mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <input
-          placeholder="Buscar por dirección, contacto o zona..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="col-span-1 sm:col-span-1"
-        />
-        <select value={filterTerritory} onChange={e => setFilterTerritory(e.target.value)}>
-          <option value="Todos">Todos los territorios</option>
-          {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-        </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="Todos">Todos los estados</option>
-          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+      <div className="card mb-4 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              placeholder="Buscar dirección, contacto o zona..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <select value={filterTerritory} onChange={e => setFilterTerritory(e.target.value)}>
+            <option value="Todos">Todos los territorios</option>
+            {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+          </select>
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="Todos">Todos los estados</option>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Tabla — desktop */}
@@ -89,34 +94,34 @@ const HousesList = () => {
         <div className="card overflow-x-auto p-0">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Dirección</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Territorio</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Contacto</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Especial</th>
-                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Acciones</th>
+              <tr className="border-b border-gray-100" style={{ backgroundColor: '#F8FAFC' }}>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider w-16">Foto</th>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Dirección</th>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Territorio</th>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Contacto</th>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Especial</th>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredCasas.length > 0 ? filteredCasas.map(c => (
-                <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                <tr key={c.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors duration-100">
                   <td className="px-4 py-3">
                     {c.foto_url ? (
-                      <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200">
+                      <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-xl overflow-hidden border border-gray-200">
                         <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                          <ZoomIn size={14} className="text-white" />
+                          <ZoomIn size={13} className="text-white" />
                         </div>
                       </button>
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
                         <ImageOff size={14} className="text-gray-300" />
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium">{c.direccion}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-gray-800">{c.direccion}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{c.territorio_nombre}</td>
                   <td className="px-4 py-3 text-sm">
                     {editStatusId === c.id ? (
@@ -125,7 +130,7 @@ const HousesList = () => {
                         defaultValue={c.estado}
                         onBlur={() => setEditStatusId(null)}
                         onChange={e => handleStatusChange(c.id, e.target.value)}
-                        className="text-xs py-1 px-2 border border-blue-300 rounded-lg"
+                        className="text-xs py-1 px-2 border border-blue-300 rounded-lg w-auto"
                       >
                         {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -135,14 +140,14 @@ const HousesList = () => {
                         className={`badge cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${getStatusBadge(c.estado)}`}
                         title="Clic para cambiar estado"
                       >
-                        {c.estado} <ChevronDown size={11} />
+                        {c.estado} <ChevronDown size={10} />
                       </button>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">{c.nombre_contacto || '—'}</td>
                   <td className="px-4 py-3 text-sm">
                     {c.tiene_caso_especial
-                      ? <span className="text-amber-600 font-medium text-xs">{c.tipo_caso || 'Especial'}</span>
+                      ? <span className="text-amber-600 font-semibold text-xs">{c.tipo_caso || 'Especial'}</span>
                       : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -156,7 +161,7 @@ const HousesList = () => {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="7" className="px-4 py-10 text-center text-gray-400 text-sm">
+                  <td colSpan="7" className="px-4 py-12 text-center text-gray-400 text-sm">
                     No se encontraron casas con los filtros actuales.
                   </td>
                 </tr>
@@ -172,16 +177,16 @@ const HousesList = () => {
           <div key={c.id} className="card p-4">
             <div className="flex items-start gap-3 mb-2">
               {c.foto_url ? (
-                <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 shrink-0">
                   <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
                 </button>
               ) : (
-                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
                   <ImageOff size={16} className="text-gray-300" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{c.direccion}</p>
+                <p className="font-bold text-sm truncate text-gray-800">{c.direccion}</p>
                 <p className="text-xs text-gray-400 truncate">{c.territorio_nombre}</p>
               </div>
               {editStatusId === c.id ? (
@@ -190,7 +195,7 @@ const HousesList = () => {
                   defaultValue={c.estado}
                   onBlur={() => setEditStatusId(null)}
                   onChange={e => handleStatusChange(c.id, e.target.value)}
-                  className="text-xs py-1 px-1.5 border border-blue-300 rounded-lg shrink-0"
+                  className="text-xs py-1 px-1.5 border border-blue-300 rounded-lg shrink-0 w-auto"
                 >
                   {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -206,7 +211,7 @@ const HousesList = () => {
 
             <div className="text-xs text-gray-500 space-y-0.5 mb-3">
               {c.nombre_contacto && <div>Contacto: {c.nombre_contacto}</div>}
-              {c.tiene_caso_especial && <div className="text-amber-600">Caso especial: {c.tipo_caso || 'Sí'}</div>}
+              {c.tiene_caso_especial && <div className="text-amber-600 font-semibold">Caso especial: {c.tipo_caso || 'Sí'}</div>}
             </div>
 
             <div className="flex justify-end">
@@ -237,19 +242,19 @@ const HousesList = () => {
       {/* Lightbox foto */}
       {lightboxUrl && (
         <div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[99998] p-4"
+          className="fixed inset-0 bg-black/85 flex items-center justify-center z-[99998] p-4"
           onClick={() => setLightboxUrl(null)}
         >
           <button
-            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/80 transition-colors"
+            className="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2.5 transition-colors border border-white/20"
             onClick={() => setLightboxUrl(null)}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
           <img
             src={lightboxUrl}
             alt="Foto de la casa"
-            className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl"
+            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
             onClick={e => e.stopPropagation()}
           />
         </div>

@@ -121,23 +121,23 @@ const TerritoriesMap = () => {
   return (
     <div className="flex flex-col h-full min-h-[60vh]">
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-3 sm:mb-5">
+      <div className="flex flex-wrap justify-between items-start gap-3 mb-3 sm:mb-4">
         <div>
-          <h1 className="text-lg sm:text-2xl font-semibold">Mapa Principal y Territorios</h1>
-          <p className="hidden sm:block text-sm text-gray-500 mt-0.5">
-            Dibuja polígonos para crear territorios. Haz clic en un polígono para editarlo o eliminarlo.
+          <h1 className="text-lg sm:text-2xl font-bold">Mapa Principal y Territorios</h1>
+          <p className="hidden sm:block text-sm text-gray-400 mt-0.5">
+            Dibuja polígonos para crear territorios. Clic en un polígono para editar o eliminar.
           </p>
         </div>
-        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full shrink-0">
           {territorios.length} territorios · {casas.length} casas
-        </span>
+        </div>
       </div>
 
       {/* Leyenda */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-3">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 px-0.5">
         {Object.entries(STATUS_COLORS).map(([label, { hex }]) => (
-          <span key={label} className="flex items-center gap-1.5 text-xs text-gray-600">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hex }} />
+          <span key={label} className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: hex }} />
             {label}
           </span>
         ))}
@@ -146,8 +146,9 @@ const TerritoriesMap = () => {
       {/* Map card */}
       <div className="card flex-1 min-h-0 p-0 overflow-hidden" style={{ minHeight: '420px' }}>
         {loading ? (
-          <div className="flex items-center justify-center h-full min-h-[420px]">
-            <div className="text-sm text-gray-400 animate-pulse">Cargando mapa...</div>
+          <div className="flex flex-col items-center justify-center h-full min-h-[420px] gap-3">
+            <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-500 rounded-full animate-spin" style={{ borderWidth: 3 }} />
+            <p className="text-sm text-gray-400">Cargando mapa...</p>
           </div>
         ) : (
           <MapContainer center={[31.7619, -106.4850]} zoom={13} style={{ height: '100%', width: '100%', minHeight: '420px' }}>
@@ -167,28 +168,28 @@ const TerritoriesMap = () => {
                 positions={t.coordenadas}
                 pathOptions={{ color: t.color, fillColor: t.color, fillOpacity: 0.2, weight: 2 }}
                 eventHandlers={{
-                  mouseover: (e) => e.target.setStyle({ fillOpacity: 0.45, weight: 3 }),
-                  mouseout:  (e) => e.target.setStyle({ fillOpacity: 0.2,  weight: 2 }),
+                  mouseover: (e) => e.target.setStyle({ fillOpacity: 0.4, weight: 3 }),
+                  mouseout:  (e) => e.target.setStyle({ fillOpacity: 0.2, weight: 2 }),
                 }}
               >
                 <Popup minWidth={220} maxWidth={280}>
                   {editingId === t.id ? (
                     <div className="py-1 space-y-2" style={{ minWidth: 210 }}>
-                      <p className="font-semibold text-sm mb-1">Editar territorio</p>
+                      <p className="font-bold text-sm mb-2">Editar territorio</p>
                       <input
-                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-400"
                         value={editForm.nombre}
                         onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))}
                         placeholder="Nombre"
                       />
                       <input
-                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-400"
                         value={editForm.responsable}
                         onChange={e => setEditForm(f => ({ ...f, responsable: e.target.value }))}
                         placeholder="Responsable"
                       />
                       <textarea
-                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                        className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-400 resize-none"
                         rows={2}
                         value={editForm.descripcion}
                         onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))}
@@ -206,21 +207,21 @@ const TerritoriesMap = () => {
                       <div className="flex gap-2 pt-1">
                         <button
                           onClick={() => setEditingId(null)}
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium"
                         >
-                          <X size={12} /> Cancelar
+                          <X size={11} /> Cancelar
                         </button>
                         <button
                           onClick={handleSaveEdit}
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-medium"
                         >
-                          <Check size={12} /> Guardar
+                          <Check size={11} /> Guardar
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="py-1" style={{ minWidth: 200 }}>
-                      <h4 className="font-semibold text-sm mb-1" style={{ color: t.color }}>{t.nombre}</h4>
+                      <h4 className="font-bold text-sm mb-1" style={{ color: t.color }}>{t.nombre}</h4>
                       {t.responsable && <p className="text-xs text-gray-600 mb-0.5"><strong>Responsable:</strong> {t.responsable}</p>}
                       {t.descripcion && <p className="text-xs text-gray-500 mb-1">{t.descripcion}</p>}
                       <p className="text-xs text-gray-400 mb-3">
@@ -229,13 +230,13 @@ const TerritoriesMap = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => openEdit(t)}
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
+                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium"
                         >
                           <Pencil size={11} /> Editar
                         </button>
                         <button
                           onClick={() => confirmDelete(t)}
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
                         >
                           <Trash2 size={11} /> Eliminar
                         </button>
@@ -253,15 +254,15 @@ const TerritoriesMap = () => {
                   <Popup className="ficha-tecnica">
                     <div className="min-w-[180px] max-w-[260px]">
                       {c.foto_url ? (
-                        <div className="w-full h-36 mb-3 rounded-md overflow-hidden">
+                        <div className="w-full h-36 mb-3 rounded-lg overflow-hidden">
                           <img src={c.foto_url} alt="Casa" className="w-full h-full object-cover" />
                         </div>
                       ) : (
-                        <div className="w-full h-10 bg-gray-100 rounded-md mb-3 flex items-center justify-center text-gray-400 text-xs">
+                        <div className="w-full h-10 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-gray-400 text-xs">
                           Sin foto adjunta
                         </div>
                       )}
-                      <h4 className="mb-2 text-[1rem] font-semibold">{c.direccion}</h4>
+                      <h4 className="mb-2 text-[0.95rem] font-bold">{c.direccion}</h4>
                       <div className="mb-3">
                         <span
                           className="badge"
@@ -276,7 +277,7 @@ const TerritoriesMap = () => {
                         <p><strong>Zona:</strong> {c.territorio_nombre}</p>
                       </div>
                       {c.tiene_caso_especial && (
-                        <div className="mt-3 p-2 bg-red-50 rounded text-xs text-red-800">
+                        <div className="mt-3 p-2 bg-red-50 rounded-lg text-xs text-red-800">
                           <strong>Especial ({c.tipo_caso}):</strong> {c.detalles_caso}
                         </div>
                       )}
@@ -291,9 +292,9 @@ const TerritoriesMap = () => {
 
       {/* Modal nuevo territorio */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
-            <h3 className="text-lg font-semibold mb-5">Nuevo Territorio</h3>
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-[9999] p-4" style={{ backdropFilter: 'blur(4px)' }}>
+          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in" style={{ borderRadius: '1.25rem' }}>
+            <h3 className="text-lg font-bold mb-5">Nuevo Territorio</h3>
             <form onSubmit={handleSaveNew}>
               <div className="form-group">
                 <label className="form-label">Nombre *</label>
@@ -310,7 +311,7 @@ const TerritoriesMap = () => {
               <div className="form-group">
                 <label className="form-label">Color del polígono</label>
                 <div className="flex items-center gap-3">
-                  <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 border border-gray-200 rounded-lg cursor-pointer" />
+                  <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 border border-gray-200 rounded-xl cursor-pointer" />
                   <span className="text-sm text-gray-400">Color visible en el mapa</span>
                 </div>
               </div>
