@@ -9,22 +9,20 @@ import UsersList from './pages/UsersList';
 import Login from './pages/Login';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './components/Toast';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <div className="flex items-center justify-center h-screen"><div className="skeleton w-64 h-8 rounded-lg" /></div>;
   if (!user) return <Navigate to="/login" replace />;
-  
-  if (allowedRoles && !allowedRoles.includes(user.rol)) {
-    return <Navigate to="/" replace />;
-  }
+  if (allowedRoles && !allowedRoles.includes(user.rol)) return <Navigate to="/" replace />;
   return children;
 };
 
 const AppLayout = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -57,12 +55,14 @@ function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/*" element={<AppLayout />} />
-          </Routes>
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={<AppLayout />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
       </DataProvider>
     </AuthProvider>
   );

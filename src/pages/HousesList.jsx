@@ -1,101 +1,162 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-
-const statusClass = (estado) => {
-  if (estado === 'Atendido') return 'badge bg-emerald-50 text-emerald-800';
-  if (estado === 'No atendió') return 'badge bg-red-50 text-red-800';
-  return 'badge bg-gray-100 text-gray-800';
-};
+import { useToast } from '../components/Toast';
+import ConfirmModal from '../components/ConfirmModal';
+import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
+import { Trash2, ChevronDown, ImageOff, ZoomIn, X } from 'lucide-react';
 
 const HousesList = () => {
-  const { casas, territorios, deleteCasa, loading } = useData();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { casas, territorios, deleteCasa, updateCasa, loading } = useData();
+  const toast = useToast();
+
+  const [searchTerm, setSearchTerm]         = useState('');
   const [filterTerritory, setFilterTerritory] = useState('Todos');
+  const [filterStatus, setFilterStatus]     = useState('Todos');
+
+  const [deleteTarget, setDeleteTarget]     = useState(null);
+  const [editStatusId, setEditStatusId]     = useState(null);
+  const [lightboxUrl, setLightboxUrl]       = useState(null);
 
   if (loading) {
-    return <div className="p-8 text-center">Cargando lista de casas...</div>;
+    return (
+      <div className="space-y-3">
+        {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-14 rounded-xl" />)}
+      </div>
+    );
   }
 
   const filteredCasas = casas.filter(c => {
-    const matchesSearch = c.direccion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (c.nombre_contacto && c.nombre_contacto.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesTerritory = filterTerritory === 'Todos' || String(c.territorio_id) === String(filterTerritory);
-    return matchesSearch && matchesTerritory;
+    const q = searchTerm.toLowerCase();
+    const matchSearch = c.direccion.toLowerCase().includes(q) ||
+                        (c.nombre_contacto?.toLowerCase().includes(q)) ||
+                        (c.territorio_nombre?.toLowerCase().includes(q));
+    const matchTerritory = filterTerritory === 'Todos' || String(c.territorio_id) === String(filterTerritory);
+    const matchStatus    = filterStatus    === 'Todos' || c.estado === filterStatus;
+    return matchSearch && matchTerritory && matchStatus;
   });
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar esta casa?')) {
-      try {
-        await deleteCasa(id);
-      } catch (e) {
-        alert('Error al eliminar la casa. Es posible que tengas problemas de permisos.');
-      }
+  const handleDelete = async () => {
+    try {
+      await deleteCasa(deleteTarget.id);
+      toast.success('Casa eliminada correctamente');
+    } catch {
+      toast.error('Error al eliminar la casa. Verifica los permisos.');
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleStatusChange = async (id, nuevoEstado) => {
+    try {
+      await updateCasa(id, { estado: nuevoEstado });
+      toast.success('Estado actualizado');
+    } catch {
+      toast.error('Error al actualizar el estado');
+    } finally {
+      setEditStatusId(null);
     }
   };
 
   return (
     <div>
-      <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Lista de Casas</h1>
-
-      {/* Filtros */}
-      <div className="card mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="form-group flex-1 min-w-0 m-0">
-          <input
-            placeholder="Buscar por dirección o contacto..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="form-group flex-1 min-w-0 m-0">
-          <select value={filterTerritory} onChange={e => setFilterTerritory(e.target.value)}>
-            <option value="Todos">Todos los territorios</option>
-            {territorios.map(t => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
-            ))}
-          </select>
-        </div>
+      <div className="flex flex-wrap justify-between items-center mb-4 sm:mb-6 gap-2">
+        <h1 className="text-xl sm:text-2xl font-semibold">Lista de Casas</h1>
+        <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">
+          {filteredCasas.length} de {casas.length} casas
+        </span>
       </div>
 
-      {/* Tabla — solo desktop */}
+      {/* Filtros */}
+      <div className="card mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <input
+          placeholder="Buscar por dirección, contacto o zona..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="col-span-1 sm:col-span-1"
+        />
+        <select value={filterTerritory} onChange={e => setFilterTerritory(e.target.value)}>
+          <option value="Todos">Todos los territorios</option>
+          {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+        </select>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="Todos">Todos los estados</option>
+          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+
+      {/* Tabla — desktop */}
       <div className="hidden md:block">
         <div className="card overflow-x-auto p-0">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="bg-[var(--bg-primary)] border-b border-[var(--border-color)]">
-                <th className="px-4 py-3 text-sm font-semibold">Dirección</th>
-                <th className="px-4 py-3 text-sm font-semibold">Territorio</th>
-                <th className="px-4 py-3 text-sm font-semibold">Estado</th>
-                <th className="px-4 py-3 text-sm font-semibold">Contacto</th>
-                <th className="px-4 py-3 text-sm font-semibold">Especial</th>
-                <th className="px-4 py-3 text-sm font-semibold text-right">Acciones</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Dirección</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Territorio</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Contacto</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Especial</th>
+                <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredCasas.length > 0 ? filteredCasas.map(c => (
-                <tr key={c.id} className="border-b border-[var(--border-color)]">
-                  <td className="px-4 py-3 text-sm">{c.direccion}</td>
-                  <td className="px-4 py-3 text-sm">{c.territorio_nombre}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={statusClass(c.estado)}>{c.estado}</span>
+                <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                  <td className="px-4 py-3">
+                    {c.foto_url ? (
+                      <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200">
+                        <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <ZoomIn size={14} className="text-white" />
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <ImageOff size={14} className="text-gray-300" />
+                      </div>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-sm">{c.nombre_contacto || '-'}</td>
+                  <td className="px-4 py-3 text-sm font-medium">{c.direccion}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{c.territorio_nombre}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {editStatusId === c.id ? (
+                      <select
+                        autoFocus
+                        defaultValue={c.estado}
+                        onBlur={() => setEditStatusId(null)}
+                        onChange={e => handleStatusChange(c.id, e.target.value)}
+                        className="text-xs py-1 px-2 border border-blue-300 rounded-lg"
+                      >
+                        {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    ) : (
+                      <button
+                        onClick={() => setEditStatusId(c.id)}
+                        className={`badge cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${getStatusBadge(c.estado)}`}
+                        title="Clic para cambiar estado"
+                      >
+                        {c.estado} <ChevronDown size={11} />
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{c.nombre_contacto || '—'}</td>
                   <td className="px-4 py-3 text-sm">
                     {c.tiene_caso_especial
-                      ? <span title={c.tipo_caso} className="text-[var(--warning)]">⚠️ Sí</span>
-                      : 'No'}
+                      ? <span className="text-amber-600 font-medium text-xs">{c.tipo_caso || 'Especial'}</span>
+                      : <span className="text-gray-300">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right">
+                  <td className="px-4 py-3 text-right">
                     <button
-                      onClick={() => handleDelete(c.id)}
-                      className="btn btn-danger py-1.5 px-3 text-xs"
+                      onClick={() => setDeleteTarget(c)}
+                      className="btn btn-danger py-1.5 px-3 text-xs flex items-center gap-1 ml-auto"
                     >
-                      Eliminar
+                      <Trash2 size={12} /> Eliminar
                     </button>
                   </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-[var(--text-secondary)] text-sm">
+                  <td colSpan="7" className="px-4 py-10 text-center text-gray-400 text-sm">
                     No se encontraron casas con los filtros actuales.
                   </td>
                 </tr>
@@ -105,39 +166,94 @@ const HousesList = () => {
         </div>
       </div>
 
-      {/* Cards — solo móvil */}
+      {/* Cards — mobile */}
       <div className="md:hidden space-y-3">
         {filteredCasas.length > 0 ? filteredCasas.map(c => (
           <div key={c.id} className="card p-4">
-            {/* Fila superior: dirección + badge estado */}
-            <div className="flex justify-between items-start gap-2 mb-2">
-              <span className="font-semibold text-sm">{c.direccion}</span>
-              <span className={statusClass(c.estado)}>{c.estado}</span>
-            </div>
-            {/* Fila media: territorio y contacto */}
-            <div className="text-sm text-gray-500 mb-3 space-y-0.5">
-              <div>Territorio: {c.territorio_nombre || '-'}</div>
-              <div>Contacto: {c.nombre_contacto || '-'}</div>
-              {c.tiene_caso_especial && (
-                <div className="text-[var(--warning)]">⚠️ Caso especial</div>
+            <div className="flex items-start gap-3 mb-2">
+              {c.foto_url ? (
+                <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                  <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
+                </button>
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                  <ImageOff size={16} className="text-gray-300" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{c.direccion}</p>
+                <p className="text-xs text-gray-400 truncate">{c.territorio_nombre}</p>
+              </div>
+              {editStatusId === c.id ? (
+                <select
+                  autoFocus
+                  defaultValue={c.estado}
+                  onBlur={() => setEditStatusId(null)}
+                  onChange={e => handleStatusChange(c.id, e.target.value)}
+                  className="text-xs py-1 px-1.5 border border-blue-300 rounded-lg shrink-0"
+                >
+                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              ) : (
+                <button
+                  onClick={() => setEditStatusId(c.id)}
+                  className={`badge flex items-center gap-0.5 cursor-pointer hover:opacity-80 shrink-0 ${getStatusBadge(c.estado)}`}
+                >
+                  {c.estado} <ChevronDown size={10} />
+                </button>
               )}
             </div>
-            {/* Fila inferior: botón Eliminar */}
+
+            <div className="text-xs text-gray-500 space-y-0.5 mb-3">
+              {c.nombre_contacto && <div>Contacto: {c.nombre_contacto}</div>}
+              {c.tiene_caso_especial && <div className="text-amber-600">Caso especial: {c.tipo_caso || 'Sí'}</div>}
+            </div>
+
             <div className="flex justify-end">
-              <button
-                onClick={() => handleDelete(c.id)}
-                className="btn btn-danger py-1.5 px-3 text-xs"
-              >
-                Eliminar
+              <button onClick={() => setDeleteTarget(c)} className="btn btn-danger py-1.5 px-3 text-xs flex items-center gap-1">
+                <Trash2 size={12} /> Eliminar
               </button>
             </div>
           </div>
         )) : (
-          <div className="card p-8 text-center text-[var(--text-secondary)] text-sm">
+          <div className="card p-10 text-center text-gray-400 text-sm">
             No se encontraron casas con los filtros actuales.
           </div>
         )}
       </div>
+
+      {/* Confirm delete */}
+      {deleteTarget && (
+        <ConfirmModal
+          message={`¿Eliminar la casa "${deleteTarget.direccion}"?`}
+          detail="Esta acción no se puede deshacer."
+          confirmText="Sí, eliminar"
+          danger
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* Lightbox foto */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[99998] p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/80 transition-colors"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Foto de la casa"
+            className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

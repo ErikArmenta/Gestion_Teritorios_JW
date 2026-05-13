@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
 const DataContext = createContext();
-
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
@@ -13,52 +12,62 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     fetchData();
 
-    // Real-time subscriptions para mantener todo sincronizado entre clientes
-    const territoriosSubscription = supabase
+    // Realtime incremental — actualiza solo el registro afectado, no refetch completo
+    const terrSub = supabase
       .channel('public:territorios')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'territorios' }, payload => {
-        fetchData(); 
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'territorios' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setTerritorios(prev => [...prev, payload.new]);
+        } else if (payload.eventType === 'UPDATE') {
+          setTerritorios(prev => prev.map(t => t.id === payload.new.id ? payload.new : t));
+        } else if (payload.eventType === 'DELETE') {
+          setTerritorios(prev => prev.filter(t => t.id !== payload.old.id));
+        }
       })
       .subscribe();
 
-    const casasSubscription = supabase
+    const casasSub = supabase
       .channel('public:casas')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'casas' }, payload => {
-        fetchData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'casas' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setCasas(prev => [...prev, payload.new]);
+        } else if (payload.eventType === 'UPDATE') {
+          setCasas(prev => prev.map(c => c.id === payload.new.id ? payload.new : c));
+        } else if (payload.eventType === 'DELETE') {
+          setCasas(prev => prev.filter(c => c.id !== payload.old.id));
+        }
       })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(territoriosSubscription);
-      supabase.removeChannel(casasSubscription);
+      supabase.removeChannel(terrSub);
+      supabase.removeChannel(casasSub);
     };
   }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: terrData, error: terrErr } = await supabase.from('territorios').select('*');
-      if (terrErr) console.error("Error fetching territorios:", terrErr);
-      else setTerritorios(terrData || []);
-
-      const { data: casasData, error: casasErr } = await supabase.from('casas').select('*');
-      if (casasErr) console.error("Error fetching casas:", casasErr);
-      else setCasas(casasData || []);
+      const [terrRes, casasRes] = await Promise.all([
+        supabase.from('territorios').select('*'),
+        supabase.from('casas').select('*'),
+      ]);
+      if (!terrRes.error)  setTerritorios(terrRes.data  || []);
+      if (!casasRes.error) setCasas(casasRes.data || []);
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error('fetchData error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const addTerritorio = async (territorio) => {
-    // Si supabase lanza error (ej. tabla no existe aún), lo atrapamos en el UI
     const { error } = await supabase.from('territorios').insert([territorio]);
     if (error) throw error;
   };
 
-  const addCasa = async (casa) => {
-    const { error } = await supabase.from('casas').insert([casa]);
+  const updateTerritorio = async (id, updates) => {
+    const { error } = await supabase.from('territorios').update(updates).eq('id', id);
     if (error) throw error;
   };
 
@@ -69,8 +78,8 @@ export const DataProvider = ({ children }) => {
     if (error) throw error;
   };
 
-  const deleteCasa = async (id) => {
-    const { error } = await supabase.from('casas').delete().eq('id', id);
+  const addCasa = async (casa) => {
+    const { error } = await supabase.from('casas').insert([casa]);
     if (error) throw error;
   };
 
@@ -79,27 +88,26 @@ export const DataProvider = ({ children }) => {
     if (error) throw error;
   };
 
-  const uploadPhoto = async (file) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    
-    const { error, data } = await supabase.storage
-      .from('fotos_casas')
-      .upload(fileName, file);
-
+  const deleteCasa = async (id) => {
+    const { error } = await supabase.from('casas').delete().eq('id', id);
     if (error) throw error;
-    
-    const { data: publicUrlData } = supabase.storage
-      .from('fotos_casas')
-      .getPublicUrl(fileName);
+  };
 
-    return publicUrlData.publicUrl;
+  const uploadPhoto = async (file) => {
+    const ext = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    const { error } = await supabase.storage.from('fotos_casas').upload(fileName, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from('fotos_casas').getPublicUrl(fileName);
+    return data.publicUrl;
   };
 
   return (
     <DataContext.Provider value={{
       territorios, casas, loading,
-      addTerritorio, addCasa, deleteTerritorio, deleteCasa, updateCasa, uploadPhoto
+      addTerritorio, updateTerritorio, deleteTerritorio,
+      addCasa, updateCasa, deleteCasa,
+      uploadPhoto,
     }}>
       {children}
     </DataContext.Provider>

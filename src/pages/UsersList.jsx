@@ -2,241 +2,312 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useToast } from '../components/Toast';
+import ConfirmModal from '../components/ConfirmModal';
+import { ROLES } from '../utils/constants';
+import { Eye, EyeOff, Pencil, Trash2, UserPlus } from 'lucide-react';
 
 const UsersList = () => {
   const { user } = useAuth();
   const { uploadPhoto } = useData();
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [photoFile, setPhotoFile] = useState(null);
-  const [formData, setFormData] = useState({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null });
+  const toast = useToast();
+
+  const [usuarios, setUsuarios]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [showModal, setShowModal]   = useState(false);
+  const [photoFile, setPhotoFile]   = useState(null);
+  const [showPassId, setShowPassId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formData, setFormData] = useState({
+    id: null, nombre: '', usuario: '', password: '',
+    rol: 'Publicador', activo: true, foto_url: null,
+  });
 
   const fetchUsuarios = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('app_usuarios').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('app_usuarios')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (!error) setUsuarios(data || []);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchUsuarios();
-  }, []);
+  useEffect(() => { fetchUsuarios(); }, []);
+
+  const openNew = () => {
+    setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null });
+    setPhotoFile(null);
+    setShowModal(true);
+  };
+
+  const openEdit = (u) => {
+    setFormData(u);
+    setPhotoFile(null);
+    setShowModal(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      let fotoUrl = formData.foto_url;
-      if (photoFile) {
-        fotoUrl = await uploadPhoto(photoFile);
-      }
+      let foto_url = formData.foto_url;
+      if (photoFile) foto_url = await uploadPhoto(photoFile);
 
       if (formData.id) {
         const { error } = await supabase.from('app_usuarios').update({
-          nombre: formData.nombre,
-          usuario: formData.usuario,
-          password: formData.password,
-          rol: formData.rol,
-          activo: formData.activo,
-          foto_url: fotoUrl
+          nombre: formData.nombre, usuario: formData.usuario,
+          password: formData.password, rol: formData.rol,
+          activo: formData.activo, foto_url,
         }).eq('id', formData.id);
-
-        if (error) alert("Error al actualizar");
-        else { setShowModal(false); setPhotoFile(null); fetchUsuarios(); }
+        if (error) throw error;
+        toast.success('Usuario actualizado correctamente');
       } else {
         const { error } = await supabase.from('app_usuarios').insert([{
-          nombre: formData.nombre,
-          usuario: formData.usuario,
-          password: formData.password,
-          rol: formData.rol,
-          activo: true,
-          foto_url: fotoUrl
+          nombre: formData.nombre, usuario: formData.usuario,
+          password: formData.password, rol: formData.rol,
+          activo: true, foto_url,
         }]);
-
-        if (error) alert("Error al crear usuario. Tal vez el nombre de usuario ya existe.");
-        else { setShowModal(false); setPhotoFile(null); fetchUsuarios(); }
+        if (error) throw error;
+        toast.success('Usuario creado correctamente');
       }
-    } catch(err) {
-      alert("Error: " + err.message);
+
+      setShowModal(false);
+      setPhotoFile(null);
+      fetchUsuarios();
+    } catch (err) {
+      toast.error(err.message?.includes('unique') ? 'El nombre de usuario ya existe.' : ('Error: ' + err.message));
     }
   };
 
-  const handleDelete = async (id) => {
-    if(window.confirm("¿Estás seguro de eliminar permanentemente a este usuario?")) {
-      await supabase.from('app_usuarios').delete().eq('id', id);
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase.from('app_usuarios').delete().eq('id', deleteTarget.id);
+      if (error) throw error;
+      toast.success(`Usuario "${deleteTarget.nombre}" eliminado`);
       fetchUsuarios();
+    } catch (err) {
+      toast.error('Error al eliminar: ' + err.message);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
   if (user?.rol !== 'Admin Principal') {
-    return <div className="p-8 text-center text-red-500">Acceso denegado. Módulo exclusivo para Administradores.</div>;
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="text-center">
+          <p className="text-red-500 font-semibold mb-1">Acceso denegado</p>
+          <p className="text-sm text-gray-400">Este módulo es exclusivo para Administradores.</p>
+        </div>
+      </div>
+    );
   }
+
+  const AvatarCell = ({ u }) => u.foto_url ? (
+    <img src={u.foto_url} alt={u.nombre} className="w-9 h-9 rounded-full object-cover border-2 border-gray-200" />
+  ) : (
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-semibold text-white">
+      {u.nombre?.charAt(0).toUpperCase() || '?'}
+    </div>
+  );
+
+  const PasswordCell = ({ u }) => (
+    <div className="flex items-center gap-1">
+      <span className="font-mono text-xs">
+        {showPassId === u.id ? u.password : '••••••••'}
+      </span>
+      <button
+        onClick={() => setShowPassId(showPassId === u.id ? null : u.id)}
+        className="text-gray-300 hover:text-gray-500 transition-colors"
+        title={showPassId === u.id ? 'Ocultar' : 'Ver contraseña'}
+      >
+        {showPassId === u.id ? <EyeOff size={13} /> : <Eye size={13} />}
+      </button>
+    </div>
+  );
 
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-wrap gap-2 items-center justify-between mb-4 sm:mb-6">
+      <div className="flex flex-wrap gap-3 items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold m-0">Gestión de Usuarios</h1>
-        <button className="btn btn-primary" onClick={() => {
-          setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null });
-          setPhotoFile(null);
-          setShowModal(true);
-        }}>
-          + Nuevo Usuario
+        <button className="btn btn-primary flex items-center gap-2" onClick={openNew}>
+          <UserPlus size={16} /> Nuevo Usuario
         </button>
       </div>
 
-      {/* Tabla — solo desktop */}
-      <div className="hidden md:block card overflow-x-auto p-0">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-4 py-3 text-sm font-semibold">Foto</th>
-              <th className="px-4 py-3 text-sm font-semibold">Nombre</th>
-              <th className="px-4 py-3 text-sm font-semibold">Usuario</th>
-              <th className="px-4 py-3 text-sm font-semibold">Contraseña</th>
-              <th className="px-4 py-3 text-sm font-semibold">Rol</th>
-              <th className="px-4 py-3 text-sm font-semibold">Estado</th>
-              <th className="px-4 py-3 text-sm font-semibold text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map(u => (
-              <tr key={u.id} className="border-b border-gray-200">
-                <td className="px-4 py-3">
-                  {u.foto_url ? (
-                    <img src={u.foto_url} alt={u.nombre} className="w-9 h-9 rounded-full object-cover border-2 border-gray-200" />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500">
-                      {u.nombre ? u.nombre.charAt(0).toUpperCase() : '?'}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-sm">{u.nombre}</td>
-                <td className="px-4 py-3 text-sm"><strong>{u.usuario}</strong></td>
-                <td className="px-4 py-3 text-sm font-mono">{u.password}</td>
-                <td className="px-4 py-3 text-sm">
-                  <span className={`badge ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
-                    {u.rol}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  <span className={`badge ${u.activo ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
-                    {u.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm text-right">
-                  <button onClick={() => { setFormData(u); setPhotoFile(null); setShowModal(true); }} className="btn btn-secondary py-1 px-2 text-xs mr-2">Editar</button>
-                  <button onClick={() => handleDelete(u.id)} className="btn btn-danger py-1 px-2 text-xs">Eliminar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Cards — solo móvil */}
-      <div className="md:hidden space-y-3">
-        {usuarios.map(u => (
-          <div key={u.id} className="card p-4">
-            {/* Fila superior: avatar + info */}
-            <div className="flex items-center gap-3 mb-3">
-              {u.foto_url ? (
-                <img src={u.foto_url} alt={u.nombre} className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500 flex-shrink-0">
-                  {u.nombre ? u.nombre.charAt(0).toUpperCase() : '?'}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-gray-900 truncate">{u.nombre}</p>
-                <p className="text-xs text-gray-500 truncate"><strong>{u.usuario}</strong></p>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className={`badge text-xs ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
-                  {u.rol}
-                </span>
-                <span className={`badge text-xs ${u.activo ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
-                  {u.activo ? 'Activo' : 'Inactivo'}
-                </span>
-              </div>
-            </div>
-
-            {/* Contraseña */}
-            <p className="text-xs text-gray-400 font-mono mb-3">Pass: {u.password}</p>
-
-            {/* Fila inferior: botones */}
-            <div className="flex gap-2">
-              <button onClick={() => { setFormData(u); setPhotoFile(null); setShowModal(true); }} className="btn btn-secondary py-1 px-3 text-xs flex-1">Editar</button>
-              <button onClick={() => handleDelete(u.id)} className="btn btn-danger py-1 px-3 text-xs flex-1">Eliminar</button>
-            </div>
+      {loading ? (
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-14 rounded-xl" />)}
+        </div>
+      ) : (
+        <>
+          {/* Tabla desktop */}
+          <div className="hidden md:block card overflow-x-auto p-0">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Foto</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Usuario</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Contraseña</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usuarios.map(u => (
+                  <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-3"><AvatarCell u={u} /></td>
+                    <td className="px-4 py-3 text-sm font-medium">{u.nombre}</td>
+                    <td className="px-4 py-3 text-sm"><strong>{u.usuario}</strong></td>
+                    <td className="px-4 py-3 text-sm"><PasswordCell u={u} /></td>
+                    <td className="px-4 py-3">
+                      <span className={`badge text-xs ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                        {u.rol}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`badge text-xs ${u.activo ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                        {u.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center gap-2 justify-end">
+                        <button onClick={() => openEdit(u)} className="btn btn-secondary py-1 px-2.5 text-xs flex items-center gap-1">
+                          <Pencil size={12} /> Editar
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(u)}
+                          disabled={u.id === user.id}
+                          className="btn btn-danger py-1 px-2.5 text-xs flex items-center gap-1 disabled:opacity-30"
+                          title={u.id === user.id ? 'No puedes eliminar tu propia cuenta' : 'Eliminar'}
+                        >
+                          <Trash2 size={12} /> Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
 
-      {/* Modal */}
+          {/* Cards mobile */}
+          <div className="md:hidden space-y-3">
+            {usuarios.map(u => (
+              <div key={u.id} className="card p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <AvatarCell u={u} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-900 truncate">{u.nombre}</p>
+                    <p className="text-xs text-gray-500 truncate">{u.usuario}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`badge text-xs ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                      {u.rol}
+                    </span>
+                    <span className={`badge text-xs ${u.activo ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                      {u.activo ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <PasswordCell u={u} />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => openEdit(u)} className="btn btn-secondary py-1.5 px-3 text-xs flex-1 flex items-center justify-center gap-1">
+                    <Pencil size={12} /> Editar
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(u)}
+                    disabled={u.id === user.id}
+                    className="btn btn-danger py-1.5 px-3 text-xs flex-1 flex items-center justify-center gap-1 disabled:opacity-30"
+                  >
+                    <Trash2 size={12} /> Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Modal crear/editar */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h3 className="mb-6 text-lg font-semibold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+          <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in">
+            <h3 className="mb-5 text-lg font-semibold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">Nombre Completo</label>
-                <input required value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} placeholder="Ej. Juan Pérez" />
+                <label className="form-label">Nombre Completo *</label>
+                <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej. Juan Pérez" />
               </div>
               <div className="form-group">
-                <label className="form-label">Usuario de Acceso</label>
-                <input required value={formData.usuario} onChange={e => setFormData({...formData, usuario: e.target.value})} placeholder="Para iniciar sesión" />
+                <label className="form-label">Usuario de Acceso *</label>
+                <input required value={formData.usuario} onChange={e => setFormData(f => ({ ...f, usuario: e.target.value }))} placeholder="Para iniciar sesión" />
               </div>
               <div className="form-group">
-                <label className="form-label">Contraseña</label>
-                <input required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} type="text" />
+                <label className="form-label">Contraseña *</label>
+                <input required value={formData.password} onChange={e => setFormData(f => ({ ...f, password: e.target.value }))} type="text" placeholder="Contraseña de acceso" />
               </div>
               <div className="form-group">
-                <label className="form-label">Rol del Sistema</label>
-                <select value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})}>
-                  <option value="Publicador">Publicador (Solo registrar casas)</option>
-                  <option value="Ministerial">Ministerial (Acceso Operativo)</option>
-                  <option value="Anciano">Anciano (Acceso Operativo)</option>
-                  <option value="Admin Principal">Admin Principal (Acceso Total)</option>
+                <label className="form-label">Rol del Sistema *</label>
+                <select value={formData.rol} onChange={e => setFormData(f => ({ ...f, rol: e.target.value }))}>
+                  {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
-
               <div className="form-group">
                 <label className="form-label">Foto de Perfil</label>
                 {(formData.foto_url || photoFile) && (
-                  <div className="flex justify-center mb-2">
+                  <div className="flex justify-center mb-3">
                     <img
                       src={photoFile ? URL.createObjectURL(photoFile) : formData.foto_url}
                       alt="Preview"
-                      className="w-20 h-20 rounded-full object-cover border-4 border-blue-500"
+                      className="w-20 h-20 rounded-full object-cover border-4 border-blue-200"
                     />
                   </div>
                 )}
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setPhotoFile(e.target.files[0])}
-                  className="border-2 border-dashed border-gray-200 p-3 bg-gray-50 cursor-pointer w-full rounded-lg"
+                  onChange={e => setPhotoFile(e.target.files[0] || null)}
+                  className="border-2 border-dashed border-gray-200 p-3 bg-gray-50 cursor-pointer w-full rounded-lg text-sm text-gray-500"
                 />
               </div>
-
               {formData.id && (
                 <div className="form-group">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-auto" checked={formData.activo} onChange={e => setFormData({...formData, activo: e.target.checked})} />
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                    <input
+                      type="checkbox"
+                      className="w-auto accent-blue-500"
+                      checked={formData.activo}
+                      onChange={e => setFormData(f => ({ ...f, activo: e.target.checked }))}
+                    />
                     Permitir acceso al sistema (Activo)
                   </label>
                 </div>
               )}
-
-              <div className="flex gap-4 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary flex-1">Cancelar</button>
+              <div className="flex gap-3 mt-5">
+                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
                 <button type="submit" className="btn btn-primary flex-1">Guardar</button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Confirm delete */}
+      {deleteTarget && (
+        <ConfirmModal
+          message={`¿Eliminar al usuario "${deleteTarget.nombre}"?`}
+          detail="Esta acción no se puede deshacer."
+          confirmText="Sí, eliminar"
+          danger
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );
