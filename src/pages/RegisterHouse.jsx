@@ -138,10 +138,11 @@ const RegisterHouse = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
         {/* ── Formulario ── */}
         <div className="card">
-          <h3 className="mb-5 text-base font-bold flex items-center gap-2" style={{ color: '#E2E8F0' }}>
-            <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(59,130,246,0.18)', color: '#60A5FA' }}>1</span>
-            Datos Generales
-          </h3>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(59,130,246,0.2)', border: '2px solid rgba(59,130,246,0.4)', color: '#60A5FA' }}>1</div>
+            <h3 className="text-base font-bold" style={{ color: '#E2E8F0' }}>Datos Generales</h3>
+            <div className="flex-1 h-px" style={{ background: 'rgba(59,130,246,0.15)' }} />
+          </div>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">Territorio *</label>
@@ -163,11 +164,10 @@ const RegisterHouse = () => {
               </select>
             </div>
 
-            <div className="pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#E2E8F0' }}>
-                <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(59,130,246,0.18)', color: '#60A5FA' }}>2</span>
-                Residentes y Casos
-              </h3>
+            <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(59,130,246,0.2)', border: '2px solid rgba(59,130,246,0.4)', color: '#60A5FA' }}>2</div>
+              <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Residentes y Casos</h3>
+              <div className="flex-1 h-px" style={{ background: 'rgba(59,130,246,0.15)' }} />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -218,11 +218,10 @@ const RegisterHouse = () => {
             </div>
 
             {/* Foto */}
-            <div className="pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#E2E8F0' }}>
-                <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(59,130,246,0.18)', color: '#60A5FA' }}>3</span>
-                Evidencia Fotográfica
-              </h3>
+            <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(59,130,246,0.2)', border: '2px solid rgba(59,130,246,0.4)', color: '#60A5FA' }}>3</div>
+              <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Evidencia Fotográfica</h3>
+              <div className="flex-1 h-px" style={{ background: 'rgba(59,130,246,0.15)' }} />
             </div>
 
             {photoPreview && (

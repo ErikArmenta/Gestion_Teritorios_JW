@@ -103,11 +103,19 @@ const UsersList = () => {
     );
   }
 
-  const AvatarCell = ({ u }) => u.foto_url ? (
-    <img src={u.foto_url} alt={u.nombre} className="w-9 h-9 rounded-full object-cover" style={{ border: '2px solid rgba(255,255,255,0.15)' }} />
-  ) : (
-    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold text-white">
-      {u.nombre?.charAt(0).toUpperCase() || '?'}
+  const AvatarCell = ({ u }) => (
+    <div className="relative w-10 h-10">
+      {u.foto_url ? (
+        <img src={u.foto_url} alt={u.nombre} className="w-10 h-10 rounded-full object-cover" style={{ border: '2px solid rgba(255,255,255,0.15)' }} />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold text-white">
+          {u.nombre?.charAt(0).toUpperCase() || '?'}
+        </div>
+      )}
+      <span
+        className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
+        style={{ background: u.activo ? '#10B981' : '#EF4444', borderColor: '#0d1117' }}
+      />
     </div>
   );
 
@@ -127,10 +135,13 @@ const UsersList = () => {
     </div>
   );
 
+  const activeCount = usuarios.filter(u => u.activo).length;
+  const inactiveCount = usuarios.filter(u => !u.activo).length;
+
   return (
     <div className="animate-page-in">
       {/* Header */}
-      <div className="flex flex-wrap gap-3 items-center justify-between mb-5 sm:mb-6">
+      <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Gestión de Usuarios</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Administración de cuentas del sistema</p>
@@ -139,6 +150,26 @@ const UsersList = () => {
           <UserPlus size={15} /> Nuevo Usuario
         </button>
       </div>
+
+      {/* Stats bar */}
+      {!loading && (
+        <div className="flex flex-wrap gap-2 mb-5">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+            <span className="text-xs font-bold tabular-nums" style={{ color: '#60A5FA' }}>{usuarios.length}</span>
+            <span className="text-xs font-medium" style={{ color: '#64748B' }}>total</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10B981' }} />
+            <span className="text-xs font-bold tabular-nums" style={{ color: '#34D399' }}>{activeCount}</span>
+            <span className="text-xs font-medium" style={{ color: '#64748B' }}>activos</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#EF4444' }} />
+            <span className="text-xs font-bold tabular-nums" style={{ color: '#F87171' }}>{inactiveCount}</span>
+            <span className="text-xs font-medium" style={{ color: '#64748B' }}>inactivos</span>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -208,7 +239,7 @@ const UsersList = () => {
           {/* Cards mobile */}
           <div className="md:hidden space-y-3">
             {usuarios.map(u => (
-              <div key={u.id} className="card p-4">
+              <div key={u.id} className="card p-4" style={{ borderLeft: `3px solid ${u.activo ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.35)'}` }}>
                 <div className="flex items-center gap-3 mb-3">
                   <AvatarCell u={u} />
                   <div className="flex-1 min-w-0">

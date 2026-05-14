@@ -56,10 +56,17 @@ const HousesList = () => {
     }
   };
 
+  const statsRow = [
+    { label: 'Atendidos', count: casas.filter(c => c.estado === 'Atendido').length, color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
+    { label: 'Sin contacto', count: casas.filter(c => c.estado === 'No atendió').length, color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+    { label: 'Pendientes', count: casas.filter(c => c.estado === 'Pendiente').length, color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+    { label: 'No tocar', count: casas.filter(c => c.estado === 'No tocar').length, color: '#64748B', bg: 'rgba(100,116,139,0.12)' },
+  ];
+
   return (
     <div className="animate-page-in">
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-5 sm:mb-6 gap-3">
+      <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Lista de Casas</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Registro de visitas y estados</p>
@@ -69,8 +76,19 @@ const HousesList = () => {
         </span>
       </div>
 
+      {/* Stats mini-bar */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {statsRow.map(s => (
+          <div key={s.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: s.bg, border: `1px solid ${s.color}25` }}>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
+            <span className="text-xs font-bold tabular-nums" style={{ color: s.color }}>{s.count}</span>
+            <span className="text-xs font-medium" style={{ color: '#64748B' }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Filtros */}
-      <div className="card mb-4 p-4">
+      <div className="card mb-4 p-4" style={{ borderLeft: '3px solid rgba(59,130,246,0.4)' }}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#475569' }} />
@@ -113,7 +131,7 @@ const HousesList = () => {
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" style={{ borderLeft: `3px solid ${getStatusColor(c.estado)}60` }}>
                     {c.foto_url ? (
                       <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
                         <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
@@ -181,7 +199,7 @@ const HousesList = () => {
       {/* Cards — mobile */}
       <div className="md:hidden space-y-3">
         {filteredCasas.length > 0 ? filteredCasas.map(c => (
-          <div key={c.id} className="card p-4">
+          <div key={c.id} className="card p-4" style={{ borderLeft: `3px solid ${getStatusColor(c.estado)}60` }}>
             <div className="flex items-start gap-3 mb-2">
               {c.foto_url ? (
                 <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-xl overflow-hidden shrink-0" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>

@@ -302,8 +302,8 @@ const DashboardStats = () => {
     {
       label: 'Total Casas',
       value: totalCasas,
-      sub: `${territorios.length} territorios`,
-      icon: <Home size={20} className="text-white/80" />,
+      sub: `${territorios.length} territorios activos`,
+      icon: <Home size={22} className="text-white/80" />,
       gradient: 'linear-gradient(135deg, #1E3A5F 0%, #0F2040 100%)',
       glowClass: 'stat-card-slate',
       accent: '#3B82F6',
@@ -311,8 +311,8 @@ const DashboardStats = () => {
     {
       label: 'Atendidos',
       value: atendidos,
-      sub: `${porcAtendidos}% del total`,
-      icon: <CheckCircle size={20} className="text-white/80" />,
+      sub: `${porcAtendidos}% de cobertura`,
+      icon: <CheckCircle size={22} className="text-white/80" />,
       gradient: 'linear-gradient(135deg, #064E3B 0%, #022c22 100%)',
       glowClass: 'stat-card-green',
       accent: '#10B981',
@@ -320,8 +320,8 @@ const DashboardStats = () => {
     {
       label: 'Sin Contacto',
       value: noAtendidos,
-      sub: 'No atendieron',
-      icon: <XCircle size={20} className="text-white/80" />,
+      sub: 'No atendieron la visita',
+      icon: <XCircle size={22} className="text-white/80" />,
       gradient: 'linear-gradient(135deg, #7F1D1D 0%, #450a0a 100%)',
       glowClass: 'stat-card-red',
       accent: '#EF4444',
@@ -330,7 +330,7 @@ const DashboardStats = () => {
       label: 'Casos Especiales',
       value: especiales,
       sub: 'Atención diferenciada',
-      icon: <AlertTriangle size={20} className="text-white/80" />,
+      icon: <AlertTriangle size={22} className="text-white/80" />,
       gradient: 'linear-gradient(135deg, #78350F 0%, #3d1a05 100%)',
       glowClass: 'stat-card-amber',
       accent: '#F59E0B',
@@ -340,89 +340,148 @@ const DashboardStats = () => {
   return (
     <div className="animate-page-in">
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-6 sm:mb-8 gap-4">
+      <div className="flex flex-wrap justify-between items-center mb-7 sm:mb-9 gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Estadísticas</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Cobertura y actividad territorial</p>
+          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Cobertura y actividad territorial en tiempo real</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2.5">
+        <div className="flex gap-2.5">
           <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
-            <FileText size={15} /> PDF
+            <FileText size={15} /> Exportar PDF
           </button>
           <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2">
-            <Table size={15} /> Excel
+            <Table size={15} /> Exportar Excel
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5">
         {kpiCards.map((k, i) => (
           <div
             key={i}
             className={`rounded-2xl p-4 sm:p-5 text-white cursor-default transition-all duration-250 hover:-translate-y-1 ${k.glowClass}`}
-            style={{ background: k.gradient, border: `1px solid ${k.accent}30` }}
+            style={{
+              background: k.gradient,
+              border: `1px solid ${k.accent}20`,
+              borderTop: `3px solid ${k.accent}`,
+            }}
           >
-            <div className="flex items-start justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <div className="flex items-start justify-between mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 {k.label}
               </p>
-              <div className="p-1.5 rounded-lg" style={{ background: `${k.accent}25` }}>
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                style={{ background: `${k.accent}25`, boxShadow: `0 0 18px ${k.accent}35` }}
+              >
                 {k.icon}
               </div>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold leading-none mb-1 tabular-nums">{k.value}</p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{k.sub}</p>
+            <p className="num-display text-5xl sm:text-6xl font-black leading-none mb-2 tabular-nums">{k.value}</p>
+            <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Coverage progress bar */}
+      {/* Coverage Hero */}
       {totalCasas > 0 && (
-        <div className="card mb-5 p-4 sm:p-5">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-semibold" style={{ color: '#94A3B8' }}>Cobertura global</span>
-            <span className="text-sm font-bold" style={{ color: '#10B981' }}>{porcAtendidos}%</span>
+        <div className="card mb-5 p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#475569' }}>Cobertura Global</p>
+              <div className="flex items-end gap-2">
+                <p className="num-display text-6xl font-black tabular-nums leading-none" style={{ color: '#10B981' }}>{porcAtendidos}</p>
+                <span className="text-2xl font-bold mb-1" style={{ color: '#34D399' }}>%</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#10B981' }} />
+                <span style={{ color: '#64748B' }}><strong style={{ color: '#34D399' }}>{atendidos}</strong> atendidos</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#EF4444' }} />
+                <span style={{ color: '#64748B' }}><strong style={{ color: '#F87171' }}>{noAtendidos}</strong> sin contacto</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
+                <span style={{ color: '#64748B' }}><strong style={{ color: '#FCD34D' }}>{pendientes}</strong> pendientes</span>
+              </span>
+            </div>
           </div>
-          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${porcAtendidos}%`, background: 'linear-gradient(90deg, #059669 0%, #10B981 100%)' }}
-            />
+          {/* Segmented bar */}
+          <div className="h-3 rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.05)' }}>
+            {atendidos > 0 && (
+              <div
+                className="h-full transition-all duration-700"
+                style={{ width: `${(atendidos / totalCasas) * 100}%`, background: 'linear-gradient(90deg, #059669, #10B981)' }}
+              />
+            )}
+            {noAtendidos > 0 && (
+              <div
+                className="h-full transition-all duration-700"
+                style={{ width: `${(noAtendidos / totalCasas) * 100}%`, background: 'linear-gradient(90deg, #DC2626, #EF4444)', marginLeft: '2px' }}
+              />
+            )}
+            {pendientes > 0 && (
+              <div
+                className="h-full transition-all duration-700"
+                style={{ width: `${(pendientes / totalCasas) * 100}%`, background: 'linear-gradient(90deg, #D97706, #F59E0B)', marginLeft: '2px' }}
+              />
+            )}
           </div>
-          <div className="flex justify-between text-xs mt-1.5" style={{ color: '#475569' }}>
-            <span>{atendidos} atendidos</span>
-            <span>{totalCasas - atendidos} restantes</span>
+          <div className="flex justify-between text-xs mt-2" style={{ color: '#334155' }}>
+            <span>0%</span>
+            <span>100%</span>
           </div>
         </div>
       )}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
         <div className="card">
-          <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#64748B' }}>Distribución por Estado</h3>
-          <div className="relative h-72">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#3B82F6' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Distribución por Estado</h3>
+          </div>
+          <div className="relative h-80">
             {totalCasas > 0
               ? <Doughnut data={donutData} options={donutOptions} />
-              : <p className="text-center pt-20 text-sm" style={{ color: '#475569' }}>Sin datos registrados</p>}
+              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos registrados</p>}
           </div>
         </div>
         <div className="card">
-          <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#64748B' }}>Actividad por Territorio</h3>
-          <div className="relative h-72">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#10B981' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Actividad por Territorio</h3>
+          </div>
+          <div className="relative h-80">
             {terrData.length > 0
               ? <Bar data={barData} options={barOptions} />
-              : <p className="text-center pt-20 text-sm" style={{ color: '#475569' }}>Sin territorios registrados</p>}
+              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin territorios registrados</p>}
           </div>
         </div>
       </div>
 
       {/* Territory Detail Cards */}
       <div className="card">
-        <h3 className="text-sm font-bold mb-5 uppercase tracking-wider" style={{ color: '#64748B' }}>Detalle por Territorio</h3>
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
+          <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Detalle por Territorio</h3>
+          <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA' }}>
+            {terrData.length} zonas
+          </span>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {terrData.map((t, i) => {
             const pct = t.total > 0 ? Math.round((t.atendidos / t.total) * 100) : 0;
+            const pctColor = pct >= 70 ? '#10B981' : pct >= 40 ? '#F59E0B' : '#EF4444';
+            const barBg = pct >= 70
+              ? 'linear-gradient(90deg, #059669, #10B981)'
+              : pct >= 40
+                ? 'linear-gradient(90deg, #D97706, #F59E0B)'
+                : 'linear-gradient(90deg, #DC2626, #EF4444)';
             return (
               <div
                 key={i}
@@ -430,33 +489,40 @@ const DashboardStats = () => {
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  borderLeft: `3px solid ${pctColor}70`,
                 }}
               >
-                <div className="flex justify-between items-center mb-3">
-                  <strong className="text-sm font-bold truncate mr-2" style={{ color: '#E2E8F0' }}>{t.nombre}</strong>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,130,246,0.15)', color: '#60A5FA' }}>{t.total}</span>
+                <div className="flex items-start justify-between mb-1.5">
+                  <strong className="text-sm font-bold leading-tight pr-2" style={{ color: '#E2E8F0' }}>{t.nombre}</strong>
+                  <span className="text-xs tabular-nums font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA' }}>
+                    {t.total}
+                  </span>
                 </div>
-                {/* Mini progress */}
+                <div className="flex items-end justify-between mb-2">
+                  <p className="num-display text-4xl font-black tabular-nums leading-none" style={{ color: pctColor }}>
+                    {pct}<span className="text-xl ml-0.5">%</span>
+                  </p>
+                  <span className="text-xs mb-0.5" style={{ color: '#475569' }}>cobertura</span>
+                </div>
                 <div className="h-1.5 rounded-full mb-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #059669, #10B981)' }} />
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barBg }} />
                 </div>
-                <div className="grid grid-cols-2 gap-y-1.5 text-xs" style={{ color: '#64748B' }}>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span style={{ color: '#10B981' }}>{t.atendidos}</span> atend.
+                <div className="grid grid-cols-2 gap-y-1.5 text-xs">
+                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#10B981' }} />
+                    <strong style={{ color: '#34D399' }}>{t.atendidos}</strong>&nbsp;atend.
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                    <span style={{ color: '#EF4444' }}>{t.noAtendidos}</span> s/cont.
+                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#EF4444' }} />
+                    <strong style={{ color: '#F87171' }}>{t.noAtendidos}</strong>&nbsp;s/c
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    <span style={{ color: '#F59E0B' }}>{t.pendientes}</span> pend.
+                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
+                    <strong style={{ color: '#FCD34D' }}>{t.pendientes}</strong>&nbsp;pend.
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-                    <span style={{ color: '#A78BFA' }}>{t.especiales}</span> esp.
+                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#A78BFA' }} />
+                    <strong style={{ color: '#C4B5FD' }}>{t.especiales}</strong>&nbsp;esp.
                   </span>
                 </div>
               </div>

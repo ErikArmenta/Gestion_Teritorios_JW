@@ -66,20 +66,25 @@ const AlertCard = ({ alerta }) => {
     ? `https://www.google.com/maps?q=${alerta.latitud},${alerta.longitud}`
     : null;
 
+  const stripClass = TYPE_CONFIG[alerta.tipo]?.bg || 'bg-gray-600';
+
   return (
-    <div className="card overflow-hidden p-0">
+    <div
+      className="card overflow-hidden p-0"
+      style={{ borderLeft: alerta.activa ? '3px solid rgba(239,68,68,0.6)' : '3px solid rgba(100,116,139,0.25)' }}
+    >
       {/* Header strip */}
-      <div className={`h-1 w-full ${TYPE_CONFIG[alerta.tipo]?.bg || 'bg-gray-600'}`} />
+      <div className={`h-1.5 w-full ${stripClass}`} />
 
       <div className="p-4 sm:p-5">
         {/* Top row */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <User size={14} style={{ color: '#64748B' }} />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <User size={15} style={{ color: '#64748B' }} />
             </div>
             <div>
-              <p className="font-semibold text-sm leading-tight" style={{ color: '#E2E8F0' }}>
+              <p className="font-bold text-sm leading-tight" style={{ color: '#E2E8F0' }}>
                 {usuario?.nombre || `Usuario #${alerta.usuario_id}`}
               </p>
               {usuario?.telefono && (

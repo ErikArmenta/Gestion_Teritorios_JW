@@ -128,8 +128,15 @@ const TerritoriesMap = () => {
             Dibuja polígonos para crear territorios. Clic en un polígono para editar o eliminar.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60A5FA' }}>
-          {territorios.length} territorios · {casas.length} casas
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.2)' }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#3B82F6' }} />
+            {territorios.length} territorios
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#34D399', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#10B981' }} />
+            {casas.length} casas
+          </div>
         </div>
       </div>
 
