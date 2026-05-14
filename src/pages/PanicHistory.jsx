@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { Bell, MapPin, Clock, User, Filter, X, ExternalLink } from 'lucide-react';
 
 const TYPE_CONFIG = {
@@ -166,10 +165,6 @@ const AlertCard = ({ alerta }) => {
 
 const PanicHistory = () => {
   const { user } = useAuth();
-
-  if (!user || user.rol !== 'Admin Principal') {
-    return <Navigate to="/" replace />;
-  }
 
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
