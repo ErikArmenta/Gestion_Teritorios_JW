@@ -104,21 +104,22 @@ const UsersList = () => {
   }
 
   const AvatarCell = ({ u }) => u.foto_url ? (
-    <img src={u.foto_url} alt={u.nombre} className="w-9 h-9 rounded-full object-cover border-2 border-slate-200" />
+    <img src={u.foto_url} alt={u.nombre} className="w-9 h-9 rounded-full object-cover" style={{ border: '2px solid rgba(255,255,255,0.15)' }} />
   ) : (
-    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-bold text-white">
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold text-white">
       {u.nombre?.charAt(0).toUpperCase() || '?'}
     </div>
   );
 
   const PasswordCell = ({ u }) => (
     <div className="flex items-center gap-1.5">
-      <span className="font-mono text-xs text-gray-600">
+      <span className="font-mono text-xs" style={{ color: '#94A3B8' }}>
         {showPassId === u.id ? u.password : '••••••••'}
       </span>
       <button
         onClick={() => setShowPassId(showPassId === u.id ? null : u.id)}
-        className="text-gray-300 hover:text-gray-500 transition-colors p-0.5"
+        className="transition-colors p-0.5"
+        style={{ color: '#475569' }}
         title={showPassId === u.id ? 'Ocultar' : 'Ver contraseña'}
       >
         {showPassId === u.id ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -127,10 +128,13 @@ const UsersList = () => {
   );
 
   return (
-    <div>
+    <div className="animate-page-in">
       {/* Header */}
       <div className="flex flex-wrap gap-3 items-center justify-between mb-5 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold m-0">Gestión de Usuarios</h1>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Gestión de Usuarios</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Administración de cuentas del sistema</p>
+        </div>
         <button className="btn btn-primary flex items-center gap-2" onClick={openNew}>
           <UserPlus size={15} /> Nuevo Usuario
         </button>
@@ -146,30 +150,37 @@ const UsersList = () => {
           <div className="hidden md:block card overflow-x-auto p-0">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-gray-100" style={{ backgroundColor: '#F8FAFC' }}>
-                  <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Foto</th>
-                  <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre</th>
-                  <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario</th>
-                  <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Contraseña</th>
-                  <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Rol</th>
-                  <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }}>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Foto</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Nombre</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Usuario</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Contraseña</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Rol</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Estado</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {usuarios.map(u => (
-                  <tr key={u.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors duration-100">
+                  <tr key={u.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
                     <td className="px-4 py-3"><AvatarCell u={u} /></td>
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-800">{u.nombre}</td>
-                    <td className="px-4 py-3 text-sm font-mono text-gray-700">{u.usuario}</td>
+                    <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#E2E8F0' }}>{u.nombre}</td>
+                    <td className="px-4 py-3 text-sm font-mono" style={{ color: '#94A3B8' }}>{u.usuario}</td>
                     <td className="px-4 py-3 text-sm"><PasswordCell u={u} /></td>
                     <td className="px-4 py-3">
-                      <span className={`badge text-xs ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                      <span className="badge text-xs" style={u.rol === 'Admin Principal'
+                        ? { background: 'rgba(59,130,246,0.15)', color: '#60A5FA' }
+                        : { background: 'rgba(100,116,139,0.12)', color: '#94A3B8' }}>
                         {u.rol}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`badge text-xs ${u.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                      <span className="badge text-xs" style={u.activo
+                        ? { background: 'rgba(16,185,129,0.15)', color: '#34D399' }
+                        : { background: 'rgba(239,68,68,0.12)', color: '#F87171' }}>
                         {u.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
@@ -201,14 +212,18 @@ const UsersList = () => {
                 <div className="flex items-center gap-3 mb-3">
                   <AvatarCell u={u} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-gray-800 truncate">{u.nombre}</p>
-                    <p className="text-xs text-gray-500 font-mono truncate">{u.usuario}</p>
+                    <p className="font-bold text-sm truncate" style={{ color: '#E2E8F0' }}>{u.nombre}</p>
+                    <p className="text-xs font-mono truncate" style={{ color: '#64748B' }}>{u.usuario}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className={`badge text-xs ${u.rol === 'Admin Principal' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                    <span className="badge text-xs" style={u.rol === 'Admin Principal'
+                      ? { background: 'rgba(59,130,246,0.15)', color: '#60A5FA' }
+                      : { background: 'rgba(100,116,139,0.12)', color: '#94A3B8' }}>
                       {u.rol}
                     </span>
-                    <span className={`badge text-xs ${u.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                    <span className="badge text-xs" style={u.activo
+                      ? { background: 'rgba(16,185,129,0.15)', color: '#34D399' }
+                      : { background: 'rgba(239,68,68,0.12)', color: '#F87171' }}>
                       {u.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
@@ -265,7 +280,8 @@ const UsersList = () => {
                     <img
                       src={photoFile ? URL.createObjectURL(photoFile) : formData.foto_url}
                       alt="Preview"
-                      className="w-20 h-20 rounded-full object-cover border-4 border-blue-200"
+                      className="w-20 h-20 rounded-full object-cover"
+                      style={{ border: '3px solid rgba(59,130,246,0.4)' }}
                     />
                   </div>
                 )}
@@ -273,12 +289,13 @@ const UsersList = () => {
                   type="file"
                   accept="image/*"
                   onChange={e => setPhotoFile(e.target.files[0] || null)}
-                  className="border-2 border-dashed border-gray-200 p-3 bg-gray-50 cursor-pointer w-full rounded-xl text-sm text-gray-500"
+                  className="cursor-pointer w-full rounded-xl text-xs"
+                  style={{ border: '2px dashed rgba(255,255,255,0.12)', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', color: '#64748B' }}
                 />
               </div>
               {formData.id && (
                 <div className="form-group">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium" style={{ color: '#94A3B8' }}>
                     <input
                       type="checkbox"
                       className="w-auto accent-blue-500"

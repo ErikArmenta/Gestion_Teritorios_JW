@@ -129,14 +129,17 @@ const RegisterHouse = () => {
   };
 
   return (
-    <div>
-      <h1 className="text-xl sm:text-2xl font-bold mb-5 sm:mb-6">Registrar Nueva Casa</h1>
+    <div className="animate-page-in">
+      <div className="mb-5 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Registrar Nueva Casa</h1>
+        <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Ubica y documenta el punto en el territorio</p>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
         {/* ── Formulario ── */}
         <div className="card">
-          <h3 className="mb-5 text-base font-bold flex items-center gap-2">
-            <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span>
+          <h3 className="mb-5 text-base font-bold flex items-center gap-2" style={{ color: '#E2E8F0' }}>
+            <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(59,130,246,0.18)', color: '#60A5FA' }}>1</span>
             Datos Generales
           </h3>
           <form onSubmit={handleSubmit}>
@@ -160,9 +163,9 @@ const RegisterHouse = () => {
               </select>
             </div>
 
-            <div className="border-t border-gray-100 pt-4 mt-2 mb-4">
-              <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span>
+            <div className="pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#E2E8F0' }}>
+                <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(59,130,246,0.18)', color: '#60A5FA' }}>2</span>
                 Residentes y Casos
               </h3>
             </div>
@@ -179,7 +182,7 @@ const RegisterHouse = () => {
             </div>
 
             <div className="form-group">
-              <label className="flex items-center gap-2 cursor-pointer text-sm select-none font-medium text-gray-700">
+              <label className="flex items-center gap-2 cursor-pointer text-sm select-none font-medium" style={{ color: '#94A3B8' }}>
                 <input
                   type="checkbox"
                   className="w-auto accent-blue-500"
@@ -191,7 +194,7 @@ const RegisterHouse = () => {
             </div>
 
             {formData.tiene_caso_especial && (
-              <div className="p-4 bg-red-50 border border-red-100 rounded-xl mb-4 space-y-3">
+              <div className="p-4 rounded-xl mb-4 space-y-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <div className="form-group mb-0">
                   <label className="form-label">Tipo de Caso</label>
                   <select value={formData.tipo_caso} onChange={e => setFormData(f => ({ ...f, tipo_caso: e.target.value }))}>
@@ -215,15 +218,15 @@ const RegisterHouse = () => {
             </div>
 
             {/* Foto */}
-            <div className="border-t border-gray-100 pt-4 mt-2 mb-4">
-              <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</span>
+            <div className="pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#E2E8F0' }}>
+                <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: 'rgba(59,130,246,0.18)', color: '#60A5FA' }}>3</span>
                 Evidencia Fotográfica
               </h3>
             </div>
 
             {photoPreview && (
-              <div className="relative w-full h-40 mb-3 rounded-xl overflow-hidden border border-gray-200">
+              <div className="relative w-full h-40 mb-3 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
                 <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                 <button
                   type="button"
@@ -234,9 +237,9 @@ const RegisterHouse = () => {
                 </button>
               </div>
             )}
-            <label className="flex flex-col items-center gap-2 border-2 border-dashed border-gray-200 p-4 rounded-xl cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors text-sm text-gray-400">
-              <Upload size={20} className="text-gray-300" />
-              {photoFile ? <span className="text-blue-600 font-medium text-xs">{photoFile.name}</span> : 'Toca para adjuntar foto (opcional)'}
+            <label className="flex flex-col items-center gap-2 p-4 rounded-xl cursor-pointer transition-colors text-sm" style={{ border: '2px dashed rgba(255,255,255,0.1)', color: '#475569' }}>
+              <Upload size={20} style={{ color: '#334155' }} />
+              {photoFile ? <span className="font-medium text-xs" style={{ color: '#60A5FA' }}>{photoFile.name}</span> : 'Toca para adjuntar foto (opcional)'}
               <input
                 ref={photoInputRef}
                 type="file"
@@ -263,28 +266,29 @@ const RegisterHouse = () => {
         {/* ── Mapa ── */}
         <div className="card flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="m-0 text-base font-bold flex items-center gap-2">
-              <MapPin size={16} className="text-blue-500" /> Geolocalización
+            <h3 className="m-0 text-base font-bold flex items-center gap-2" style={{ color: '#E2E8F0' }}>
+              <MapPin size={16} style={{ color: '#60A5FA' }} /> Geolocalización
             </h3>
             <button
               type="button"
               onClick={handleLocate}
               disabled={locating}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 font-medium"
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 font-medium"
+              style={{ border: '1px solid rgba(59,130,246,0.3)', color: '#60A5FA', background: 'rgba(59,130,246,0.06)' }}
             >
               <Locate size={13} />
               {locating ? 'Obteniendo GPS...' : 'Usar mi ubicación'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mb-3">Haz clic en el mapa para posicionar la casa.</p>
+          <p className="text-xs mb-3" style={{ color: '#475569' }}>Haz clic en el mapa para posicionar la casa.</p>
 
           {insideTerritory === true && (
-            <div className="p-2.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl mb-3 text-xs font-medium">
+            <div className="p-2.5 rounded-xl mb-3 text-xs font-medium" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#34D399' }}>
               Ubicación correcta dentro del territorio seleccionado.
             </div>
           )}
           {insideTerritory === false && formData.territorio_id && (
-            <div className="p-2.5 bg-amber-50 text-amber-700 border border-amber-100 rounded-xl mb-3 text-xs font-medium">
+            <div className="p-2.5 rounded-xl mb-3 text-xs font-medium" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', color: '#FCD34D' }}>
               Ubicación fuera del territorio seleccionado. Puedes guardar de todos modos.
             </div>
           )}

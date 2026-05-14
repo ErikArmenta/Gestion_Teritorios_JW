@@ -67,23 +67,23 @@ const AlertCard = ({ alerta }) => {
     : null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="card overflow-hidden p-0">
       {/* Header strip */}
-      <div className={`h-1.5 w-full ${TYPE_CONFIG[alerta.tipo]?.bg || 'bg-gray-400'}`} />
+      <div className={`h-1 w-full ${TYPE_CONFIG[alerta.tipo]?.bg || 'bg-gray-600'}`} />
 
       <div className="p-4 sm:p-5">
         {/* Top row */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-              <User size={14} className="text-slate-500" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <User size={14} style={{ color: '#64748B' }} />
             </div>
             <div>
-              <p className="font-semibold text-slate-800 text-sm leading-tight">
+              <p className="font-semibold text-sm leading-tight" style={{ color: '#E2E8F0' }}>
                 {usuario?.nombre || `Usuario #${alerta.usuario_id}`}
               </p>
               {usuario?.telefono && (
-                <a href={`tel:${usuario.telefono}`} className="text-xs text-blue-600 hover:underline">
+                <a href={`tel:${usuario.telefono}`} className="text-xs hover:underline" style={{ color: '#60A5FA' }}>
                   {usuario.telefono}
                 </a>
               )}
@@ -97,13 +97,13 @@ const AlertCard = ({ alerta }) => {
 
         {/* Mensaje */}
         {alerta.mensaje && (
-          <p className="mt-3 text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+          <p className="mt-3 text-sm rounded-xl px-3 py-2" style={{ color: '#94A3B8', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
             {alerta.mensaje}
           </p>
         )}
 
         {/* Meta row */}
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-500">
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs" style={{ color: '#475569' }}>
           <span className="flex items-center gap-1">
             <Clock size={12} />
             {formatDate(alerta.created_at)}
@@ -119,7 +119,8 @@ const AlertCard = ({ alerta }) => {
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-blue-600 hover:underline"
+              className="flex items-center gap-1 hover:underline"
+              style={{ color: '#60A5FA' }}
             >
               <MapPin size={12} />
               Ver en mapa
@@ -130,20 +131,21 @@ const AlertCard = ({ alerta }) => {
 
         {/* Respondedores */}
         {respondieron.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#475569' }}>
               Respondieron ({respondieron.length})
             </p>
             <div className="flex flex-wrap gap-2">
               {respondieron.map((r, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-100"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium"
+                  style={{ background: 'rgba(16,185,129,0.12)', color: '#34D399', border: '1px solid rgba(16,185,129,0.2)' }}
                 >
                   <User size={10} />
                   {r.nombre || `Usuario #${r.usuario_id}`}
                   {r.timestamp && (
-                    <span className="text-green-500 ml-0.5">
+                    <span className="ml-0.5" style={{ color: '#10B981' }}>
                       · {new Date(r.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
@@ -224,27 +226,28 @@ const PanicHistory = () => {
   const hasFilters = filterFechaInicio || filterFechaFin || filterUsuario || filterTipo || filterEstado !== 'todos';
 
   return (
-    <div className="max-w-3xl mx-auto w-full">
+    <div className="max-w-3xl mx-auto w-full animate-page-in">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
-          <Bell size={20} className="text-red-600" />
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <Bell size={20} style={{ color: '#F87171' }} />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Historial de Alertas</h1>
-          <p className="text-sm text-slate-500">Registro completo de alertas de pánico</p>
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Historial de Alertas</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Registro completo de alertas de pánico</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-5">
+      <div className="card mb-5 p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Filter size={14} className="text-slate-400" />
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Filtros</span>
+          <Filter size={14} style={{ color: '#475569' }} />
+          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#475569' }}>Filtros</span>
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              className="ml-auto flex items-center gap-1 text-xs transition-colors"
+              style={{ color: '#475569' }}
             >
               <X size={12} /> Limpiar
             </button>
@@ -252,29 +255,26 @@ const PanicHistory = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Fecha inicio</label>
+            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Fecha inicio</label>
             <input
               type="date"
               value={filterFechaInicio}
               onChange={(e) => setFilterFechaInicio(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Fecha fin</label>
+            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Fecha fin</label>
             <input
               type="date"
               value={filterFechaFin}
               onChange={(e) => setFilterFechaFin(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Usuario</label>
+            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Usuario</label>
             <select
               value={filterUsuario}
               onChange={(e) => setFilterUsuario(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="">Todos</option>
               {usuarios.map((u) => (
@@ -283,11 +283,10 @@ const PanicHistory = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Tipo</label>
+            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Tipo</label>
             <select
               value={filterTipo}
               onChange={(e) => setFilterTipo(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="">Todos</option>
               <option value="seguridad">Seguridad</option>
@@ -296,11 +295,10 @@ const PanicHistory = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Estado</label>
+            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Estado</label>
             <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="todos">Todos</option>
               <option value="activa">Activas</option>
@@ -311,7 +309,7 @@ const PanicHistory = () => {
       </div>
 
       {/* Results count */}
-      <p className="text-xs text-slate-400 mb-3 px-1">
+      <p className="text-xs mb-3 px-1" style={{ color: '#475569' }}>
         {loading ? 'Cargando...' : `${filtered.length} alerta${filtered.length !== 1 ? 's' : ''} encontrada${filtered.length !== 1 ? 's' : ''}`}
       </p>
 
@@ -319,13 +317,13 @@ const PanicHistory = () => {
       {loading ? (
         <div className="flex flex-col gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-slate-100 rounded-2xl animate-pulse" />
+            <div key={i} className="skeleton h-32 rounded-2xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-slate-400">
-          <Bell size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No hay alertas{hasFilters ? ' con esos filtros' : ''}</p>
+        <div className="card p-16 text-center">
+          <Bell size={40} className="mx-auto mb-3 opacity-20" style={{ color: '#64748B' }} />
+          <p className="font-medium" style={{ color: '#475569' }}>No hay alertas{hasFilters ? ' con esos filtros' : ''}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">

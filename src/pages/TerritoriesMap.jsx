@@ -123,12 +123,12 @@ const TerritoriesMap = () => {
       {/* Header */}
       <div className="flex flex-wrap justify-between items-start gap-3 mb-3 sm:mb-4">
         <div>
-          <h1 className="text-lg sm:text-2xl font-bold">Mapa Principal y Territorios</h1>
-          <p className="hidden sm:block text-sm text-gray-400 mt-0.5">
+          <h1 className="text-lg sm:text-2xl font-bold heading-gradient">Mapa Principal y Territorios</h1>
+          <p className="hidden sm:block text-sm mt-0.5" style={{ color: '#475569' }}>
             Dibuja polígonos para crear territorios. Clic en un polígono para editar o eliminar.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full shrink-0">
+        <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#60A5FA' }}>
           {territorios.length} territorios · {casas.length} casas
         </div>
       </div>
@@ -136,7 +136,7 @@ const TerritoriesMap = () => {
       {/* Leyenda */}
       <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 px-0.5">
         {Object.entries(STATUS_COLORS).map(([label, { hex }]) => (
-          <span key={label} className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+          <span key={label} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#64748B' }}>
             <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: hex }} />
             {label}
           </span>
@@ -148,7 +148,7 @@ const TerritoriesMap = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[420px] gap-3">
             <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-500 rounded-full animate-spin" style={{ borderWidth: 3 }} />
-            <p className="text-sm text-gray-400">Cargando mapa...</p>
+            <p className="text-sm" style={{ color: '#475569' }}>Cargando mapa...</p>
           </div>
         ) : (
           <MapContainer center={[31.7619, -106.4850]} zoom={13} style={{ height: '100%', width: '100%', minHeight: '420px' }}>
@@ -311,8 +311,8 @@ const TerritoriesMap = () => {
               <div className="form-group">
                 <label className="form-label">Color del polígono</label>
                 <div className="flex items-center gap-3">
-                  <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 border border-gray-200 rounded-xl cursor-pointer" />
-                  <span className="text-sm text-gray-400">Color visible en el mapa</span>
+                  <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 rounded-xl cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.1)' }} />
+                  <span className="text-sm" style={{ color: '#475569' }}>Color visible en el mapa</span>
                 </div>
               </div>
               <div className="flex gap-3 mt-6">

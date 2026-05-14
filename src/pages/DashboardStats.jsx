@@ -76,13 +76,28 @@ const DashboardStats = () => {
       hoverOffset: 18
     }]
   };
+  const CHART_TOOLTIP = {
+    backgroundColor: 'rgba(15,23,42,0.95)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    titleFont: { size: 13, family: 'Inter', weight: '600' },
+    bodyFont: { size: 12, family: 'Inter' },
+    padding: 12,
+    cornerRadius: 10,
+    titleColor: '#E2E8F0',
+    bodyColor: '#94A3B8',
+  };
+
   const donutOptions = {
     responsive: true, maintainAspectRatio: false,
-    cutout: '65%',
+    cutout: '68%',
     plugins: {
-      legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 12, font: { size: 13, family: 'Inter' } } },
+      legend: {
+        position: 'bottom',
+        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#94A3B8' }
+      },
       tooltip: {
-        backgroundColor: '#1F2937', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 13, family: 'Inter' }, padding: 12, cornerRadius: 10,
+        ...CHART_TOOLTIP,
         callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw / totalCasas) * 100).toFixed(1)}%)` }
       }
     }
@@ -92,21 +107,33 @@ const DashboardStats = () => {
   const barData = {
     labels: terrData.map(t => t.nombre),
     datasets: [
-      { label: 'Atendidos', data: terrData.map(t => t.atendidos), backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 6, borderSkipped: false },
-      { label: 'No Atendió', data: terrData.map(t => t.noAtendidos), backgroundColor: 'rgba(239,68,68,0.75)', borderRadius: 6, borderSkipped: false },
-      { label: 'Pendientes', data: terrData.map(t => t.pendientes), backgroundColor: 'rgba(245,158,11,0.75)', borderRadius: 6, borderSkipped: false }
+      { label: 'Atendidos',  data: terrData.map(t => t.atendidos),   backgroundColor: 'rgba(16,185,129,0.8)',  borderRadius: 7, borderSkipped: false },
+      { label: 'No Atendió', data: terrData.map(t => t.noAtendidos), backgroundColor: 'rgba(239,68,68,0.8)',   borderRadius: 7, borderSkipped: false },
+      { label: 'Pendientes', data: terrData.map(t => t.pendientes),  backgroundColor: 'rgba(245,158,11,0.8)',  borderRadius: 7, borderSkipped: false }
     ]
   };
   const barOptions = {
     responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 12, font: { size: 13, family: 'Inter' } } },
-      tooltip: { backgroundColor: '#1F2937', titleFont: { size: 14, family: 'Inter' }, bodyFont: { size: 13, family: 'Inter' }, padding: 12, cornerRadius: 10 },
+      legend: {
+        position: 'top',
+        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#94A3B8' }
+      },
+      tooltip: { ...CHART_TOOLTIP },
       title: { display: false }
     },
     scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 12, family: 'Inter' } } },
-      y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { font: { size: 12, family: 'Inter' }, stepSize: 1 } }
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B' },
+        border: { color: 'rgba(255,255,255,0.06)' },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+        ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B', stepSize: 1 },
+        border: { color: 'transparent' },
+      }
     }
   };
 
@@ -276,47 +303,54 @@ const DashboardStats = () => {
       label: 'Total Casas',
       value: totalCasas,
       sub: `${territorios.length} territorios`,
-      icon: <Home size={22} className="text-white/70" />,
-      gradient: 'linear-gradient(135deg, #334155 0%, #1E293B 100%)',
-      shadow: '0 8px 24px rgba(30,41,59,0.4)',
+      icon: <Home size={20} className="text-white/80" />,
+      gradient: 'linear-gradient(135deg, #1E3A5F 0%, #0F2040 100%)',
+      glowClass: 'stat-card-slate',
+      accent: '#3B82F6',
     },
     {
       label: 'Atendidos',
       value: atendidos,
       sub: `${porcAtendidos}% del total`,
-      icon: <CheckCircle size={22} className="text-white/70" />,
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      shadow: '0 8px 24px rgba(16,185,129,0.35)',
+      icon: <CheckCircle size={20} className="text-white/80" />,
+      gradient: 'linear-gradient(135deg, #064E3B 0%, #022c22 100%)',
+      glowClass: 'stat-card-green',
+      accent: '#10B981',
     },
     {
-      label: 'No Atendieron',
+      label: 'Sin Contacto',
       value: noAtendidos,
-      sub: 'Sin contacto',
-      icon: <XCircle size={22} className="text-white/70" />,
-      gradient: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-      shadow: '0 8px 24px rgba(239,68,68,0.35)',
+      sub: 'No atendieron',
+      icon: <XCircle size={20} className="text-white/80" />,
+      gradient: 'linear-gradient(135deg, #7F1D1D 0%, #450a0a 100%)',
+      glowClass: 'stat-card-red',
+      accent: '#EF4444',
     },
     {
       label: 'Casos Especiales',
       value: especiales,
       sub: 'Atención diferenciada',
-      icon: <AlertTriangle size={22} className="text-white/70" />,
-      gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-      shadow: '0 8px 24px rgba(245,158,11,0.35)',
+      icon: <AlertTriangle size={20} className="text-white/80" />,
+      gradient: 'linear-gradient(135deg, #78350F 0%, #3d1a05 100%)',
+      glowClass: 'stat-card-amber',
+      accent: '#F59E0B',
     },
   ];
 
   return (
-    <div>
+    <div className="animate-page-in">
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-5 sm:mb-7 gap-4">
-        <h1 className="text-xl sm:text-2xl font-bold m-0">Estadísticas del Territorio</h1>
+      <div className="flex flex-wrap justify-between items-center mb-6 sm:mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Estadísticas</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Cobertura y actividad territorial</p>
+        </div>
         <div className="flex flex-col sm:flex-row gap-2.5">
           <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
-            <FileText size={15} /> Descargar PDF
+            <FileText size={15} /> PDF
           </button>
           <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2">
-            <Table size={15} /> Descargar Excel
+            <Table size={15} /> Excel
           </button>
         </div>
       </div>
@@ -326,76 +360,110 @@ const DashboardStats = () => {
         {kpiCards.map((k, i) => (
           <div
             key={i}
-            className="rounded-2xl p-4 sm:p-5 text-white cursor-default transition-transform duration-200 hover:-translate-y-0.5"
-            style={{ background: k.gradient, boxShadow: k.shadow }}
+            className={`rounded-2xl p-4 sm:p-5 text-white cursor-default transition-all duration-250 hover:-translate-y-1 ${k.glowClass}`}
+            style={{ background: k.gradient, border: `1px solid ${k.accent}30` }}
           >
             <div className="flex items-start justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.65)' }}>
+              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 {k.label}
               </p>
-              {k.icon}
+              <div className="p-1.5 rounded-lg" style={{ background: `${k.accent}25` }}>
+                {k.icon}
+              </div>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold leading-none mb-1">{k.value}</p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{k.sub}</p>
+            <p className="text-3xl sm:text-4xl font-bold leading-none mb-1 tabular-nums">{k.value}</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{k.sub}</p>
           </div>
         ))}
       </div>
 
+      {/* Coverage progress bar */}
+      {totalCasas > 0 && (
+        <div className="card mb-5 p-4 sm:p-5">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-semibold" style={{ color: '#94A3B8' }}>Cobertura global</span>
+            <span className="text-sm font-bold" style={{ color: '#10B981' }}>{porcAtendidos}%</span>
+          </div>
+          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${porcAtendidos}%`, background: 'linear-gradient(90deg, #059669 0%, #10B981 100%)' }}
+            />
+          </div>
+          <div className="flex justify-between text-xs mt-1.5" style={{ color: '#475569' }}>
+            <span>{atendidos} atendidos</span>
+            <span>{totalCasas - atendidos} restantes</span>
+          </div>
+        </div>
+      )}
+
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
         <div className="card">
-          <h3 className="text-base font-bold mb-5">Distribución por Estado</h3>
+          <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#64748B' }}>Distribución por Estado</h3>
           <div className="relative h-72">
             {totalCasas > 0
               ? <Doughnut data={donutData} options={donutOptions} />
-              : <p className="text-center text-gray-400 pt-20 text-sm">Sin datos registrados</p>}
+              : <p className="text-center pt-20 text-sm" style={{ color: '#475569' }}>Sin datos registrados</p>}
           </div>
         </div>
         <div className="card">
-          <h3 className="text-base font-bold mb-5">Actividad por Territorio</h3>
+          <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#64748B' }}>Actividad por Territorio</h3>
           <div className="relative h-72">
             {terrData.length > 0
               ? <Bar data={barData} options={barOptions} />
-              : <p className="text-center text-gray-400 pt-20 text-sm">Sin territorios registrados</p>}
+              : <p className="text-center pt-20 text-sm" style={{ color: '#475569' }}>Sin territorios registrados</p>}
           </div>
         </div>
       </div>
 
       {/* Territory Detail Cards */}
       <div className="card">
-        <h3 className="text-base font-bold mb-5">Detalle por Territorio</h3>
+        <h3 className="text-sm font-bold mb-5 uppercase tracking-wider" style={{ color: '#64748B' }}>Detalle por Territorio</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {terrData.map((t, i) => (
-            <div
-              key={i}
-              className="p-4 border border-gray-100 rounded-xl bg-gray-50/60 hover:bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-default"
-            >
-              <div className="flex justify-between items-center mb-3">
-                <strong className="text-sm font-bold text-gray-800 truncate mr-2">{t.nombre}</strong>
-                <span className="badge bg-slate-100 text-slate-700 shrink-0">{t.total}</span>
+          {terrData.map((t, i) => {
+            const pct = t.total > 0 ? Math.round((t.atendidos / t.total) * 100) : 0;
+            return (
+              <div
+                key={i}
+                className="p-4 rounded-xl transition-all duration-200 cursor-default hover:-translate-y-0.5"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                }}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <strong className="text-sm font-bold truncate mr-2" style={{ color: '#E2E8F0' }}>{t.nombre}</strong>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,130,246,0.15)', color: '#60A5FA' }}>{t.total}</span>
+                </div>
+                {/* Mini progress */}
+                <div className="h-1.5 rounded-full mb-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #059669, #10B981)' }} />
+                </div>
+                <div className="grid grid-cols-2 gap-y-1.5 text-xs" style={{ color: '#64748B' }}>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span style={{ color: '#10B981' }}>{t.atendidos}</span> atend.
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                    <span style={{ color: '#EF4444' }}>{t.noAtendidos}</span> s/cont.
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                    <span style={{ color: '#F59E0B' }}>{t.pendientes}</span> pend.
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                    <span style={{ color: '#A78BFA' }}>{t.especiales}</span> esp.
+                  </span>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-y-1.5 text-xs text-gray-500">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  Atendidos: <strong className="text-gray-700">{t.atendidos}</strong>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
-                  Sin contacto: <strong className="text-gray-700">{t.noAtendidos}</strong>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                  Pendientes: <strong className="text-gray-700">{t.pendientes}</strong>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
-                  Especiales: <strong className="text-gray-700">{t.especiales}</strong>
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {terrData.length === 0 && (
-            <p className="text-gray-400 text-sm col-span-3">No hay territorios registrados.</p>
+            <p className="text-sm col-span-3" style={{ color: '#475569' }}>No hay territorios registrados.</p>
           )}
         </div>
       </div>
