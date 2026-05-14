@@ -198,39 +198,43 @@ const TerritoriesMap = () => {
                 <Popup minWidth={220} maxWidth={280}>
                   {editingId === t.id ? (
                     <div className="py-1 space-y-2" style={{ minWidth: 210 }}>
-                      <p className="font-bold text-sm mb-2">Editar territorio</p>
+                      <p className="font-bold text-sm mb-2" style={{ color: '#F1F5F9' }}>Editar territorio</p>
                       <input
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-400"
+                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
                         value={editForm.nombre}
                         onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))}
                         placeholder="Nombre"
                       />
                       <input
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-400"
+                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
                         value={editForm.responsable}
                         onChange={e => setEditForm(f => ({ ...f, responsable: e.target.value }))}
                         placeholder="Responsable"
                       />
                       <textarea
-                        className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-400 resize-none"
+                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none resize-none"
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
                         rows={2}
                         value={editForm.descripcion}
                         onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))}
                         placeholder="Descripción"
                       />
                       <div className="flex items-center gap-2">
-                        <label className="text-xs text-gray-500">Color:</label>
+                        <label className="text-xs" style={{ color: '#94A3B8' }}>Color:</label>
                         <input
                           type="color"
                           value={editForm.color}
                           onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
-                          className="w-8 h-6 p-0.5 border border-gray-200 rounded cursor-pointer"
+                          className="w-8 h-6 p-0.5 rounded cursor-pointer"
+                          style={{ border: '1px solid rgba(255,255,255,0.15)' }}
                         />
                       </div>
                       <div className="flex gap-2 pt-1">
                         <button
                           onClick={() => setEditingId(null)}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium"
+                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 text-slate-300 bg-slate-700/50 font-medium"
                         >
                           <X size={11} /> Cancelar
                         </button>
@@ -245,9 +249,9 @@ const TerritoriesMap = () => {
                   ) : (
                     <div className="py-1" style={{ minWidth: 200 }}>
                       <h4 className="font-bold text-sm mb-1" style={{ color: t.color }}>{t.nombre}</h4>
-                      {t.responsable && <p className="text-xs text-gray-600 mb-0.5"><strong>Responsable:</strong> {t.responsable}</p>}
-                      {t.descripcion && <p className="text-xs text-gray-500 mb-1">{t.descripcion}</p>}
-                      <p className="text-xs text-gray-400 mb-3">
+                      {t.responsable && <p className="text-xs text-slate-300 mb-0.5"><strong>Responsable:</strong> {t.responsable}</p>}
+                      {t.descripcion && <p className="text-xs text-slate-400 mb-1">{t.descripcion}</p>}
+                      <p className="text-xs text-slate-500 mb-3">
                         {casas.filter(c => String(c.territorio_id) === String(t.id)).length} casas registradas
                       </p>
                       <div className="flex gap-2">
@@ -274,34 +278,45 @@ const TerritoriesMap = () => {
             <MarkerClusterGroup chunkedLoading maxClusterRadius={40}>
               {casas.map((c) => (
                 <Marker key={c.id} position={[c.latitud, c.longitud]} icon={createHouseIcon(c.estado)}>
-                  <Popup className="ficha-tecnica">
-                    <div className="min-w-[180px] max-w-[260px]">
-                      {c.foto_url ? (
-                        <div className="w-full h-36 mb-3 rounded-lg overflow-hidden">
-                          <img src={c.foto_url} alt="Casa" className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className="w-full h-10 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-gray-400 text-xs">
-                          Sin foto adjunta
-                        </div>
-                      )}
-                      <h4 className="mb-2 text-[0.95rem] font-bold">{c.direccion}</h4>
-                      <div className="mb-3">
-                        <span
-                          className="badge"
-                          style={{ backgroundColor: STATUS_COLORS[c.estado]?.bg?.replace('0.7', '0.15') || '#f1f1f1', color: STATUS_COLORS[c.estado]?.hex || '#333' }}
-                        >
+                  <Popup className="ficha-tecnica" maxWidth={300} minWidth={240}>
+                    <div className="min-w-[220px] max-w-[280px]">
+                      {/* Header con color del estado */}
+                      <div style={{ background: STATUS_COLORS[c.estado]?.hex || '#6B7280', padding: '10px 14px', margin: '-12px -12px 12px -12px', borderRadius: '12px 12px 0 0' }}>
+                        <span style={{ color: 'white', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           {c.estado}
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <p><strong>Contacto:</strong> {c.nombre_contacto || 'N/A'}</p>
-                        <p><strong>Tel:</strong> {c.telefono || 'N/A'}</p>
-                        <p><strong>Zona:</strong> {c.territorio_nombre}</p>
+
+                      {/* Foto */}
+                      {c.foto_url && (
+                        <div style={{ width: '100%', height: '130px', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden' }}>
+                          <img src={c.foto_url} alt="Casa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      )}
+
+                      {/* Dirección */}
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#F1F5F9', marginBottom: '10px' }}>{c.direccion}</h4>
+
+                      {/* Datos en grid */}
+                      <div style={{ display: 'grid', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
+                        <div><strong style={{ color: '#CBD5E1' }}>Territorio:</strong> {c.territorio_nombre}</div>
+                        {c.nombre_contacto && <div><strong style={{ color: '#CBD5E1' }}>Contacto:</strong> {c.nombre_contacto}</div>}
+                        {c.telefono && (
+                          <div>
+                            <strong style={{ color: '#CBD5E1' }}>Tel:</strong>{' '}
+                            <a href={`tel:${c.telefono}`} style={{ color: '#60A5FA', textDecoration: 'underline' }}>{c.telefono}</a>
+                          </div>
+                        )}
+                        {c.notas && <div><strong style={{ color: '#CBD5E1' }}>Notas:</strong> {c.notas}</div>}
+                        <div style={{ color: '#64748B', fontSize: '10px', marginTop: '4px' }}>
+                          {Number(c.latitud).toFixed(6)}, {Number(c.longitud).toFixed(6)}
+                        </div>
                       </div>
+
+                      {/* Caso especial */}
                       {c.tiene_caso_especial && (
-                        <div className="mt-3 p-2 bg-red-50 rounded-lg text-xs text-red-800">
-                          <strong>Especial ({c.tipo_caso}):</strong> {c.detalles_caso}
+                        <div style={{ marginTop: '10px', padding: '8px 10px', background: 'rgba(239,68,68,0.15)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)', fontSize: '11px', color: '#FCA5A5' }}>
+                          <strong>Caso especial ({c.tipo_caso}):</strong> {c.detalles_caso}
                         </div>
                       )}
                     </div>
