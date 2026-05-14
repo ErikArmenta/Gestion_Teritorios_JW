@@ -367,19 +367,17 @@ const DashboardStats = () => {
               borderTop: `3px solid ${k.accent}`,
             }}
           >
-            <div className="flex items-start justify-between mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
-                {k.label}
-              </p>
+            <div className="flex flex-col items-center text-center">
               <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: `${k.accent}25`, boxShadow: `0 0 18px ${k.accent}35` }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                style={{ background: `${k.accent}20` }}
               >
                 {k.icon}
               </div>
+              <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: '#94A3B8' }}>{k.label}</p>
+              <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums" style={{ color: '#0F172A' }}>{k.value}</p>
+              <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
             </div>
-            <p className="num-display text-5xl sm:text-6xl font-black leading-none mb-2 tabular-nums" style={{ color: '#0F172A' }}>{k.value}</p>
-            <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
           </div>
         ))}
       </div>
@@ -445,7 +443,7 @@ const DashboardStats = () => {
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#3B82F6' }} />
             <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Distribución por Estado</h3>
           </div>
-          <div className="relative h-80">
+          <div className="relative h-64 sm:h-72 md:h-80">
             {totalCasas > 0
               ? <Doughnut data={donutData} options={donutOptions} />
               : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos registrados</p>}
@@ -456,7 +454,7 @@ const DashboardStats = () => {
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#10B981' }} />
             <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Actividad por Territorio</h3>
           </div>
-          <div className="relative h-80">
+          <div className="relative h-64 sm:h-72 md:h-80">
             {terrData.length > 0
               ? <Bar data={barData} options={barOptions} />
               : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin territorios registrados</p>}
