@@ -252,18 +252,425 @@ const PanicHistory = () => {
 
   const hasFilters = filterFechaInicio || filterFechaFin || filterUsuario || filterTipo || filterEstado !== 'todos';
 
+  // ── Analytics calculations ──
+  const totalAlertas = alertas.length;
+  const alertasActivas = alertas.filter(a => a.activa).length;
+  const alertasCerradas = alertas.filter(a => !a.activa).length;
+
+  const porTipo = alertas.reduce((acc, a) => {
+    acc[a.tipo] = (acc[a.tipo] || 0) + 1;
+    return acc;
+  }, {});
+
+  const porUsuario = alertas.reduce((acc, a) => {
+    const nombre = a.app_usuarios?.nombre || `Usuario #${a.usuario_id}`;
+    if (!acc[nombre]) acc[nombre] = { nombre, count: 0, tipos: {} };
+    acc[nombre].count += 1;
+    acc[nombre].tipos[a.tipo] = (acc[nombre].tipos[a.tipo] || 0) + 1;
+    return acc;
+  }, {});
+  const rankingUsuarios = Object.values(porUsuario).sort((a, b) => b.count - a.count);
+
+  const porMes = {};
+  const ahora = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+    const key = d.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+    porMes[key] = 0;
+  }
+  alertas.forEach(a => {
+    const d = new Date(a.created_at);
+    const key = d.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+    if (porMes[key] !== undefined) porMes[key] += 1;
+  });
+
+  const tiempos = alertas
+    .filter(a => a.cerrada_at)
+    .map(a => (new Date(a.cerrada_at) - new Date(a.created_at)) / 1000 / 60);
+  const tiempoPromedio = tiempos.length > 0
+    ? (tiempos.reduce((s, t) => s + t, 0) / tiempos.length).toFixed(1)
+    : 0;
+
+  const totalResponses = alertas.reduce((sum, a) => {
+    return sum + (Array.isArray(a.respondieron) ? a.respondieron.length : 0);
+  }, 0);
+
+  // ── KPI Cards ──
+  const kpiCards = [
+    {
+      label: 'Total Alertas',
+      value: totalAlertas,
+      sub: `${alertasActivas} activa${alertasActivas !== 1 ? 's' : ''} ahora`,
+      icon: <Bell size={22} style={{ color: '#EF4444' }} />,
+      gradient: 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)',
+      accent: '#EF4444',
+    },
+    {
+      label: 'Cerradas',
+      value: alertasCerradas,
+      sub: 'Alertas resueltas',
+      icon: <Shield size={22} style={{ color: '#059669' }} />,
+      gradient: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+      accent: '#059669',
+    },
+    {
+      label: 'Tiempo Prom.',
+      value: `${tiempoPromedio}`,
+      sub: 'Minutos de respuesta',
+      icon: <Activity size={22} style={{ color: '#2563EB' }} />,
+      gradient: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+      accent: '#2563EB',
+    },
+    {
+      label: 'Respuestas',
+      value: totalResponses,
+      sub: '"Voy en camino" totales',
+      icon: <TrendingUp size={22} style={{ color: '#D97706' }} />,
+      gradient: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+      accent: '#D97706',
+    },
+  ];
+
+  // ── Chart data ──
+  const tipoLabels = Object.keys(porTipo);
+  const tipoValues = Object.values(porTipo);
+  const TIPO_COLORS = {
+    seguridad: { hex: '#EF4444', bg: 'rgba(239,68,68,0.7)' },
+    medica:    { hex: '#3B82F6', bg: 'rgba(59,130,246,0.7)' },
+    accidente: { hex: '#F97316', bg: 'rgba(249,115,22,0.7)' },
+  };
+
+  const donutAlertData = {
+    labels: tipoLabels.map(t => TYPE_CONFIG[t]?.label || t),
+    datasets: [{
+      data: tipoValues,
+      backgroundColor: tipoLabels.map(t => TIPO_COLORS[t]?.bg || 'rgba(156,163,175,0.7)'),
+      borderColor: tipoLabels.map(t => TIPO_COLORS[t]?.hex || '#9CA3AF'),
+      borderWidth: 2,
+      hoverOffset: 18,
+    }],
+  };
+
+  const barAlertData = {
+    labels: Object.keys(porMes),
+    datasets: [{
+      label: 'Alertas',
+      data: Object.values(porMes),
+      backgroundColor: 'rgba(239,68,68,0.8)',
+      borderRadius: 7,
+      borderSkipped: false,
+    }],
+  };
+
+  const donutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { padding: 16, font: { size: 12, weight: '600' }, usePointStyle: true, pointStyleWidth: 8 },
+      },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#0F172A',
+        bodyColor: '#475569',
+        borderColor: 'rgba(0,0,0,0.08)',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: (ctx) => ` ${ctx.label}: ${ctx.parsed} (${totalAlertas > 0 ? ((ctx.parsed / totalAlertas) * 100).toFixed(1) : 0}%)`,
+        },
+      },
+    },
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#0F172A',
+        bodyColor: '#475569',
+        borderColor: 'rgba(0,0,0,0.08)',
+        borderWidth: 1,
+        padding: 10,
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94A3B8' } },
+      y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#94A3B8', stepSize: 1 }, beginAtZero: true },
+    },
+  };
+
+  // ── Export functions ──
+  const generateAlertPDF = () => {
+    const doc = new jsPDF('p', 'mm', 'letter');
+    const pageW = doc.internal.pageSize.getWidth();
+    let y = 20;
+
+    doc.setFillColor(127, 29, 29);
+    doc.rect(0, 0, pageW, 42, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Reporte de Alertas de Emergencia', pageW / 2, 18, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Gestión Territorial JW — Historial de Pánico', pageW / 2, 27, { align: 'center' });
+    doc.setFontSize(9);
+    doc.text(`Generado: ${new Date().toLocaleString('es-MX')}  |  Usuario: ${user?.nombre || 'N/A'}`, pageW / 2, 36, { align: 'center' });
+    y = 52;
+
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('1. Resumen de Alertas', 14, y);
+    y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [['Indicador', 'Valor']],
+      body: [
+        ['Total de Alertas', String(totalAlertas)],
+        ['Alertas Activas', String(alertasActivas)],
+        ['Alertas Cerradas', String(alertasCerradas)],
+        ['Tiempo Prom. Respuesta', `${tiempoPromedio} min`],
+        ['Total Respuestas "Voy en camino"', String(totalResponses)],
+        ['Seguridad', String(porTipo.seguridad || 0)],
+        ['Médica', String(porTipo.medica || 0)],
+        ['Accidente', String(porTipo.accidente || 0)],
+      ],
+      headStyles: { fillColor: [185, 28, 28], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
+      bodyStyles: { font: 'helvetica', fontSize: 9 },
+      alternateRowStyles: { fillColor: [254, 242, 242] },
+      margin: { left: 14, right: 14 },
+      styles: { cellPadding: 4 },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('2. Ranking de Reportes por Usuario', 14, y);
+    y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [['#', 'Usuario', 'Total Alertas', 'Seguridad', 'Médica', 'Accidente']],
+      body: rankingUsuarios.map((u, i) => [
+        i + 1, u.nombre, u.count,
+        u.tipos.seguridad || 0, u.tipos.medica || 0, u.tipos.accidente || 0,
+      ]),
+      headStyles: { fillColor: [220, 38, 38], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
+      bodyStyles: { font: 'helvetica', fontSize: 9 },
+      alternateRowStyles: { fillColor: [254, 242, 242] },
+      margin: { left: 14, right: 14 },
+      styles: { cellPadding: 4 },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    if (y > 200) { doc.addPage(); y = 20; }
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('3. Detalle de Alertas', 14, y);
+    y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [['Fecha', 'Usuario', 'Tipo', 'Estado', 'Mensaje', 'Respondieron']],
+      body: filtered.map(a => [
+        formatDate(a.created_at),
+        a.app_usuarios?.nombre || `#${a.usuario_id}`,
+        TYPE_CONFIG[a.tipo]?.label || a.tipo,
+        a.activa ? 'Activa' : 'Cerrada',
+        a.mensaje || '—',
+        Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '—',
+      ]),
+      headStyles: { fillColor: [31, 41, 55], font: 'helvetica', fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { font: 'helvetica', fontSize: 8 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 },
+      styles: { cellPadding: 3 },
+      columnStyles: { 4: { cellWidth: 45 }, 5: { cellWidth: 35 } },
+    });
+
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(156, 163, 175);
+      doc.text('Gestión Territorial JW  |  Reporte de Alertas', pageW / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+      doc.text(`Página ${i} de ${totalPages}`, pageW - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+    }
+    doc.save(`Reporte_Alertas_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  const generateAlertExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    const resumen = [
+      ['Indicador', 'Valor'],
+      ['Total Alertas', totalAlertas],
+      ['Activas', alertasActivas],
+      ['Cerradas', alertasCerradas],
+      ['Tiempo Prom. Respuesta (min)', tiempoPromedio],
+      ['Total Respuestas', totalResponses],
+      ['Tipo Seguridad', porTipo.seguridad || 0],
+      ['Tipo Médica', porTipo.medica || 0],
+      ['Tipo Accidente', porTipo.accidente || 0],
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(resumen);
+    ws1['!cols'] = [{ wch: 30 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
+
+    const headers = ['Fecha', 'Usuario', 'Teléfono', 'Tipo', 'Estado', 'Mensaje', 'Latitud', 'Longitud', 'Cerrada', 'Respondieron'];
+    const rows = filtered.map(a => [
+      formatDate(a.created_at),
+      a.app_usuarios?.nombre || `#${a.usuario_id}`,
+      a.app_usuarios?.telefono || '',
+      TYPE_CONFIG[a.tipo]?.label || a.tipo,
+      a.activa ? 'Activa' : 'Cerrada',
+      a.mensaje || '',
+      a.latitud || '',
+      a.longitud || '',
+      a.cerrada_at ? formatDate(a.cerrada_at) : '',
+      Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '',
+    ]);
+    const ws2 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws2['!cols'] = headers.map(() => ({ wch: 18 }));
+    XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Alertas');
+
+    const rankHeaders = ['#', 'Usuario', 'Total', 'Seguridad', 'Médica', 'Accidente'];
+    const rankRows = rankingUsuarios.map((u, i) => [
+      i + 1, u.nombre, u.count,
+      u.tipos.seguridad || 0, u.tipos.medica || 0, u.tipos.accidente || 0,
+    ]);
+    const ws3 = XLSX.utils.aoa_to_sheet([rankHeaders, ...rankRows]);
+    ws3['!cols'] = rankHeaders.map(() => ({ wch: 16 }));
+    XLSX.utils.book_append_sheet(wb, ws3, 'Ranking Usuarios');
+
+    XLSX.writeFile(wb, `Alertas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   return (
-    <div className="max-w-3xl mx-auto w-full animate-page-in">
+    <div className="mx-auto w-full animate-page-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <Bell size={20} style={{ color: '#F87171' }} />
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <Bell size={20} style={{ color: '#F87171' }} />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Historial de Alertas</h1>
+            <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Analytics y registro completo de alertas</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Historial de Alertas</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Registro completo de alertas de pánico</p>
+        <div className="flex gap-2.5">
+          <button onClick={generateAlertPDF} className="btn btn-primary flex items-center gap-2">
+            <FileText size={15} /> PDF
+          </button>
+          <button onClick={generateAlertExcel} className="btn btn-secondary flex items-center gap-2">
+            <Table size={15} /> Excel
+          </button>
         </div>
       </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5">
+        {kpiCards.map((k, i) => (
+          <div
+            key={i}
+            className="rounded-2xl p-4 sm:p-5 cursor-default transition-all duration-250 hover:-translate-y-1"
+            style={{
+              background: k.gradient,
+              border: `1px solid ${k.accent}30`,
+              borderTop: `3px solid ${k.accent}`,
+            }}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: `${k.accent}20` }}>
+                {k.icon}
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: '#94A3B8' }}>{k.label}</p>
+              <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums" style={{ color: '#0F172A' }}>{k.value}</p>
+              <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+        <div className="card">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#EF4444' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Por Tipo de Emergencia</h3>
+          </div>
+          <div className="relative h-64 sm:h-72 md:h-80">
+            {totalAlertas > 0
+              ? <Doughnut data={donutAlertData} options={donutOptions} />
+              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin alertas registradas</p>}
+          </div>
+        </div>
+        <div className="card">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F97316' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Alertas por Mes</h3>
+          </div>
+          <div className="relative h-64 sm:h-72 md:h-80">
+            {totalAlertas > 0
+              ? <Bar data={barAlertData} options={barOptions} />
+              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Ranking de usuarios */}
+      {rankingUsuarios.length > 0 && (
+        <div className="card mb-5">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#DC2626' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Ranking de Reportes por Usuario</h3>
+            <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
+              {rankingUsuarios.length} usuario{rankingUsuarios.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {rankingUsuarios.slice(0, 10).map((u, i) => {
+              const pct = totalAlertas > 0 ? ((u.count / totalAlertas) * 100).toFixed(0) : 0;
+              const barColor = i === 0 ? '#EF4444' : i === 1 ? '#F97316' : i === 2 ? '#F59E0B' : '#94A3B8';
+              return (
+                <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.06)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: barColor }}>
+                        {i + 1}
+                      </span>
+                      <span className="font-bold text-sm" style={{ color: '#0F172A' }}>{u.nombre}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold tabular-nums" style={{ color: '#475569' }}>{u.count} alerta{u.count !== 1 ? 's' : ''}</span>
+                      <span className="text-xs font-bold tabular-nums px-2 py-0.5 rounded-full" style={{ background: `${barColor}20`, color: barColor }}>{pct}%</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.06)' }}>
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    {Object.entries(u.tipos).map(([tipo, count]) => (
+                      <span key={tipo} className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{
+                        background: tipo === 'seguridad' ? 'rgba(239,68,68,0.1)' : tipo === 'medica' ? 'rgba(59,130,246,0.1)' : 'rgba(249,115,22,0.1)',
+                        color: tipo === 'seguridad' ? '#EF4444' : tipo === 'medica' ? '#3B82F6' : '#F97316',
+                      }}>
+                        {TYPE_CONFIG[tipo]?.label || tipo}: {count}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="card mb-5 p-4">
