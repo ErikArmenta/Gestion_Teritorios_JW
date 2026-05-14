@@ -183,23 +183,40 @@ const PanicHistory = () => {
       .from('alertas_panico')
       .select('*, app_usuarios(nombre, telefono)')
       .order('created_at', { ascending: false });
-    if (!error && data) {
-      setAlertas(data);
-      // Build unique user list for filter select
-      const uniqueUsers = [];
-      const seen = new Set();
-      data.forEach((a) => {
-        if (a.usuario_id && !seen.has(a.usuario_id)) {
-          seen.add(a.usuario_id);
-          uniqueUsers.push({ id: a.usuario_id, nombre: a.app_usuarios?.nombre || `#${a.usuario_id}` });
-        }
-      });
-      setUsuarios(uniqueUsers);
+
+    if (error) {
+      console.error('Error fetching alertas:', error);
+      setAlertas([]);
+    } else {
+      setAlertas(data || []);
     }
+
+    // Build unique user list for filter select
+    const items = data || [];
+    const uniqueUsers = [];
+    const seen = new Set();
+    items.forEach((a) => {
+      if (a.usuario_id && !seen.has(a.usuario_id)) {
+        seen.add(a.usuario_id);
+        uniqueUsers.push({ id: a.usuario_id, nombre: a.app_usuarios?.nombre || `#${a.usuario_id}` });
+      }
+    });
+    setUsuarios(uniqueUsers);
     setLoading(false);
   };
 
   useEffect(() => { fetchAlertas(); }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('alertas-history')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_panico' }, () => {
+        fetchAlertas();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const clearFilters = () => {
     setFilterFechaInicio('');
