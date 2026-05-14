@@ -175,9 +175,15 @@ const TerritoriesMap = () => {
           </div>
         ) : (
           <MapContainer center={[31.7619, -106.4850]} zoom={13} style={{ height: '100%', width: '100%', minHeight: '420px' }}>
+            {/* Capa base oscura sin labels */}
             <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            />
+            {/* Capa de labels con efecto neón brillante */}
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+              className="neon-labels"
             />
             <GlobalMapFitter territorios={territorios} />
             <FeatureGroup>
