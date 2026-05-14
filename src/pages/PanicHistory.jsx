@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { Bell, MapPin, Clock, User, Filter, X, ExternalLink } from 'lucide-react';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
+  ArcElement, Tooltip as ChartTooltip, Legend, Title
+} from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { Bell, MapPin, Clock, User, Filter, X, ExternalLink, FileText, Table, Shield, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartTooltip, Legend, Title);
 
 const TYPE_CONFIG = {
   seguridad:  { label: 'Seguridad',  bg: 'bg-red-600',    text: 'text-white' },
