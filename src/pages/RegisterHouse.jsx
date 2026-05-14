@@ -3,7 +3,7 @@ import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import { MapContainer, TileLayer, Marker, useMapEvents, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import * as turf from '@turf/turf';
-import { Locate, Upload, X, MapPin } from 'lucide-react';
+import { Locate, Upload, X, MapPin, Camera } from 'lucide-react';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 
 import L from 'leaflet';
@@ -246,17 +246,39 @@ const RegisterHouse = () => {
                 </button>
               </div>
             )}
-            <label className="flex flex-col items-center gap-2 p-4 rounded-xl cursor-pointer transition-colors text-sm" style={{ border: '2px dashed rgba(0,0,0,0.15)', color: '#475569' }}>
-              <Upload size={20} style={{ color: '#94A3B8' }} />
-              {photoFile ? <span className="font-medium text-xs" style={{ color: '#2563EB' }}>{photoFile.name}</span> : 'Toca para adjuntar foto (opcional)'}
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => setPhotoFile(e.target.files[0] || null)}
-              />
-            </label>
+            <div className="flex gap-3">
+              {/* Botón para tomar foto con cámara */}
+              <label className="flex-1 flex flex-col items-center gap-2 p-4 rounded-xl cursor-pointer transition-colors text-sm hover:bg-blue-50/50"
+                     style={{ border: '2px dashed rgba(37,99,235,0.3)', color: '#2563EB' }}>
+                <Camera size={22} />
+                <span className="font-medium text-xs">Tomar Foto</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => setPhotoFile(e.target.files[0] || null)}
+                />
+              </label>
+
+              {/* Botón para seleccionar de galería */}
+              <label className="flex-1 flex flex-col items-center gap-2 p-4 rounded-xl cursor-pointer transition-colors text-sm hover:bg-slate-50/50"
+                     style={{ border: '2px dashed rgba(0,0,0,0.15)', color: '#475569' }}>
+                <Upload size={22} style={{ color: '#94A3B8' }} />
+                <span className="font-medium text-xs">Galería</span>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setPhotoFile(e.target.files[0] || null)}
+                />
+              </label>
+            </div>
+
+            {photoFile && (
+              <p className="text-xs font-medium mt-2 text-center" style={{ color: '#2563EB' }}>{photoFile.name}</p>
+            )}
 
             <button type="submit" className="btn btn-primary w-full mt-5" disabled={isUploading}>
               {isUploading ? (
