@@ -52,6 +52,16 @@ const RegisterHouse = () => {
     return () => URL.revokeObjectURL(url);
   }, [photoFile]);
 
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {},
+        { timeout: 8000, enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
   const checkInPolygon = () => {
     if (!formData.territorio_id) return null;
     const territorio = territorios.find(t => String(t.id) === String(formData.territorio_id));
@@ -181,7 +191,7 @@ const RegisterHouse = () => {
               </div>
             </div>
 
-            <div className="form-group">
+            <div className="form-group flex justify-center">
               <label className="flex items-center gap-2 cursor-pointer text-sm select-none font-medium" style={{ color: '#64748B' }}>
                 <input
                   type="checkbox"
@@ -294,7 +304,7 @@ const RegisterHouse = () => {
 
           <div className="flex-1 rounded-xl overflow-hidden" style={{ minHeight: '380px' }}>
             <MapContainer center={[position.lat, position.lng]} zoom={14} style={{ height: '100%', width: '100%', minHeight: '380px' }}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
               <LocationMarker position={position} setPosition={setPosition} />
               <MapCenterer territorioObj={selectedTerritoryObj} />
               {selectedTerritoryObj?.coordenadas && (
@@ -316,6 +326,11 @@ const RegisterHouse = () => {
                 </CircleMarker>
               ))}
             </MapContainer>
+            <div className="flex items-center justify-center gap-4 mt-2 px-3 py-2 rounded-lg text-xs font-mono" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)', color: '#475569' }}>
+              <span>Lat: <strong>{position.lat.toFixed(6)}</strong></span>
+              <span className="w-px h-4" style={{ background: 'rgba(0,0,0,0.1)' }} />
+              <span>Lng: <strong>{position.lng.toFixed(6)}</strong></span>
+            </div>
           </div>
         </div>
       </div>
