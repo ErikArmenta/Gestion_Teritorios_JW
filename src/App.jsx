@@ -8,6 +8,7 @@ import HousesList from './pages/HousesList';
 import UsersList from './pages/UsersList';
 import PanicHistory from './pages/PanicHistory';
 import Login from './pages/Login';
+import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
 import BottomNav from './components/BottomNav';
@@ -61,6 +62,7 @@ const AppLayout = () => {
   return (
     <div className="flex min-h-screen overflow-x-hidden">
       <Sidebar />
+      <OfflineIndicator />
       <main
         className="flex-1 p-4 pb-24 md:p-8 md:pb-8 overflow-y-auto flex flex-col"
       >
