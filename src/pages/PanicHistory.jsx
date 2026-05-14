@@ -1,3 +1,10 @@
+/**
+ * NOTA: Si las alertas no se muestran, verificar en Supabase Dashboard:
+ * 1. Tabla alertas_panico → Authentication → RLS debe estar OFF
+ *    (o tener policy: CREATE POLICY "anon_all" ON alertas_panico FOR ALL USING (true) WITH CHECK (true))
+ * 2. La relación con app_usuarios debe existir (FK usuario_id → app_usuarios.id)
+ * 3. Verificar en consola del navegador los logs [PanicHistory]
+ */
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -179,6 +186,7 @@ const PanicHistory = () => {
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [usuarios, setUsuarios] = useState([]);
+  const [fetchError, setFetchError] = useState(null);
 
   // Filters
   const [filterFechaInicio, setFilterFechaInicio] = useState('');
@@ -189,16 +197,22 @@ const PanicHistory = () => {
 
   const fetchAlertas = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    console.log('[PanicHistory] Fetching alertas...');
+    const { data, error, status, statusText } = await supabase
       .from('alertas_panico')
       .select('*, app_usuarios(nombre, telefono)')
       .order('created_at', { ascending: false });
 
+    console.log('[PanicHistory] Response:', { data: data?.length, error, status, statusText });
+
     if (error) {
-      console.error('Error fetching alertas:', error);
+      console.error('[PanicHistory] Error fetching alertas:', error.message, error.details, error.hint);
+      setFetchError(error.message || 'Error al cargar alertas');
       setAlertas([]);
     } else {
+      setFetchError(null);
       setAlertas(data || []);
+      console.log('[PanicHistory] Loaded', data?.length, 'alertas');
     }
 
     // Build unique user list for filter select
@@ -741,6 +755,30 @@ const PanicHistory = () => {
           </div>
         </div>
       </div>
+
+      {/* Error banner */}
+      {fetchError && (
+        <div className="card p-4 mb-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={18} style={{ color: '#EF4444', marginTop: 2 }} />
+            <div>
+              <p className="text-sm font-bold" style={{ color: '#DC2626' }}>Error al cargar alertas</p>
+              <p className="text-xs mt-1" style={{ color: '#64748B' }}>{fetchError}</p>
+              <p className="text-xs mt-2" style={{ color: '#475569' }}>
+                Si el error es de permisos (RLS), ve al dashboard de Supabase → tabla <code>alertas_panico</code> → Authentication → Policies,
+                y agrega una policy "Enable read access for all users" con <code>USING (true)</code>.
+                O desactiva RLS en esta tabla si tu autenticación es custom.
+              </p>
+              <button
+                onClick={fetchAlertas}
+                className="mt-3 btn btn-primary text-xs px-4 py-2"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Results count */}
       <p className="text-xs mb-3 px-1" style={{ color: '#475569' }}>
