@@ -10,6 +10,7 @@ import PanicHistory from './pages/PanicHistory';
 import Login from './pages/Login';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
+import BottomNav from './components/BottomNav';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
@@ -24,7 +25,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 const AppLayout = () => {
   const { user } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
@@ -60,9 +60,9 @@ const AppLayout = () => {
 
   return (
     <div className="flex min-h-screen overflow-x-hidden">
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+      <Sidebar />
       <main
-        className={`flex-1 p-4 pl-14 pt-16 md:p-8 md:pt-8 overflow-y-auto flex flex-col transition-transform duration-300 ease-out md:translate-x-0 ${sidebarOpen ? 'translate-x-64' : 'translate-x-0'}`}
+        className="flex-1 p-4 pb-24 md:p-8 md:pb-8 overflow-y-auto flex flex-col"
       >
         <Routes>
           <Route path="/" element={<TerritoriesMap />} />
@@ -121,6 +121,7 @@ const AppLayout = () => {
       {/* Panic module — always visible when authenticated */}
       <PanicButton />
       <PanicAlert />
+      <BottomNav />
     </div>
   );
 };
