@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, LogOut, User, Menu, X } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
 
   if (!user) return null;
 
@@ -25,6 +24,7 @@ const Sidebar = () => {
     { path: '/stats', name: 'Estadísticas', icon: <BarChart2 size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
     { path: '/list', name: 'Lista de Casas', icon: <List size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
     { path: '/users', name: 'Usuarios', icon: <Users size={18} />, roles: ['Admin Principal'] },
+    { path: '/alerts', name: 'Alertas', icon: <Bell size={18} />, roles: ['Admin Principal'] },
   ];
 
   const visibleMenu = menuItems.filter(item => item.roles.includes(user.rol));
@@ -96,39 +96,16 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Botón hamburger animado — solo móvil */}
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        className="fixed top-3 left-3 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-xl shadow-lg border border-white/10 transition-colors duration-200"
-        style={{ backgroundColor: '#0F172A' }}
-        aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
-      >
-        <div className="relative w-[18px] h-[18px]">
-          <Menu
-            size={18}
-            className="absolute inset-0 text-white transition-all duration-300"
-            style={{ opacity: isOpen ? 0 : 1, transform: isOpen ? 'rotate(90deg) scale(0.7)' : 'rotate(0deg) scale(1)' }}
-          />
-          <X
-            size={18}
-            className="absolute inset-0 text-white transition-all duration-300"
-            style={{ opacity: isOpen ? 1 : 0, transform: isOpen ? 'rotate(0deg) scale(1)' : 'rotate(-90deg) scale(0.7)' }}
-          />
-        </div>
-      </button>
-
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 z-30 md:hidden transition-all duration-300"
-        style={{
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: isOpen ? 'blur(4px)' : 'none',
-          opacity: isOpen ? 1 : 0,
-          pointerEvents: isOpen ? 'auto' : 'none',
-        }}
-        onClick={() => setIsOpen(false)}
-        aria-hidden="true"
-      />
+      {/* Botón hamburger — solo móvil, visible cuando el sidebar está cerrado */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed top-3 left-3 z-50 md:hidden p-2 rounded-lg bg-white/80 backdrop-blur shadow-sm border border-gray-200"
+          aria-label="Abrir menú"
+        >
+          <Menu size={18} className="text-gray-700" />
+        </button>
+      )}
 
       {/* Drawer móvil */}
       <div
@@ -139,6 +116,14 @@ const Sidebar = () => {
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
+        {/* Botón X dentro del sidebar */}
+        <button
+          onClick={() => setIsOpen(false)}
+          className="absolute top-3 right-3 p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors z-10"
+          aria-label="Cerrar menú"
+        >
+          <X size={18} />
+        </button>
         <SidebarContent onNavClick={handleNavClick} />
       </div>
 

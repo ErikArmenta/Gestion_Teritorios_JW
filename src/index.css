@@ -290,13 +290,19 @@ textarea { resize: vertical; min-height: 80px; }
 .ficha-tecnica .leaflet-popup-content { margin: 12px; }
 
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
-  background-color: rgba(59, 130, 246, 0.6) !important;
+  background-color: rgba(34, 211, 238, 0.25) !important;
+  border: 2px solid rgba(34, 211, 238, 0.6) !important;
 }
 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-  background-color: rgba(37, 99, 235, 0.9) !important;
+  background-color: rgba(34, 211, 238, 0.85) !important;
   color: white !important;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
+}
+
+@keyframes panic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50%       { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
 }
 
 @media (max-width: 767px) {
