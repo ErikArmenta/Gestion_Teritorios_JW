@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
+import { offlineStore } from '../utils/offlineStore';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 const DataContext = createContext();
 export const useData = () => useContext(DataContext);
@@ -8,20 +10,131 @@ export const DataProvider = ({ children }) => {
   const [territorios, setTerritorios] = useState([]);
   const [casas, setCasas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const isOnline = useOnlineStatus();
+  const syncingRef = useRef(false);
 
+  // ── Fetch con fallback a cache ──
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      if (navigator.onLine) {
+        const [terrRes, casasRes] = await Promise.all([
+          supabase.from('territorios').select('*'),
+          supabase.from('casas').select('*'),
+        ]);
+        const terrData = terrRes.error ? [] : (terrRes.data || []);
+        const casasData = casasRes.error ? [] : (casasRes.data || []);
+        setTerritorios(terrData);
+        setCasas(casasData);
+        // Cache para uso offline
+        await offlineStore.cacheTerritorios(terrData).catch(() => {});
+        await offlineStore.cacheCasas(casasData).catch(() => {});
+      } else {
+        // Sin conexión — servir desde cache
+        const [cachedTerr, cachedCasas] = await Promise.all([
+          offlineStore.getCachedTerritorios().catch(() => []),
+          offlineStore.getCachedCasas().catch(() => []),
+        ]);
+        setTerritorios(cachedTerr);
+        setCasas(cachedCasas);
+      }
+    } catch (err) {
+      console.error('fetchData error:', err);
+      // Fallback a cache si hay cualquier error de red
+      try {
+        const [cachedTerr, cachedCasas] = await Promise.all([
+          offlineStore.getCachedTerritorios(),
+          offlineStore.getCachedCasas(),
+        ]);
+        if (cachedTerr.length > 0 || cachedCasas.length > 0) {
+          setTerritorios(cachedTerr);
+          setCasas(cachedCasas);
+        }
+      } catch {}
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Sync cola de pendientes cuando vuelve la conexión ──
+  const syncPendingQueue = useCallback(async () => {
+    if (syncingRef.current || !navigator.onLine) return;
+    syncingRef.current = true;
+    setSyncing(true);
+    try {
+      const queue = await offlineStore.getPendingQueue();
+      if (queue.length === 0) { setSyncing(false); syncingRef.current = false; return; }
+
+      let syncedCount = 0;
+      for (const item of queue) {
+        try {
+          if (item.type === 'addCasa') {
+            // Si tiene foto pendiente (base64), subirla primero
+            let foto_url = item.data.foto_url;
+            if (item.photoBase64) {
+              // Convertir base64 a File y subir
+              const res = await fetch(item.photoBase64);
+              const blob = await res.blob();
+              const file = new File([blob], `offline_${Date.now()}.jpg`, { type: 'image/jpeg' });
+              const ext = 'jpg';
+              const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+              const { error: upErr } = await supabase.storage.from('fotos_casas').upload(fileName, file);
+              if (!upErr) {
+                const { data: urlData } = supabase.storage.from('fotos_casas').getPublicUrl(fileName);
+                foto_url = urlData.publicUrl;
+              }
+            }
+            const casaData = { ...item.data, foto_url };
+            // Eliminar campos temporales
+            delete casaData.id; // Remover ID temporal negativo
+            delete casaData._offline;
+            const { error } = await supabase.from('casas').insert([casaData]);
+            if (!error) {
+              await offlineStore.removeFromPendingQueue(item.queueId);
+              syncedCount++;
+            }
+          }
+          // Se pueden agregar más tipos: updateCasa, deleteCasa, etc.
+        } catch (err) {
+          console.error('Error syncing item:', item.queueId, err);
+          // Dejar en la cola para reintentar después
+        }
+      }
+
+      if (syncedCount > 0) {
+        // Refrescar datos del servidor después de sincronizar
+        await fetchData();
+      }
+
+      const remaining = await offlineStore.getPendingQueue();
+      setPendingCount(remaining.length);
+    } finally {
+      setSyncing(false);
+      syncingRef.current = false;
+    }
+  }, []);
+
+  // ── Init: fetch + check pending ──
   useEffect(() => {
     fetchData();
+    offlineStore.getPendingQueue().then(q => setPendingCount(q.length)).catch(() => {});
+  }, []);
 
-    // Realtime incremental — actualiza solo el registro afectado, no refetch completo
+  // ── Realtime (solo cuando online) ──
+  useEffect(() => {
+    if (!isOnline) return;
+
     const terrSub = supabase
       .channel('public:territorios')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'territorios' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setTerritorios(prev => [...prev, payload.new]);
+          setTerritorios(prev => { const next = [...prev, payload.new]; offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
         } else if (payload.eventType === 'UPDATE') {
-          setTerritorios(prev => prev.map(t => t.id === payload.new.id ? payload.new : t));
+          setTerritorios(prev => { const next = prev.map(t => t.id === payload.new.id ? payload.new : t); offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
         } else if (payload.eventType === 'DELETE') {
-          setTerritorios(prev => prev.filter(t => t.id !== payload.old.id));
+          setTerritorios(prev => { const next = prev.filter(t => t.id !== payload.old.id); offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
         }
       })
       .subscribe();
@@ -30,11 +143,17 @@ export const DataProvider = ({ children }) => {
       .channel('public:casas')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'casas' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setCasas(prev => [...prev, payload.new]);
+          setCasas(prev => {
+            // Remover el placeholder offline si existe con la misma dirección/territorio
+            const cleaned = prev.filter(c => !(c._offline && c.direccion === payload.new.direccion && c.territorio_id === payload.new.territorio_id));
+            const next = [...cleaned, payload.new];
+            offlineStore.cacheCasas(next).catch(() => {});
+            return next;
+          });
         } else if (payload.eventType === 'UPDATE') {
-          setCasas(prev => prev.map(c => c.id === payload.new.id ? payload.new : c));
+          setCasas(prev => { const next = prev.map(c => c.id === payload.new.id ? payload.new : c); offlineStore.cacheCasas(next).catch(() => {}); return next; });
         } else if (payload.eventType === 'DELETE') {
-          setCasas(prev => prev.filter(c => c.id !== payload.old.id));
+          setCasas(prev => { const next = prev.filter(c => c.id !== payload.old.id); offlineStore.cacheCasas(next).catch(() => {}); return next; });
         }
       })
       .subscribe();
@@ -43,24 +162,16 @@ export const DataProvider = ({ children }) => {
       supabase.removeChannel(terrSub);
       supabase.removeChannel(casasSub);
     };
-  }, []);
+  }, [isOnline]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [terrRes, casasRes] = await Promise.all([
-        supabase.from('territorios').select('*'),
-        supabase.from('casas').select('*'),
-      ]);
-      if (!terrRes.error)  setTerritorios(terrRes.data  || []);
-      if (!casasRes.error) setCasas(casasRes.data || []);
-    } catch (err) {
-      console.error('fetchData error:', err);
-    } finally {
-      setLoading(false);
+  // ── Cuando vuelve la conexión, sincronizar pendientes ──
+  useEffect(() => {
+    if (isOnline && pendingCount > 0) {
+      syncPendingQueue();
     }
-  };
+  }, [isOnline, pendingCount, syncPendingQueue]);
 
+  // ── CRUD functions con soporte offline ──
   const addTerritorio = async (territorio) => {
     const { error } = await supabase.from('territorios').insert([territorio]);
     if (error) throw error;
@@ -78,9 +189,33 @@ export const DataProvider = ({ children }) => {
     if (error) throw error;
   };
 
-  const addCasa = async (casa) => {
-    const { error } = await supabase.from('casas').insert([casa]);
-    if (error) throw error;
+  const addCasa = async (casa, photoBase64 = null) => {
+    if (navigator.onLine) {
+      // Online — insertar directamente
+      const { error } = await supabase.from('casas').insert([casa]);
+      if (error) throw error;
+    } else {
+      // Offline — guardar en cola y agregar placeholder local
+      const tempId = -Date.now(); // ID temporal negativo
+      const offlineCasa = { ...casa, id: tempId, _offline: true };
+
+      // Agregar a la cola de pendientes
+      await offlineStore.addToPendingQueue({
+        type: 'addCasa',
+        data: casa,
+        photoBase64: photoBase64, // base64 de la foto para subir después
+        timestamp: Date.now(),
+      });
+
+      // Agregar al estado local para que se vea inmediatamente
+      setCasas(prev => {
+        const next = [...prev, offlineCasa];
+        offlineStore.cacheCasas(next).catch(() => {});
+        return next;
+      });
+
+      setPendingCount(prev => prev + 1);
+    }
   };
 
   const updateCasa = async (id, updates) => {
@@ -94,6 +229,15 @@ export const DataProvider = ({ children }) => {
   };
 
   const uploadPhoto = async (file) => {
+    if (!navigator.onLine) {
+      // Offline: convertir a base64 y retornar como data URL temporal
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result); // data:image/...;base64,...
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
     const ext = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
     const { error } = await supabase.storage.from('fotos_casas').upload(fileName, file);
@@ -108,6 +252,7 @@ export const DataProvider = ({ children }) => {
       addTerritorio, updateTerritorio, deleteTerritorio,
       addCasa, updateCasa, deleteCasa,
       uploadPhoto,
+      isOnline, pendingCount, syncing, syncPendingQueue,
     }}>
       {children}
     </DataContext.Provider>
