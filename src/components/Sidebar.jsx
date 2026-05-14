@@ -1,9 +1,9 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Menu, X } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const Sidebar = ({ isOpen, setIsOpen }) => {
+const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -12,10 +12,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  const handleNavClick = () => {
-    setIsOpen(false);
   };
 
   const menuItems = [
@@ -106,42 +102,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
-      {/* Botón hamburger — solo móvil */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed top-3 left-3 z-50 md:hidden p-2 rounded-lg transition-colors"
-          style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
-          aria-label="Abrir menú"
-        >
-          <Menu size={18} style={{ color: '#475569' }} />
-        </button>
-      )}
-
-      {/* Drawer móvil */}
-      <div
-        className="fixed inset-y-0 left-0 z-40 w-64 flex flex-col md:hidden transition-transform duration-300 ease-out"
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderRight: '1px solid rgba(0,0,0,0.08)',
-          boxShadow: '4px 0 24px rgba(0,0,0,0.08)',
-          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}
-      >
-        <button
-          onClick={() => setIsOpen(false)}
-          className="absolute top-3 right-3 p-2 rounded-lg transition-colors z-10"
-          style={{ color: '#64748B' }}
-          onMouseEnter={e => e.currentTarget.style.background = '#F1F5F9'}
-          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          aria-label="Cerrar menú"
-        >
-          <X size={18} />
-        </button>
-        <SidebarContent onNavClick={handleNavClick} />
-      </div>
-
       {/* Sidebar desktop */}
       <div
         className="hidden md:flex md:flex-col md:w-64 md:sticky md:top-0 md:h-screen shrink-0"
