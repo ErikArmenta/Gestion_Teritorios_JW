@@ -316,18 +316,13 @@ textarea { resize: vertical; min-height: 80px; }
   height: 100%;
 }
 
-.custom-marker-wrapper { background: transparent; border: none; }
-.custom-marker {
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  border: 3px solid white;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.house-marker-icon {
+  background: none !important;
+  border: none !important;
 }
-.custom-marker-wrapper:hover .custom-marker {
-  transform: scale(1.4);
-  box-shadow: 0 5px 12px rgba(0,0,0,0.4);
-  z-index: 1000 !important;
+.house-marker-icon:hover svg {
+  transform: scale(1.2);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .ficha-tecnica .leaflet-popup-content-wrapper {
@@ -338,15 +333,37 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .ficha-tecnica .leaflet-popup-content { margin: 12px; }
 
-.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
-  background-color: rgba(37,99,235,0.15) !important;
-  border: 2px solid rgba(37,99,235,0.45) !important;
+/* Cluster outer circle */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: rgba(37, 99, 235, 0.2) !important;
+  border: 2px solid rgba(37, 99, 235, 0.5) !important;
+  border-radius: 50% !important;
 }
-.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-  background-color: rgba(37,99,235,0.85) !important;
+
+/* Cluster inner circle */
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background-color: rgba(37, 99, 235, 0.85) !important;
   color: white !important;
   font-weight: 700;
   font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  border-radius: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.marker-cluster-small div { width: 30px; height: 30px; }
+.marker-cluster-medium div { width: 36px; height: 36px; }
+.marker-cluster-large div { width: 42px; height: 42px; }
+
+.marker-cluster span {
+  line-height: 1 !important;
 }
 
 @keyframes panic-pulse {
