@@ -333,6 +333,23 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .ficha-tecnica .leaflet-popup-content { margin: 12px; }
 
+/* Dark popup styles */
+.leaflet-popup-content-wrapper {
+  background: #1E293B !important;
+  color: #E2E8F0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+.leaflet-popup-tip {
+  background: #1E293B !important;
+}
+.leaflet-popup-content {
+  color: #E2E8F0;
+}
+.leaflet-popup-content a { color: #60A5FA; }
+.leaflet-popup-close-button { color: #94A3B8 !important; }
+.leaflet-popup-close-button:hover { color: #FFFFFF !important; }
+
 /* Cluster outer circle */
 .marker-cluster-small,
 .marker-cluster-medium,
