@@ -33,17 +33,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     <div className="flex flex-col h-full">
       {/* Logo section */}
       <div className="flex flex-col items-center pt-8 pb-5 px-4">
-        <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg mb-3" style={{ boxShadow: '0 0 0 2px rgba(59,130,246,0.45), 0 4px 16px rgba(0,0,0,0.4)' }}>
+        <div
+          className="w-16 h-16 rounded-2xl overflow-hidden mb-3"
+          style={{ boxShadow: '0 0 0 3px rgba(37,99,235,0.2), 0 4px 16px rgba(37,99,235,0.15)' }}
+        >
           <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
         </div>
-        <h2 className="text-sm font-bold text-white/90 text-center leading-snug tracking-tight">
+        <h2 className="text-sm font-bold text-center leading-snug tracking-tight" style={{ color: '#0F172A' }}>
           Gestión Territorial
         </h2>
-        <span className="text-xs text-white/35 mt-0.5 font-medium">JW</span>
+        <span className="text-xs font-medium mt-0.5" style={{ color: '#94A3B8' }}>JW</span>
       </div>
 
       {/* Divider */}
-      <div className="mx-5 h-px bg-white/10 mb-3" />
+      <div className="mx-5 h-px mb-3" style={{ background: 'rgba(0,0,0,0.07)' }} />
 
       {/* Nav links */}
       <nav className="flex flex-col gap-0.5 flex-1 px-3">
@@ -65,14 +68,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
       {/* User info + logout */}
       <div className="px-3 pb-6 pt-3">
-        <div className="h-px bg-white/10 mb-4" />
+        <div className="h-px mb-4" style={{ background: 'rgba(0,0,0,0.07)' }} />
         <div className="flex items-center gap-3 px-2 mb-3">
           {user.foto_url ? (
             <img
               src={user.foto_url}
               alt={user.nombre}
               className="w-9 h-9 rounded-full object-cover shrink-0"
-              style={{ boxShadow: '0 0 0 2px rgba(59,130,246,0.5)' }}
+              style={{ boxShadow: '0 0 0 2px rgba(37,99,235,0.35)' }}
             />
           ) : (
             <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
@@ -80,13 +83,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             </div>
           )}
           <div className="flex-1 overflow-hidden">
-            <div className="text-sm font-semibold text-white/90 truncate">{user.nombre}</div>
-            <div className="text-xs text-white/40 truncate">{user.rol}</div>
+            <div className="text-sm font-semibold truncate" style={{ color: '#0F172A' }}>{user.nombre}</div>
+            <div className="text-xs truncate" style={{ color: '#94A3B8' }}>{user.rol}</div>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 transition-colors duration-200 border border-red-500/15"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200"
+          style={{
+            color: '#DC2626',
+            background: 'rgba(220,38,38,0.07)',
+            border: '1px solid rgba(220,38,38,0.15)',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,38,38,0.12)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(220,38,38,0.07)'}
         >
           <LogOut size={15} /> Cerrar Sesión
         </button>
@@ -96,14 +106,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
-      {/* Botón hamburger — solo móvil, visible cuando el sidebar está cerrado */}
+      {/* Botón hamburger — solo móvil */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed top-3 left-3 z-50 md:hidden p-2 rounded-lg bg-white/80 backdrop-blur shadow-sm border border-gray-200"
+          className="fixed top-3 left-3 z-50 md:hidden p-2 rounded-lg transition-colors"
+          style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
           aria-label="Abrir menú"
         >
-          <Menu size={18} className="text-gray-700" />
+          <Menu size={18} style={{ color: '#475569' }} />
         </button>
       )}
 
@@ -111,15 +122,19 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <div
         className="fixed inset-y-0 left-0 z-40 w-64 flex flex-col md:hidden transition-transform duration-300 ease-out"
         style={{
-          backgroundColor: '#0F172A',
+          backgroundColor: '#FFFFFF',
+          borderRight: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '4px 0 24px rgba(0,0,0,0.08)',
           transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
-        {/* Botón X dentro del sidebar */}
         <button
           onClick={() => setIsOpen(false)}
-          className="absolute top-3 right-3 p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors z-10"
+          className="absolute top-3 right-3 p-2 rounded-lg transition-colors z-10"
+          style={{ color: '#64748B' }}
+          onMouseEnter={e => e.currentTarget.style.background = '#F1F5F9'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           aria-label="Cerrar menú"
         >
           <X size={18} />
@@ -130,7 +145,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       {/* Sidebar desktop */}
       <div
         className="hidden md:flex md:flex-col md:w-64 md:sticky md:top-0 md:h-screen shrink-0"
-        style={{ backgroundColor: '#0F172A', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRight: '1px solid rgba(0,0,0,0.07)',
+          boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
         <SidebarContent onNavClick={() => {}} />
       </div>
