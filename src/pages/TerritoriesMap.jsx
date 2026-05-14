@@ -159,7 +159,7 @@ const TerritoriesMap = () => {
       {/* Leyenda */}
       <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 px-0.5">
         {Object.entries(STATUS_COLORS).map(([label, { hex }]) => (
-          <span key={label} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#64748B' }}>
+          <span key={label} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#94A3B8' }}>
             <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: hex }} />
             {label}
           </span>
@@ -176,8 +176,8 @@ const TerritoriesMap = () => {
         ) : (
           <MapContainer center={[31.7619, -106.4850]} zoom={13} style={{ height: '100%', width: '100%', minHeight: '420px' }}>
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
             <GlobalMapFitter territorios={territorios} />
             <FeatureGroup>
@@ -189,10 +189,10 @@ const TerritoriesMap = () => {
               <Polygon
                 key={t.id}
                 positions={t.coordenadas}
-                pathOptions={{ color: t.color, fillColor: t.color, fillOpacity: 0.2, weight: 2 }}
+                pathOptions={{ color: t.color, fillColor: t.color, fillOpacity: 0.25, weight: 2.5 }}
                 eventHandlers={{
-                  mouseover: (e) => e.target.setStyle({ fillOpacity: 0.4, weight: 3 }),
-                  mouseout:  (e) => e.target.setStyle({ fillOpacity: 0.2, weight: 2 }),
+                  mouseover: (e) => e.target.setStyle({ fillOpacity: 0.45, weight: 4 }),
+                  mouseout:  (e) => e.target.setStyle({ fillOpacity: 0.25, weight: 2.5 }),
                 }}
               >
                 <Popup minWidth={220} maxWidth={280}>
