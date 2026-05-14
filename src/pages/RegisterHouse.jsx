@@ -44,6 +44,7 @@ const RegisterHouse = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [locating, setLocating]       = useState(false);
   const [formData, setFormData]       = useState(EMPTY_FORM);
+  const [gpsPermission, setGpsPermission] = useState('prompt'); // 'granted' | 'denied' | 'prompt'
 
   useEffect(() => {
     if (!photoFile) { setPhotoPreview(null); return; }
@@ -59,6 +60,15 @@ const RegisterHouse = () => {
         () => {},
         { timeout: 8000, enableHighAccuracy: true }
       );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        setGpsPermission(result.state);
+        result.onchange = () => setGpsPermission(result.state);
+      }).catch(() => {});
     }
   }, []);
 
@@ -109,9 +119,22 @@ const RegisterHouse = () => {
     setIsUploading(true);
     try {
       const territorio = territorios.find(t => String(t.id) === String(formData.territorio_id));
-      const foto_url = photoFile ? await uploadPhoto(photoFile) : null;
 
-      await addCasa({
+      let foto_url = null;
+      let photoBase64 = null;
+
+      if (photoFile) {
+        if (navigator.onLine) {
+          foto_url = await uploadPhoto(photoFile);
+        } else {
+          // Offline: convertir a base64 para guardar en cola
+          foto_url = await uploadPhoto(photoFile); // retorna data URL en modo offline
+          photoBase64 = foto_url; // Guardar base64 para sync posterior
+          foto_url = null; // No guardar data URL como foto_url real
+        }
+      }
+
+      const casaData = {
         territorio_id:       parseInt(formData.territorio_id, 10),
         direccion:           formData.direccion,
         estado:              formData.estado,
@@ -125,9 +148,15 @@ const RegisterHouse = () => {
         latitud:             position.lat,
         longitud:            position.lng,
         foto_url,
-      });
+      };
 
-      toast.success('Casa registrada exitosamente');
+      await addCasa(casaData, photoBase64);
+
+      if (navigator.onLine) {
+        toast.success('Casa registrada exitosamente');
+      } else {
+        toast.success('Casa guardada offline — se sincronizará al conectarse');
+      }
       setFormData(EMPTY_FORM);
       setPhotoFile(null);
       if (photoInputRef.current) photoInputRef.current.value = '';
@@ -321,6 +350,16 @@ const RegisterHouse = () => {
           {insideTerritory === false && formData.territorio_id && (
             <div className="p-2.5 rounded-xl mb-3 text-xs font-medium" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#D97706' }}>
               Ubicación fuera del territorio seleccionado. Puedes guardar de todos modos.
+            </div>
+          )}
+
+          {gpsPermission === 'denied' && (
+            <div className="p-3 rounded-xl mb-3 text-xs" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <p className="font-semibold mb-1" style={{ color: '#D97706' }}>Ubicación GPS desactivada</p>
+              <p style={{ color: '#92400E' }}>
+                Para mejor precisión, activa la ubicación en la configuración de tu navegador:
+                <br/>Configuración → Privacidad → Ubicación → Permitir para este sitio.
+              </p>
             </div>
           )}
 
