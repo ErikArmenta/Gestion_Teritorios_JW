@@ -77,15 +77,15 @@ const DashboardStats = () => {
     }]
   };
   const CHART_TOOLTIP = {
-    backgroundColor: 'rgba(15,23,42,0.95)',
-    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.98)',
+    borderColor: 'rgba(0,0,0,0.1)',
     borderWidth: 1,
     titleFont: { size: 13, family: 'Inter', weight: '600' },
     bodyFont: { size: 12, family: 'Inter' },
     padding: 12,
     cornerRadius: 10,
-    titleColor: '#E2E8F0',
-    bodyColor: '#94A3B8',
+    titleColor: '#0F172A',
+    bodyColor: '#64748B',
   };
 
   const donutOptions = {
@@ -94,7 +94,7 @@ const DashboardStats = () => {
     plugins: {
       legend: {
         position: 'bottom',
-        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#94A3B8' }
+        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#475569' }
       },
       tooltip: {
         ...CHART_TOOLTIP,
@@ -117,7 +117,7 @@ const DashboardStats = () => {
     plugins: {
       legend: {
         position: 'top',
-        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#94A3B8' }
+        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#475569' }
       },
       tooltip: { ...CHART_TOOLTIP },
       title: { display: false }
@@ -126,11 +126,11 @@ const DashboardStats = () => {
       x: {
         grid: { display: false },
         ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B' },
-        border: { color: 'rgba(255,255,255,0.06)' },
+        border: { color: 'rgba(0,0,0,0.06)' },
       },
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+        grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
         ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B', stepSize: 1 },
         border: { color: 'transparent' },
       }
@@ -303,37 +303,37 @@ const DashboardStats = () => {
       label: 'Total Casas',
       value: totalCasas,
       sub: `${territorios.length} territorios activos`,
-      icon: <Home size={22} className="text-white/80" />,
-      gradient: 'linear-gradient(135deg, #1E3A5F 0%, #0F2040 100%)',
+      icon: <Home size={22} style={{ color: '#2563EB' }} />,
+      gradient: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
       glowClass: 'stat-card-slate',
-      accent: '#3B82F6',
+      accent: '#2563EB',
     },
     {
       label: 'Atendidos',
       value: atendidos,
       sub: `${porcAtendidos}% de cobertura`,
-      icon: <CheckCircle size={22} className="text-white/80" />,
-      gradient: 'linear-gradient(135deg, #064E3B 0%, #022c22 100%)',
+      icon: <CheckCircle size={22} style={{ color: '#059669' }} />,
+      gradient: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
       glowClass: 'stat-card-green',
-      accent: '#10B981',
+      accent: '#059669',
     },
     {
       label: 'Sin Contacto',
       value: noAtendidos,
       sub: 'No atendieron la visita',
-      icon: <XCircle size={22} className="text-white/80" />,
-      gradient: 'linear-gradient(135deg, #7F1D1D 0%, #450a0a 100%)',
+      icon: <XCircle size={22} style={{ color: '#DC2626' }} />,
+      gradient: 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)',
       glowClass: 'stat-card-red',
-      accent: '#EF4444',
+      accent: '#DC2626',
     },
     {
       label: 'Casos Especiales',
       value: especiales,
       sub: 'Atención diferenciada',
-      icon: <AlertTriangle size={22} className="text-white/80" />,
-      gradient: 'linear-gradient(135deg, #78350F 0%, #3d1a05 100%)',
+      icon: <AlertTriangle size={22} style={{ color: '#D97706' }} />,
+      gradient: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
       glowClass: 'stat-card-amber',
-      accent: '#F59E0B',
+      accent: '#D97706',
     },
   ];
 
@@ -360,15 +360,15 @@ const DashboardStats = () => {
         {kpiCards.map((k, i) => (
           <div
             key={i}
-            className={`rounded-2xl p-4 sm:p-5 text-white cursor-default transition-all duration-250 hover:-translate-y-1 ${k.glowClass}`}
+            className={`rounded-2xl p-4 sm:p-5 cursor-default transition-all duration-250 hover:-translate-y-1 ${k.glowClass}`}
             style={{
               background: k.gradient,
-              border: `1px solid ${k.accent}20`,
+              border: `1px solid ${k.accent}30`,
               borderTop: `3px solid ${k.accent}`,
             }}
           >
             <div className="flex items-start justify-between mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#94A3B8' }}>
                 {k.label}
               </p>
               <div
@@ -378,7 +378,7 @@ const DashboardStats = () => {
                 {k.icon}
               </div>
             </div>
-            <p className="num-display text-5xl sm:text-6xl font-black leading-none mb-2 tabular-nums">{k.value}</p>
+            <p className="num-display text-5xl sm:text-6xl font-black leading-none mb-2 tabular-nums" style={{ color: '#0F172A' }}>{k.value}</p>
             <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
           </div>
         ))}
@@ -391,27 +391,27 @@ const DashboardStats = () => {
             <div>
               <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#475569' }}>Cobertura Global</p>
               <div className="flex items-end gap-2">
-                <p className="num-display text-6xl font-black tabular-nums leading-none" style={{ color: '#10B981' }}>{porcAtendidos}</p>
-                <span className="text-2xl font-bold mb-1" style={{ color: '#34D399' }}>%</span>
+                <p className="num-display text-6xl font-black tabular-nums leading-none" style={{ color: '#059669' }}>{porcAtendidos}</p>
+                <span className="text-2xl font-bold mb-1" style={{ color: '#059669' }}>%</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#10B981' }} />
-                <span style={{ color: '#64748B' }}><strong style={{ color: '#34D399' }}>{atendidos}</strong> atendidos</span>
+                <span style={{ color: '#64748B' }}><strong style={{ color: '#059669' }}>{atendidos}</strong> atendidos</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-                <span style={{ color: '#64748B' }}><strong style={{ color: '#F87171' }}>{noAtendidos}</strong> sin contacto</span>
+                <span style={{ color: '#64748B' }}><strong style={{ color: '#DC2626' }}>{noAtendidos}</strong> sin contacto</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-                <span style={{ color: '#64748B' }}><strong style={{ color: '#FCD34D' }}>{pendientes}</strong> pendientes</span>
+                <span style={{ color: '#64748B' }}><strong style={{ color: '#D97706' }}>{pendientes}</strong> pendientes</span>
               </span>
             </div>
           </div>
           {/* Segmented bar */}
-          <div className="h-3 rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          <div className="h-3 rounded-full overflow-hidden flex" style={{ background: 'rgba(0,0,0,0.08)' }}>
             {atendidos > 0 && (
               <div
                 className="h-full transition-all duration-700"
@@ -443,7 +443,7 @@ const DashboardStats = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#3B82F6' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Distribución por Estado</h3>
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Distribución por Estado</h3>
           </div>
           <div className="relative h-80">
             {totalCasas > 0
@@ -454,7 +454,7 @@ const DashboardStats = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#10B981' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Actividad por Territorio</h3>
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Actividad por Territorio</h3>
           </div>
           <div className="relative h-80">
             {terrData.length > 0
@@ -468,8 +468,8 @@ const DashboardStats = () => {
       <div className="card">
         <div className="flex items-center gap-2.5 mb-6">
           <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-          <h3 className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Detalle por Territorio</h3>
-          <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA' }}>
+          <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Detalle por Territorio</h3>
+          <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
             {terrData.length} zonas
           </span>
         </div>
@@ -487,14 +487,14 @@ const DashboardStats = () => {
                 key={i}
                 className="p-4 rounded-xl transition-all duration-200 cursor-default hover:-translate-y-0.5"
                 style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  borderLeft: `3px solid ${pctColor}70`,
+                  background: 'rgba(0,0,0,0.02)',
+                  border: '1px solid rgba(0,0,0,0.07)',
+                  borderLeft: `3px solid ${pctColor}80`,
                 }}
               >
                 <div className="flex items-start justify-between mb-1.5">
-                  <strong className="text-sm font-bold leading-tight pr-2" style={{ color: '#E2E8F0' }}>{t.nombre}</strong>
-                  <span className="text-xs tabular-nums font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA' }}>
+                  <strong className="text-sm font-bold leading-tight pr-2" style={{ color: '#0F172A' }}>{t.nombre}</strong>
+                  <span className="text-xs tabular-nums font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
                     {t.total}
                   </span>
                 </div>
@@ -504,25 +504,25 @@ const DashboardStats = () => {
                   </p>
                   <span className="text-xs mb-0.5" style={{ color: '#475569' }}>cobertura</span>
                 </div>
-                <div className="h-1.5 rounded-full mb-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                <div className="h-1.5 rounded-full mb-3 overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
                   <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barBg }} />
                 </div>
                 <div className="grid grid-cols-2 gap-y-1.5 text-xs">
                   <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#10B981' }} />
-                    <strong style={{ color: '#34D399' }}>{t.atendidos}</strong>&nbsp;atend.
+                    <strong style={{ color: '#059669' }}>{t.atendidos}</strong>&nbsp;atend.
                   </span>
                   <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-                    <strong style={{ color: '#F87171' }}>{t.noAtendidos}</strong>&nbsp;s/c
+                    <strong style={{ color: '#DC2626' }}>{t.noAtendidos}</strong>&nbsp;s/c
                   </span>
                   <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-                    <strong style={{ color: '#FCD34D' }}>{t.pendientes}</strong>&nbsp;pend.
+                    <strong style={{ color: '#D97706' }}>{t.pendientes}</strong>&nbsp;pend.
                   </span>
                   <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#A78BFA' }} />
-                    <strong style={{ color: '#C4B5FD' }}>{t.especiales}</strong>&nbsp;esp.
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
+                    <strong style={{ color: '#7C3AED' }}>{t.especiales}</strong>&nbsp;esp.
                   </span>
                 </div>
               </div>

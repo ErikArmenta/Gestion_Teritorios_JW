@@ -71,7 +71,7 @@ const HousesList = () => {
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Lista de Casas</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Registro de visitas y estados</p>
         </div>
-        <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.15)', color: '#60A5FA' }}>
+        <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
           {filteredCasas.length} / {casas.length}
         </span>
       </div>
@@ -115,7 +115,7 @@ const HousesList = () => {
         <div className="card overflow-x-auto p-0">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }}>
+              <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
                 <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest w-16" style={{ color: '#475569' }}>Foto</th>
                 <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Dirección</th>
                 <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Territorio</th>
@@ -127,25 +127,25 @@ const HousesList = () => {
             </thead>
             <tbody>
               {filteredCasas.length > 0 ? filteredCasas.map(c => (
-                <tr key={c.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                <tr key={c.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.025)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <td className="px-4 py-3" style={{ borderLeft: `3px solid ${getStatusColor(c.estado)}60` }}>
                     {c.foto_url ? (
-                      <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
                         <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                           <ZoomIn size={13} className="text-white" />
                         </div>
                       </button>
                     ) : (
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                        <ImageOff size={14} style={{ color: '#334155' }} />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.05)' }}>
+                        <ImageOff size={14} style={{ color: '#94A3B8' }} />
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#E2E8F0' }}>{c.direccion}</td>
+                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#0F172A' }}>{c.direccion}</td>
                   <td className="px-4 py-3 text-sm" style={{ color: '#64748B' }}>{c.territorio_nombre}</td>
                   <td className="px-4 py-3 text-sm">
                     {editStatusId === c.id ? (
@@ -173,7 +173,7 @@ const HousesList = () => {
                   <td className="px-4 py-3 text-sm">
                     {c.tiene_caso_especial
                       ? <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>{c.tipo_caso || 'Especial'}</span>
-                      : <span style={{ color: '#334155' }}>—</span>}
+                      : <span style={{ color: '#94A3B8' }}>—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
@@ -202,16 +202,16 @@ const HousesList = () => {
           <div key={c.id} className="card p-4" style={{ borderLeft: `3px solid ${getStatusColor(c.estado)}60` }}>
             <div className="flex items-start gap-3 mb-2">
               {c.foto_url ? (
-                <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-xl overflow-hidden shrink-0" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-xl overflow-hidden shrink-0" style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
                   <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
                 </button>
               ) : (
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  <ImageOff size={16} style={{ color: '#334155' }} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(0,0,0,0.05)' }}>
+                  <ImageOff size={16} style={{ color: '#94A3B8' }} />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm truncate" style={{ color: '#E2E8F0' }}>{c.direccion}</p>
+                <p className="font-bold text-sm truncate" style={{ color: '#0F172A' }}>{c.direccion}</p>
                 <p className="text-xs truncate" style={{ color: '#64748B' }}>{c.territorio_nombre}</p>
               </div>
               {editStatusId === c.id ? (

@@ -129,7 +129,7 @@ const TerritoriesMap = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.2)' }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.2)' }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#3B82F6' }} />
             {territorios.length} territorios
           </div>
@@ -318,7 +318,7 @@ const TerritoriesMap = () => {
               <div className="form-group">
                 <label className="form-label">Color del polígono</label>
                 <div className="flex items-center gap-3">
-                  <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 rounded-xl cursor-pointer" style={{ border: '1px solid rgba(255,255,255,0.1)' }} />
+                  <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 rounded-xl cursor-pointer" style={{ border: '1px solid rgba(0,0,0,0.15)' }} />
                   <span className="text-sm" style={{ color: '#475569' }}>Color visible en el mapa</span>
                 </div>
               </div>

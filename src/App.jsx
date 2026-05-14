@@ -94,9 +94,9 @@ const AppLayout = () => {
       {showNotifBanner && (
         <div
           className="fixed top-0 left-0 right-0 z-[9990] flex items-center justify-between gap-3 px-4 py-3 text-sm"
-          style={{ backgroundColor: '#1E3A5F', borderBottom: '1px solid rgba(59,130,246,0.4)' }}
+          style={{ backgroundColor: '#EFF6FF', borderBottom: '1px solid rgba(59,130,246,0.25)' }}
         >
-          <span className="text-blue-100 leading-snug">
+          <span className="leading-snug" style={{ color: '#1E40AF' }}>
             Activa las notificaciones para recibir alertas de emergencia de tus compañeros incluso con la app cerrada.
           </span>
           <div className="flex gap-2 shrink-0">
@@ -109,8 +109,8 @@ const AppLayout = () => {
             </button>
             <button
               onClick={() => setShowNotifBanner(false)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-300"
-              style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: '#64748B' }}
             >
               Ahora no
             </button>

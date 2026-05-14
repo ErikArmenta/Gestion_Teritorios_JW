@@ -80,15 +80,15 @@ const AlertCard = ({ alerta }) => {
         {/* Top row */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
               <User size={15} style={{ color: '#64748B' }} />
             </div>
             <div>
-              <p className="font-bold text-sm leading-tight" style={{ color: '#E2E8F0' }}>
+              <p className="font-bold text-sm leading-tight" style={{ color: '#0F172A' }}>
                 {usuario?.nombre || `Usuario #${alerta.usuario_id}`}
               </p>
               {usuario?.telefono && (
-                <a href={`tel:${usuario.telefono}`} className="text-xs hover:underline" style={{ color: '#60A5FA' }}>
+                <a href={`tel:${usuario.telefono}`} className="text-xs hover:underline" style={{ color: '#2563EB' }}>
                   {usuario.telefono}
                 </a>
               )}
@@ -102,7 +102,7 @@ const AlertCard = ({ alerta }) => {
 
         {/* Mensaje */}
         {alerta.mensaje && (
-          <p className="mt-3 text-sm rounded-xl px-3 py-2" style={{ color: '#94A3B8', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <p className="mt-3 text-sm rounded-xl px-3 py-2" style={{ color: '#475569', background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}>
             {alerta.mensaje}
           </p>
         )}
@@ -136,7 +136,7 @@ const AlertCard = ({ alerta }) => {
 
         {/* Respondedores */}
         {respondieron.length > 0 && (
-          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#475569' }}>
               Respondieron ({respondieron.length})
             </p>
@@ -145,12 +145,12 @@ const AlertCard = ({ alerta }) => {
                 <span
                   key={i}
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium"
-                  style={{ background: 'rgba(16,185,129,0.12)', color: '#34D399', border: '1px solid rgba(16,185,129,0.2)' }}
+                  style={{ background: 'rgba(5,150,105,0.1)', color: '#059669', border: '1px solid rgba(5,150,105,0.2)' }}
                 >
                   <User size={10} />
                   {r.nombre || `Usuario #${r.usuario_id}`}
                   {r.timestamp && (
-                    <span className="ml-0.5" style={{ color: '#10B981' }}>
+                    <span className="ml-0.5" style={{ color: '#059669' }}>
                       · {new Date(r.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}

@@ -106,7 +106,7 @@ const UsersList = () => {
   const AvatarCell = ({ u }) => (
     <div className="relative w-10 h-10">
       {u.foto_url ? (
-        <img src={u.foto_url} alt={u.nombre} className="w-10 h-10 rounded-full object-cover" style={{ border: '2px solid rgba(255,255,255,0.15)' }} />
+        <img src={u.foto_url} alt={u.nombre} className="w-10 h-10 rounded-full object-cover" style={{ border: '2px solid rgba(0,0,0,0.1)' }} />
       ) : (
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold text-white">
           {u.nombre?.charAt(0).toUpperCase() || '?'}
@@ -114,7 +114,7 @@ const UsersList = () => {
       )}
       <span
         className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
-        style={{ background: u.activo ? '#10B981' : '#EF4444', borderColor: '#0d1117' }}
+        style={{ background: u.activo ? '#10B981' : '#EF4444', borderColor: '#FFFFFF' }}
       />
     </div>
   );
@@ -154,18 +154,18 @@ const UsersList = () => {
       {/* Stats bar */}
       {!loading && (
         <div className="flex flex-wrap gap-2 mb-5">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
-            <span className="text-xs font-bold tabular-nums" style={{ color: '#60A5FA' }}>{usuarios.length}</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
+            <span className="text-xs font-bold tabular-nums" style={{ color: '#2563EB' }}>{usuarios.length}</span>
             <span className="text-xs font-medium" style={{ color: '#64748B' }}>total</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10B981' }} />
-            <span className="text-xs font-bold tabular-nums" style={{ color: '#34D399' }}>{activeCount}</span>
+            <span className="text-xs font-bold tabular-nums" style={{ color: '#059669' }}>{activeCount}</span>
             <span className="text-xs font-medium" style={{ color: '#64748B' }}>activos</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-            <span className="text-xs font-bold tabular-nums" style={{ color: '#F87171' }}>{inactiveCount}</span>
+            <span className="text-xs font-bold tabular-nums" style={{ color: '#DC2626' }}>{inactiveCount}</span>
             <span className="text-xs font-medium" style={{ color: '#64748B' }}>inactivos</span>
           </div>
         </div>
@@ -181,7 +181,7 @@ const UsersList = () => {
           <div className="hidden md:block card overflow-x-auto p-0">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }}>
+                <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Foto</th>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Nombre</th>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Usuario</th>
@@ -193,25 +193,25 @@ const UsersList = () => {
               </thead>
               <tbody>
                 {usuarios.map(u => (
-                  <tr key={u.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                  <tr key={u.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.025)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <td className="px-4 py-3"><AvatarCell u={u} /></td>
-                    <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#E2E8F0' }}>{u.nombre}</td>
-                    <td className="px-4 py-3 text-sm font-mono" style={{ color: '#94A3B8' }}>{u.usuario}</td>
+                    <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#0F172A' }}>{u.nombre}</td>
+                    <td className="px-4 py-3 text-sm font-mono" style={{ color: '#64748B' }}>{u.usuario}</td>
                     <td className="px-4 py-3 text-sm"><PasswordCell u={u} /></td>
                     <td className="px-4 py-3">
                       <span className="badge text-xs" style={u.rol === 'Admin Principal'
-                        ? { background: 'rgba(59,130,246,0.15)', color: '#60A5FA' }
-                        : { background: 'rgba(100,116,139,0.12)', color: '#94A3B8' }}>
+                        ? { background: 'rgba(37,99,235,0.1)', color: '#2563EB' }
+                        : { background: 'rgba(100,116,139,0.1)', color: '#64748B' }}>
                         {u.rol}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="badge text-xs" style={u.activo
-                        ? { background: 'rgba(16,185,129,0.15)', color: '#34D399' }
-                        : { background: 'rgba(239,68,68,0.12)', color: '#F87171' }}>
+                        ? { background: 'rgba(5,150,105,0.1)', color: '#059669' }
+                        : { background: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
                         {u.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
@@ -243,7 +243,7 @@ const UsersList = () => {
                 <div className="flex items-center gap-3 mb-3">
                   <AvatarCell u={u} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate" style={{ color: '#E2E8F0' }}>{u.nombre}</p>
+                    <p className="font-bold text-sm truncate" style={{ color: '#0F172A' }}>{u.nombre}</p>
                     <p className="text-xs font-mono truncate" style={{ color: '#64748B' }}>{u.usuario}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -321,12 +321,12 @@ const UsersList = () => {
                   accept="image/*"
                   onChange={e => setPhotoFile(e.target.files[0] || null)}
                   className="cursor-pointer w-full rounded-xl text-xs"
-                  style={{ border: '2px dashed rgba(255,255,255,0.12)', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', color: '#64748B' }}
+                  style={{ border: '2px dashed rgba(0,0,0,0.12)', padding: '0.75rem', background: 'rgba(0,0,0,0.02)', color: '#64748B' }}
                 />
               </div>
               {formData.id && (
                 <div className="form-group">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium" style={{ color: '#94A3B8' }}>
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium" style={{ color: '#64748B' }}>
                     <input
                       type="checkbox"
                       className="w-auto accent-blue-500"
