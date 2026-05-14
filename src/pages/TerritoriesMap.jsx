@@ -46,8 +46,12 @@ const GlobalMapFitter = ({ territorios }) => {
   return null;
 };
 
-const createHouseIcon = (estado) => {
+const createHouseIcon = (estado, isOffline = false) => {
   const color = STATUS_COLORS[estado]?.hex || '#9CA3AF';
+  const offlineIndicator = isOffline
+    ? `<circle cx="24" cy="6" r="5" fill="#F59E0B" stroke="white" stroke-width="1.5"/>
+       <text x="24" y="9" text-anchor="middle" font-size="7" font-weight="bold" fill="white">⏳</text>`
+    : '';
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 36" width="28" height="32">
       <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -55,9 +59,11 @@ const createHouseIcon = (estado) => {
       </filter>
       <g filter="url(#shadow)">
         <path d="M16 2 L3 14 L6 14 L6 30 L26 30 L26 14 L29 14 Z"
-              fill="${color}" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+              fill="${color}" stroke="white" stroke-width="2" stroke-linejoin="round"
+              ${isOffline ? 'opacity="0.7" stroke-dasharray="4 2"' : ''}/>
         <rect x="12" y="19" width="8" height="11" rx="1" fill="white" opacity="0.35"/>
       </g>
+      ${offlineIndicator}
     </svg>`;
   return L.divIcon({
     html: svg,
@@ -283,7 +289,7 @@ const TerritoriesMap = () => {
             {/* Marcadores de casas */}
             <MarkerClusterGroup chunkedLoading maxClusterRadius={40}>
               {casas.map((c) => (
-                <Marker key={c.id} position={[c.latitud, c.longitud]} icon={createHouseIcon(c.estado)}>
+                <Marker key={c.id} position={[c.latitud, c.longitud]} icon={createHouseIcon(c.estado, c._offline)}>
                   <Popup className="ficha-tecnica" maxWidth={300} minWidth={240}>
                     <div className="min-w-[220px] max-w-[280px]">
                       {/* Header con color del estado */}
@@ -323,6 +329,13 @@ const TerritoriesMap = () => {
                       {c.tiene_caso_especial && (
                         <div style={{ marginTop: '10px', padding: '8px 10px', background: 'rgba(239,68,68,0.15)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)', fontSize: '11px', color: '#FCA5A5' }}>
                           <strong>Caso especial ({c.tipo_caso}):</strong> {c.detalles_caso}
+                        </div>
+                      )}
+
+                      {/* Badge offline */}
+                      {c._offline && (
+                        <div style={{ marginTop: '8px', padding: '6px 10px', background: 'rgba(245,158,11,0.2)', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.3)', fontSize: '10px', color: '#FCD34D', fontWeight: 600 }}>
+                          ⏳ Pendiente de sincronizar
                         </div>
                       )}
                     </div>
