@@ -149,7 +149,7 @@ export default function PanicButton() {
   return (
     <>
       {/* FAB */}
-      <div className="fixed bottom-6 right-6 z-[9999] select-none" style={{ width: SIZE, height: SIZE }}>
+      <div className="fixed bottom-24 right-5 md:bottom-6 md:right-6 z-[9999] select-none" style={{ width: SIZE, height: SIZE }}>
         {/* Progress ring — visible while holding */}
         {holding && (
           <svg
