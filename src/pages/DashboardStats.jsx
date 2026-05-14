@@ -471,7 +471,7 @@ const DashboardStats = () => {
             {terrData.length} zonas
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {terrData.map((t, i) => {
             const pct = t.total > 0 ? Math.round((t.atendidos / t.total) * 100) : 0;
             const pctColor = pct >= 70 ? '#10B981' : pct >= 40 ? '#F59E0B' : '#EF4444';
@@ -483,51 +483,67 @@ const DashboardStats = () => {
             return (
               <div
                 key={i}
-                className="p-4 rounded-xl transition-all duration-200 cursor-default hover:-translate-y-0.5"
+                className="p-4 sm:p-5 rounded-2xl transition-all duration-200 cursor-default hover:-translate-y-0.5"
                 style={{
                   background: 'rgba(0,0,0,0.02)',
                   border: '1px solid rgba(0,0,0,0.07)',
                   borderLeft: `3px solid ${pctColor}80`,
                 }}
               >
-                <div className="flex items-start justify-between mb-1.5">
-                  <strong className="text-sm font-bold leading-tight pr-2" style={{ color: '#0F172A' }}>{t.nombre}</strong>
-                  <span className="text-xs tabular-nums font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
-                    {t.total}
+                {/* Header: nombre + badge total */}
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <strong className="text-sm font-bold leading-snug" style={{ color: '#0F172A' }}>{t.nombre}</strong>
+                  <span className="text-xs tabular-nums font-bold px-2.5 py-1 rounded-full shrink-0" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
+                    {t.total} casas
                   </span>
                 </div>
-                <div className="flex items-end justify-between mb-2">
-                  <p className="num-display text-4xl font-black tabular-nums leading-none" style={{ color: pctColor }}>
-                    {pct}<span className="text-xl ml-0.5">%</span>
+
+                {/* Porcentaje centrado */}
+                <div className="flex items-center justify-center gap-1 mb-3">
+                  <p className="num-display text-3xl sm:text-4xl font-black tabular-nums leading-none" style={{ color: pctColor }}>
+                    {pct}
                   </p>
-                  <span className="text-xs mb-0.5" style={{ color: '#475569' }}>cobertura</span>
+                  <span className="text-lg font-bold mt-1" style={{ color: pctColor }}>%</span>
+                  <span className="text-xs ml-2 mt-1" style={{ color: '#475569' }}>cobertura</span>
                 </div>
-                <div className="h-1.5 rounded-full mb-3 overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barBg }} />
+
+                {/* Barra de progreso */}
+                <div className="h-2 rounded-full mb-4 overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: barBg }} />
                 </div>
-                <div className="grid grid-cols-2 gap-y-1.5 text-xs">
-                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#10B981' }} />
-                    <strong style={{ color: '#059669' }}>{t.atendidos}</strong>&nbsp;atend.
-                  </span>
-                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-                    <strong style={{ color: '#DC2626' }}>{t.noAtendidos}</strong>&nbsp;s/c
-                  </span>
-                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-                    <strong style={{ color: '#D97706' }}>{t.pendientes}</strong>&nbsp;pend.
-                  </span>
-                  <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
-                    <strong style={{ color: '#7C3AED' }}>{t.especiales}</strong>&nbsp;esp.
-                  </span>
+
+                {/* Stats en 2x2 grid con más espacio */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(16,185,129,0.06)' }}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10B981' }} />
+                    <span className="text-xs" style={{ color: '#64748B' }}>
+                      <strong className="tabular-nums" style={{ color: '#059669' }}>{t.atendidos}</strong> atend.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.06)' }}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#EF4444' }} />
+                    <span className="text-xs" style={{ color: '#64748B' }}>
+                      <strong className="tabular-nums" style={{ color: '#DC2626' }}>{t.noAtendidos}</strong> s/cont.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.06)' }}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
+                    <span className="text-xs" style={{ color: '#64748B' }}>
+                      <strong className="tabular-nums" style={{ color: '#D97706' }}>{t.pendientes}</strong> pend.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(124,58,237,0.06)' }}>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
+                    <span className="text-xs" style={{ color: '#64748B' }}>
+                      <strong className="tabular-nums" style={{ color: '#7C3AED' }}>{t.especiales}</strong> esp.
+                    </span>
+                  </div>
                 </div>
               </div>
             );
           })}
           {terrData.length === 0 && (
-            <p className="text-sm col-span-3" style={{ color: '#475569' }}>No hay territorios registrados.</p>
+            <p className="text-sm col-span-full" style={{ color: '#475569' }}>No hay territorios registrados.</p>
           )}
         </div>
       </div>
