@@ -46,11 +46,27 @@ const GlobalMapFitter = ({ territorios }) => {
   return null;
 };
 
-const createCustomIcon = (estado) => L.divIcon({
-  className: 'custom-marker-wrapper',
-  html: `<div class="custom-marker" style="background-color:${STATUS_COLORS[estado]?.hex || '#9CA3AF'};"></div>`,
-  iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -10],
-});
+const createHouseIcon = (estado) => {
+  const color = STATUS_COLORS[estado]?.hex || '#9CA3AF';
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 36" width="28" height="32">
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+      </filter>
+      <g filter="url(#shadow)">
+        <path d="M16 2 L3 14 L6 14 L6 30 L26 30 L26 14 L29 14 Z"
+              fill="${color}" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="12" y="19" width="8" height="11" rx="1" fill="white" opacity="0.35"/>
+      </g>
+    </svg>`;
+  return L.divIcon({
+    html: svg,
+    className: 'house-marker-icon',
+    iconSize: [28, 32],
+    iconAnchor: [14, 32],
+    popupAnchor: [0, -30],
+  });
+};
 
 const TerritoriesMap = () => {
   const { territorios, casas, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
@@ -257,7 +273,7 @@ const TerritoriesMap = () => {
             {/* Marcadores de casas */}
             <MarkerClusterGroup chunkedLoading maxClusterRadius={40}>
               {casas.map((c) => (
-                <Marker key={c.id} position={[c.latitud, c.longitud]} icon={createCustomIcon(c.estado)}>
+                <Marker key={c.id} position={[c.latitud, c.longitud]} icon={createHouseIcon(c.estado)}>
                   <Popup className="ficha-tecnica">
                     <div className="min-w-[180px] max-w-[260px]">
                       {c.foto_url ? (
