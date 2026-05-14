@@ -18,6 +18,14 @@ const UsersList = () => {
   const [photoFile, setPhotoFile]   = useState(null);
   const [showPassId, setShowPassId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+
+  useEffect(() => {
+    if (!photoFile) { setPhotoPreview(null); return; }
+    const url = URL.createObjectURL(photoFile);
+    setPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photoFile]);
   const [formData, setFormData] = useState({
     id: null, nombre: '', usuario: '', password: '',
     rol: 'Publicador', activo: true, foto_url: null,
@@ -309,7 +317,7 @@ const UsersList = () => {
                 {(formData.foto_url || photoFile) && (
                   <div className="flex justify-center mb-3">
                     <img
-                      src={photoFile ? URL.createObjectURL(photoFile) : formData.foto_url}
+                      src={photoPreview || formData.foto_url}
                       alt="Preview"
                       className="w-20 h-20 rounded-full object-cover"
                       style={{ border: '3px solid rgba(59,130,246,0.4)' }}
@@ -325,7 +333,7 @@ const UsersList = () => {
                 />
               </div>
               {formData.id && (
-                <div className="form-group">
+                <div className="form-group flex justify-center">
                   <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium" style={{ color: '#64748B' }}>
                     <input
                       type="checkbox"
