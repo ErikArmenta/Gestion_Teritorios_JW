@@ -99,7 +99,11 @@ const StatusBadge = ({ activa }) => {
   );
 };
 
-const AlertCard = ({ alerta }) => {
+const AlertCard = ({ alerta, findTerritorio }) => {
+  const [showMap, setShowMap] = useState(false);
+  const territorio = findTerritorio ? findTerritorio(alerta) : null;
+  const hasCoords = alerta.latitud != null && alerta.longitud != null;
+
   const usuario = alerta.app_usuarios;
   const respondieron = Array.isArray(alerta.respondieron) ? alerta.respondieron : [];
   const duracion = formatDuration(alerta.created_at, alerta.cerrada_at);
@@ -146,6 +150,14 @@ const AlertCard = ({ alerta }) => {
           <div className="flex items-center gap-2 flex-wrap">
             <TypeBadge tipo={alerta.tipo} />
             <StatusBadge activa={alerta.activa} />
+            {territorio && (
+              <span
+                className="inline-block px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                style={{ backgroundColor: territorio.color || '#6B7280' }}
+              >
+                📍 {territorio.nombre}
+              </span>
+            )}
           </div>
         </div>
 
@@ -172,20 +184,60 @@ const AlertCard = ({ alerta }) => {
               Duración: <strong style={{ color: '#D97706' }}>{duracion}</strong>
             </span>
           )}
+          {hasCoords && (
+            <button
+              type="button"
+              onClick={() => setShowMap(!showMap)}
+              className="flex items-center gap-1.5 font-semibold text-xs cursor-pointer"
+              style={{ color: '#059669', background: 'none', border: 'none', padding: 0 }}
+            >
+              <MapPin size={12} />
+              {showMap ? 'Ocultar mapa' : 'Ver mapa'}
+            </button>
+          )}
           {mapsUrl && (
             <a
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 font-semibold hover:underline"
-              style={{ color: '#059669' }}
+              style={{ color: '#2563EB' }}
             >
-              <MapPin size={12} />
-              Ver en mapa
               <ExternalLink size={10} />
+              Google Maps
             </a>
           )}
         </div>
+
+        {/* Expandable mini-map */}
+        {showMap && hasCoords && (
+          <div className="mt-3 rounded-xl overflow-hidden" style={{ height: 160, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <MapContainer
+              center={[alerta.latitud, alerta.longitud]}
+              zoom={15}
+              style={{ width: '100%', height: '100%' }}
+              zoomControl={false}
+              attributionControl={false}
+              dragging={false}
+              scrollWheelZoom={false}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {territorio?.coordenadas && (
+                <Polygon
+                  positions={territorio.coordenadas}
+                  pathOptions={{
+                    color: territorio.color || '#3B82F6',
+                    fillColor: territorio.color || '#3B82F6',
+                    fillOpacity: 0.1,
+                    weight: 2,
+                    dashArray: '6 3',
+                  }}
+                />
+              )}
+              <Marker position={[alerta.latitud, alerta.longitud]} icon={redAlertIcon} />
+            </MapContainer>
+          </div>
+        )}
 
         {/* Respondedores */}
         {respondieron.length > 0 && (
@@ -853,7 +905,7 @@ const PanicHistory = () => {
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map((alerta) => (
-            <AlertCard key={alerta.id} alerta={alerta} />
+            <AlertCard key={alerta.id} alerta={alerta} findTerritorio={findTerritorio} />
           ))}
         </div>
       )}
