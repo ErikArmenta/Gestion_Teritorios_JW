@@ -102,7 +102,7 @@ export default function PanicAlert() {
     // Fetch who activated
     const { data: emisorData } = await supabase
       .from('app_usuarios')
-      .select('id, nombre, telefono')
+      .select('id, nombre')
       .eq('id', a.usuario_id)
       .single();
 
