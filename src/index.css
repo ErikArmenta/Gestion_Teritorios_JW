@@ -1,4 +1,19 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@700&display=swap');
+
+@theme {
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-success: #059669;
+  --color-danger: #DC2626;
+  --color-warning: #D97706;
+  --color-neutral: #6B7280;
+  --color-surface: #FFFFFF;
+  --color-bg-primary: #F8FAFC;
+  --color-border-custom: rgba(0,0,0,0.08);
+  --color-text-custom-primary: #0F172A;
+  --color-text-custom-secondary: #475569;
+}
 
 :root {
   /* ── Background scale ─── */
