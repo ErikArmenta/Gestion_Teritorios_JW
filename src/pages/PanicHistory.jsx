@@ -793,8 +793,15 @@ const PanicHistory = () => {
       )}
 
       {/* Results count */}
-      <p className="text-xs mb-3 px-1" style={{ color: '#475569' }}>
-        {loading ? 'Cargando...' : `${filtered.length} alerta${filtered.length !== 1 ? 's' : ''} encontrada${filtered.length !== 1 ? 's' : ''}`}
+      <p className="text-xs font-semibold mb-3 px-1" style={{ color: '#94A3B8' }}>
+        {loading ? (
+          <span style={{ color: '#60A5FA' }}>Cargando...</span>
+        ) : (
+          <>
+            <span style={{ color: '#E2E8F0' }}>{filtered.length}</span>{' '}
+            alerta{filtered.length !== 1 ? 's' : ''} encontrada{filtered.length !== 1 ? 's' : ''}
+          </>
+        )}
       </p>
 
       {/* List */}
@@ -807,7 +814,7 @@ const PanicHistory = () => {
       ) : filtered.length === 0 ? (
         <div className="card p-16 text-center">
           <Bell size={40} className="mx-auto mb-3 opacity-20" style={{ color: '#64748B' }} />
-          <p className="font-medium" style={{ color: '#475569' }}>No hay alertas{hasFilters ? ' con esos filtros' : ''}</p>
+          <p className="font-medium" style={{ color: '#94A3B8' }}>No hay alertas{hasFilters ? ' con esos filtros' : ''}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
