@@ -212,7 +212,7 @@ const PanicHistory = () => {
     console.log('[PanicHistory] Fetching alertas...');
     const { data, error, status, statusText } = await supabase
       .from('alertas_panico')
-      .select('*, app_usuarios!usuario_id(nombre, telefono)')
+      .select('*, app_usuarios!alertas_panico_usuario_id_fkey(nombre, telefono)')
       .order('created_at', { ascending: false });
 
     console.log('[PanicHistory] Response:', { data: data?.length, error, status, statusText });
