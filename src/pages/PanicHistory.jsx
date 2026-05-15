@@ -775,10 +775,10 @@ const PanicHistory = () => {
             <AlertTriangle size={18} style={{ color: '#EF4444', marginTop: 2 }} />
             <div>
               <p className="text-sm font-bold" style={{ color: '#DC2626' }}>Error al cargar alertas</p>
-              <p className="text-xs mt-1" style={{ color: '#64748B' }}>{fetchError}</p>
-              <p className="text-xs mt-2" style={{ color: '#475569' }}>
-                Si el error es de permisos (RLS), ve al dashboard de Supabase → tabla <code>alertas_panico</code> → Authentication → Policies,
-                y agrega una policy "Enable read access for all users" con <code>USING (true)</code>.
+              <p className="text-xs mt-1" style={{ color: '#FCA5A5' }}>{fetchError}</p>
+              <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>
+                Si el error es de permisos (RLS), ve al dashboard de Supabase → tabla <code style={{ color: '#60A5FA' }}>alertas_panico</code> → Authentication → Policies,
+                y agrega una policy "Enable read access for all users" con <code style={{ color: '#60A5FA' }}>USING (true)</code>.
                 O desactiva RLS en esta tabla si tu autenticación es custom.
               </p>
               <button
