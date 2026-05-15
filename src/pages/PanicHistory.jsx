@@ -638,19 +638,23 @@ const PanicHistory = () => {
     ws1['!cols'] = [{ wch: 30 }, { wch: 15 }];
     XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
 
-    const headers = ['Fecha', 'Usuario', 'Teléfono', 'Tipo', 'Estado', 'Mensaje', 'Latitud', 'Longitud', 'Cerrada', 'Respondieron'];
-    const rows = filtered.map(a => [
-      formatDate(a.created_at),
-      a.app_usuarios?.nombre || `#${a.usuario_id}`,
-      a.app_usuarios?.telefono || '',
-      TYPE_CONFIG[a.tipo]?.label || a.tipo,
-      a.activa ? 'Activa' : 'Cerrada',
-      a.mensaje || '',
-      a.latitud || '',
-      a.longitud || '',
-      a.cerrada_at ? formatDate(a.cerrada_at) : '',
-      Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '',
-    ]);
+    const headers = ['Fecha', 'Usuario', 'Teléfono', 'Tipo', 'Estado', 'Territorio', 'Mensaje', 'Latitud', 'Longitud', 'Cerrada', 'Respondieron'];
+    const rows = filtered.map(a => {
+      const terr = findTerritorio(a);
+      return [
+        formatDate(a.created_at),
+        a.app_usuarios?.nombre || `#${a.usuario_id}`,
+        a.app_usuarios?.telefono || '',
+        TYPE_CONFIG[a.tipo]?.label || a.tipo,
+        a.activa ? 'Activa' : 'Cerrada',
+        terr?.nombre || '',
+        a.mensaje || '',
+        a.latitud || '',
+        a.longitud || '',
+        a.cerrada_at ? formatDate(a.cerrada_at) : '',
+        Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '',
+      ];
+    });
     const ws2 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws2['!cols'] = headers.map(() => ({ wch: 18 }));
     XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Alertas');
