@@ -84,10 +84,15 @@ const AlertCard = ({ alerta }) => {
 
   const stripClass = TYPE_CONFIG[alerta.tipo]?.bg || 'bg-gray-600';
 
+  // Color accent según tipo de alerta
+  const tipoAccent = alerta.tipo === 'seguridad' ? '#EF4444'
+    : alerta.tipo === 'medica' ? '#3B82F6'
+    : alerta.tipo === 'accidente' ? '#F97316' : '#6B7280';
+
   return (
     <div
       className="card overflow-hidden p-0"
-      style={{ borderLeft: alerta.activa ? '3px solid rgba(239,68,68,0.6)' : '3px solid rgba(100,116,139,0.25)' }}
+      style={{ borderLeft: alerta.activa ? `3px solid ${tipoAccent}` : '3px solid rgba(100,116,139,0.25)' }}
     >
       {/* Header strip */}
       <div className={`h-1.5 w-full ${stripClass}`} />
@@ -96,15 +101,18 @@ const AlertCard = ({ alerta }) => {
         {/* Top row */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <User size={15} style={{ color: '#64748B' }} />
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: `${tipoAccent}15`, border: `1px solid ${tipoAccent}30` }}
+            >
+              <User size={15} style={{ color: tipoAccent }} />
             </div>
             <div>
-              <p className="font-bold text-sm leading-tight" style={{ color: '#0F172A' }}>
+              <p className="font-bold text-sm leading-tight" style={{ color: '#1E293B' }}>
                 {usuario?.nombre || `Usuario #${alerta.usuario_id}`}
               </p>
               {usuario?.telefono && (
-                <a href={`tel:${usuario.telefono}`} className="text-xs hover:underline" style={{ color: '#2563EB' }}>
+                <a href={`tel:${usuario.telefono}`} className="text-xs font-medium hover:underline" style={{ color: '#2563EB' }}>
                   {usuario.telefono}
                 </a>
               )}
@@ -118,21 +126,25 @@ const AlertCard = ({ alerta }) => {
 
         {/* Mensaje */}
         {alerta.mensaje && (
-          <p className="mt-3 text-sm rounded-xl px-3 py-2" style={{ color: '#475569', background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}>
+          <p className="mt-3 text-sm rounded-xl px-3 py-2.5 leading-relaxed" style={{
+            color: '#334155',
+            background: 'rgba(0,0,0,0.03)',
+            border: '1px solid rgba(0,0,0,0.07)',
+          }}>
             {alerta.mensaje}
           </p>
         )}
 
         {/* Meta row */}
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs" style={{ color: '#475569' }}>
-          <span className="flex items-center gap-1">
-            <Clock size={12} />
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
+          <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+            <Clock size={12} style={{ color: '#2563EB' }} />
             {formatDate(alerta.created_at)}
           </span>
           {duracion && (
-            <span className="flex items-center gap-1">
-              <Clock size={12} />
-              Duración: {duracion}
+            <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+              <Clock size={12} style={{ color: '#2563EB' }} />
+              Duración: <strong style={{ color: '#D97706' }}>{duracion}</strong>
             </span>
           )}
           {mapsUrl && (
@@ -140,8 +152,8 @@ const AlertCard = ({ alerta }) => {
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:underline"
-              style={{ color: '#60A5FA' }}
+              className="flex items-center gap-1.5 font-semibold hover:underline"
+              style={{ color: '#059669' }}
             >
               <MapPin size={12} />
               Ver en mapa
@@ -153,14 +165,14 @@ const AlertCard = ({ alerta }) => {
         {/* Respondedores */}
         {respondieron.length > 0 && (
           <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#475569' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#059669' }}>
               Respondieron ({respondieron.length})
             </p>
             <div className="flex flex-wrap gap-2">
               {respondieron.map((r, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium"
                   style={{ background: 'rgba(5,150,105,0.1)', color: '#059669', border: '1px solid rgba(5,150,105,0.2)' }}
                 >
                   <User size={10} />
