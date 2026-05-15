@@ -6,8 +6,11 @@
  * 3. Verificar en consola del navegador los logs [PanicHistory]
  */
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Polygon } from 'react-leaflet';
+import L from 'leaflet';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   ArcElement, Tooltip as ChartTooltip, Legend, Title
@@ -19,6 +22,46 @@ import * as XLSX from 'xlsx';
 import { Bell, MapPin, Clock, User, Filter, X, ExternalLink, FileText, Table, Shield, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartTooltip, Legend, Title);
+
+// Red blinking marker for mini-maps
+const redDotIcon = L.divIcon({
+  html: `<div style="width:14px;height:14px;background:#EF4444;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,0.35);"></div>`,
+  className: '',
+  iconSize: [14, 14],
+  iconAnchor: [7, 7],
+});
+
+/** Check if point is inside polygon using ray-casting */
+function pointInPolygon(lat, lng, polygon) {
+  if (!polygon || !polygon.length) return false;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    const intersect = ((yi > lng) !== (yj > lng)) &&
+      (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/** Find the territory that contains the given coordinates */
+function findTerritorio(lat, lng, territorios) {
+  if (lat == null || lng == null || !territorios?.length) return null;
+  for (const t of territorios) {
+    if (t.coordenadas && pointInPolygon(lat, lng, t.coordenadas)) return t;
+  }
+  let nearest = null;
+  let minDist = Infinity;
+  for (const t of territorios) {
+    if (!t.coordenadas?.length) continue;
+    const centerLat = t.coordenadas.reduce((s, c) => s + c[0], 0) / t.coordenadas.length;
+    const centerLng = t.coordenadas.reduce((s, c) => s + c[1], 0) / t.coordenadas.length;
+    const dist = Math.sqrt((lat - centerLat) ** 2 + (lng - centerLng) ** 2);
+    if (dist < minDist) { minDist = dist; nearest = t; }
+  }
+  return minDist < 0.02 ? nearest : null;
+}
 
 const TYPE_CONFIG = {
   seguridad:  { label: 'Seguridad',  bg: 'bg-red-600',    text: 'text-white' },
@@ -74,20 +117,24 @@ const StatusBadge = ({ activa }) => {
   );
 };
 
-const AlertCard = ({ alerta }) => {
+const AlertCard = ({ alerta, territorios }) => {
   const usuario = alerta.app_usuarios;
   const respondieron = Array.isArray(alerta.respondieron) ? alerta.respondieron : [];
   const duracion = formatDuration(alerta.created_at, alerta.cerrada_at);
-  const mapsUrl = alerta.latitud && alerta.longitud
+  const hasCoords = alerta.latitud != null && alerta.longitud != null;
+  const mapsUrl = hasCoords
     ? `https://www.google.com/maps?q=${alerta.latitud},${alerta.longitud}`
     : null;
 
   const stripClass = TYPE_CONFIG[alerta.tipo]?.bg || 'bg-gray-600';
+  const territorio = findTerritorio(alerta.latitud, alerta.longitud, territorios);
 
   // Color accent según tipo de alerta
   const tipoAccent = alerta.tipo === 'seguridad' ? '#EF4444'
     : alerta.tipo === 'medica' ? '#3B82F6'
     : alerta.tipo === 'accidente' ? '#F97316' : '#6B7280';
+
+  const [showMap, setShowMap] = useState(false);
 
   return (
     <div
@@ -111,11 +158,6 @@ const AlertCard = ({ alerta }) => {
               <p className="font-bold text-sm leading-tight" style={{ color: '#1E293B' }}>
                 {usuario?.nombre || `Usuario #${alerta.usuario_id}`}
               </p>
-              {usuario?.telefono && (
-                <a href={`tel:${usuario.telefono}`} className="text-xs font-medium hover:underline" style={{ color: '#2563EB' }}>
-                  {usuario.telefono}
-                </a>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -123,6 +165,26 @@ const AlertCard = ({ alerta }) => {
             <StatusBadge activa={alerta.activa} />
           </div>
         </div>
+
+        {/* Territorio badge */}
+        {territorio && (
+          <div className="mt-2">
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold"
+              style={{
+                background: `${territorio.color || '#3B82F6'}15`,
+                color: territorio.color || '#3B82F6',
+                border: `1px solid ${territorio.color || '#3B82F6'}30`,
+              }}
+            >
+              <MapPin size={11} />
+              {territorio.nombre}
+              {territorio.responsable && (
+                <span style={{ color: '#64748B', fontWeight: 500 }}>· {territorio.responsable}</span>
+              )}
+            </span>
+          </div>
+        )}
 
         {/* Mensaje */}
         {alerta.mensaje && (
@@ -147,20 +209,66 @@ const AlertCard = ({ alerta }) => {
               Duración: <strong style={{ color: '#D97706' }}>{duracion}</strong>
             </span>
           )}
+          {hasCoords && (
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className="flex items-center gap-1.5 font-semibold cursor-pointer hover:underline"
+              style={{ color: '#059669', background: 'none', border: 'none', padding: 0 }}
+            >
+              <MapPin size={12} />
+              {showMap ? 'Ocultar mapa' : 'Ver mapa'}
+            </button>
+          )}
           {mapsUrl && (
             <a
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 font-semibold hover:underline"
-              style={{ color: '#059669' }}
+              style={{ color: '#2563EB' }}
             >
-              <MapPin size={12} />
-              Ver en mapa
               <ExternalLink size={10} />
+              Google Maps
             </a>
           )}
         </div>
+
+        {/* Embedded mini-map */}
+        {showMap && hasCoords && (
+          <div className="mt-3 rounded-xl overflow-hidden" style={{ height: 180, border: '1px solid rgba(0,0,0,0.08)' }}>
+            <MapContainer
+              center={[alerta.latitud, alerta.longitud]}
+              zoom={15}
+              style={{ width: '100%', height: '100%' }}
+              zoomControl={false}
+              attributionControl={false}
+              dragging={false}
+              scrollWheelZoom={false}
+            >
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
+                attribution='&copy; OpenStreetMap &copy; CARTO'
+              />
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+                className="neon-labels"
+              />
+              {territorio?.coordenadas && (
+                <Polygon
+                  positions={territorio.coordenadas}
+                  pathOptions={{
+                    color: territorio.color || '#3B82F6',
+                    fillColor: territorio.color || '#3B82F6',
+                    fillOpacity: 0.2,
+                    weight: 2,
+                    dashArray: '6 4',
+                  }}
+                />
+              )}
+              <Marker position={[alerta.latitud, alerta.longitud]} icon={redDotIcon} />
+            </MapContainer>
+          </div>
+        )}
 
         {/* Respondedores */}
         {respondieron.length > 0 && (
@@ -194,6 +302,7 @@ const AlertCard = ({ alerta }) => {
 
 const PanicHistory = () => {
   const { user } = useAuth();
+  const { territorios } = useData();
 
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -502,21 +611,25 @@ const PanicHistory = () => {
     y += 6;
     autoTable(doc, {
       startY: y,
-      head: [['Fecha', 'Usuario', 'Tipo', 'Estado', 'Mensaje', 'Respondieron']],
-      body: filtered.map(a => [
-        formatDate(a.created_at),
-        a.app_usuarios?.nombre || `#${a.usuario_id}`,
-        TYPE_CONFIG[a.tipo]?.label || a.tipo,
-        a.activa ? 'Activa' : 'Cerrada',
-        a.mensaje || '—',
-        Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '—',
-      ]),
+      head: [['Fecha', 'Usuario', 'Tipo', 'Estado', 'Territorio', 'Mensaje', 'Respondieron']],
+      body: filtered.map(a => {
+        const terr = findTerritorio(a.latitud, a.longitud, territorios);
+        return [
+          formatDate(a.created_at),
+          a.app_usuarios?.nombre || `#${a.usuario_id}`,
+          TYPE_CONFIG[a.tipo]?.label || a.tipo,
+          a.activa ? 'Activa' : 'Cerrada',
+          terr?.nombre || 'Sin territorio',
+          a.mensaje || '—',
+          Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '—',
+        ];
+      }),
       headStyles: { fillColor: [31, 41, 55], font: 'helvetica', fontStyle: 'bold', fontSize: 9 },
       bodyStyles: { font: 'helvetica', fontSize: 8 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       margin: { left: 14, right: 14 },
       styles: { cellPadding: 3 },
-      columnStyles: { 4: { cellWidth: 45 }, 5: { cellWidth: 35 } },
+      columnStyles: { 5: { cellWidth: 40 }, 6: { cellWidth: 30 } },
     });
 
     const totalPages = doc.internal.getNumberOfPages();
@@ -548,19 +661,22 @@ const PanicHistory = () => {
     ws1['!cols'] = [{ wch: 30 }, { wch: 15 }];
     XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
 
-    const headers = ['Fecha', 'Usuario', 'Teléfono', 'Tipo', 'Estado', 'Mensaje', 'Latitud', 'Longitud', 'Cerrada', 'Respondieron'];
-    const rows = filtered.map(a => [
-      formatDate(a.created_at),
-      a.app_usuarios?.nombre || `#${a.usuario_id}`,
-      a.app_usuarios?.telefono || '',
-      TYPE_CONFIG[a.tipo]?.label || a.tipo,
-      a.activa ? 'Activa' : 'Cerrada',
-      a.mensaje || '',
-      a.latitud || '',
-      a.longitud || '',
-      a.cerrada_at ? formatDate(a.cerrada_at) : '',
-      Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '',
-    ]);
+    const headers = ['Fecha', 'Usuario', 'Tipo', 'Estado', 'Territorio', 'Mensaje', 'Latitud', 'Longitud', 'Cerrada', 'Respondieron'];
+    const rows = filtered.map(a => {
+      const terr = findTerritorio(a.latitud, a.longitud, territorios);
+      return [
+        formatDate(a.created_at),
+        a.app_usuarios?.nombre || `#${a.usuario_id}`,
+        TYPE_CONFIG[a.tipo]?.label || a.tipo,
+        a.activa ? 'Activa' : 'Cerrada',
+        terr?.nombre || 'Sin territorio',
+        a.mensaje || '',
+        a.latitud || '',
+        a.longitud || '',
+        a.cerrada_at ? formatDate(a.cerrada_at) : '',
+        Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '',
+      ];
+    });
     const ws2 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws2['!cols'] = headers.map(() => ({ wch: 18 }));
     XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Alertas');
@@ -819,7 +935,7 @@ const PanicHistory = () => {
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map((alerta) => (
-            <AlertCard key={alerta.id} alerta={alerta} />
+            <AlertCard key={alerta.id} alerta={alerta} territorios={territorios} />
           ))}
         </div>
       )}
