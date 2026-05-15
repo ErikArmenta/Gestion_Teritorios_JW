@@ -30,12 +30,12 @@ const Sidebar = () => {
       {/* Logo section */}
       <div className="flex flex-col items-center pt-8 pb-5 px-4">
         <div
-          className="w-24 h-24 rounded-2xl overflow-hidden mb-3"
-          style={{ boxShadow: '0 0 0 3px rgba(37,99,235,0.2), 0 4px 16px rgba(37,99,235,0.15)' }}
+          className="w-28 h-28 rounded-2xl overflow-hidden mb-3"
+          style={{ boxShadow: '0 0 0 3px rgba(37,99,235,0.25), 0 6px 20px rgba(37,99,235,0.18)' }}
         >
           <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
         </div>
-        <h2 className="text-base font-bold text-center leading-snug tracking-tight" style={{ color: '#0F172A' }}>
+        <h2 className="text-lg font-bold text-center leading-snug tracking-tight" style={{ color: '#0F172A' }}>
           Gestión Territorial
         </h2>
         <span className="text-xs font-medium mt-0.5" style={{ color: '#94A3B8' }}>JW</span>
