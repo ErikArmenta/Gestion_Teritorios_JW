@@ -701,8 +701,8 @@ const PanicHistory = () => {
       {/* Filters */}
       <div className="card mb-5 p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Filter size={14} style={{ color: '#475569' }} />
-          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#475569' }}>Filtros</span>
+          <Filter size={14} style={{ color: '#3B82F6' }} />
+          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>Filtros</span>
           {hasFilters && (
             <button
               onClick={clearFilters}
@@ -715,7 +715,7 @@ const PanicHistory = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Fecha inicio</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>Fecha inicio</label>
             <input
               type="date"
               value={filterFechaInicio}
@@ -723,7 +723,7 @@ const PanicHistory = () => {
             />
           </div>
           <div>
-            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Fecha fin</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>Fecha fin</label>
             <input
               type="date"
               value={filterFechaFin}
@@ -731,7 +731,7 @@ const PanicHistory = () => {
             />
           </div>
           <div>
-            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Usuario</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#8B5CF6' }}>Usuario</label>
             <select
               value={filterUsuario}
               onChange={(e) => setFilterUsuario(e.target.value)}
@@ -743,7 +743,7 @@ const PanicHistory = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Tipo</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#F59E0B' }}>Tipo</label>
             <select
               value={filterTipo}
               onChange={(e) => setFilterTipo(e.target.value)}
@@ -755,7 +755,7 @@ const PanicHistory = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1" style={{ color: '#475569' }}>Estado</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#10B981' }}>Estado</label>
             <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
