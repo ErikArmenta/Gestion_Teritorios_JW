@@ -45,12 +45,12 @@ const Login = () => {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <div
-              className="w-20 h-20 rounded-2xl overflow-hidden mb-4 shadow-xl"
+              className="w-28 h-28 rounded-2xl overflow-hidden mb-4 shadow-xl"
               style={{ boxShadow: '0 0 0 2px rgba(59,130,246,0.5), 0 8px 32px rgba(59,130,246,0.2)' }}
             >
               <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight text-center">
+            <h1 className="text-2xl font-bold text-white tracking-tight text-center">
               Gestión Territorial
             </h1>
             <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.38)' }}>
