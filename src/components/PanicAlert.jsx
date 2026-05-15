@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { useToast } from './Toast';
 
 // Fix default Leaflet icon
@@ -37,6 +38,20 @@ function timeAgo(iso) {
   if (diff < 60) return `Hace ${diff}s`;
   if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
   return `Hace ${Math.floor(diff / 3600)} h`;
+}
+
+// Point-in-polygon (ray casting) — no external dependencies
+function pointInPolygon(lat, lng, coords) {
+  if (!coords || coords.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+    const [yi, xi] = coords[i];
+    const [yj, xj] = coords[j];
+    if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
 }
 
 // Play sawtooth alarm: alternates 440/880 Hz, 3 seconds total
@@ -74,12 +89,14 @@ function stopAlarm(ctxRef, oscsRef) {
 
 export default function PanicAlert() {
   const { user } = useAuth();
+  const { territorios } = useData();
   const toast = useToast();
 
   const [alerta, setAlerta]         = useState(null);
   const [emisor, setEmisor]         = useState(null);
   const [showModal, setShowModal]   = useState(false);
   const [respondiendo, setRespondiendo] = useState(false);
+  const [tick, setTick]             = useState(0); // For live timer
 
   // Refs so stable channel callbacks can access latest values
   const userRef       = useRef(user);
@@ -89,6 +106,22 @@ export default function PanicAlert() {
 
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => { emisorRef.current = emisor; }, [emisor]);
+
+  // Live timer — update every second while modal is open
+  useEffect(() => {
+    if (!showModal || !alerta) return;
+    const timer = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, [showModal, alerta]);
+
+  // Find territory for the alert location
+  const alertTerritorio = useMemo(() => {
+    if (!alerta?.latitud || !alerta?.longitud || !territorios?.length) return null;
+    return territorios.find(t =>
+      t.coordenadas && t.coordenadas.length >= 3 &&
+      pointInPolygon(alerta.latitud, alerta.longitud, t.coordenadas)
+    ) || null;
+  }, [alerta?.latitud, alerta?.longitud, territorios]);
 
   const handleInsert = useCallback(async (payload) => {
     const a = payload.new;
@@ -110,6 +143,21 @@ export default function PanicAlert() {
     setEmisor(emisorData || null);
     emisorRef.current = emisorData || null;
     setShowModal(true);
+
+    // Native browser notification (works even with tab minimized)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        new Notification('🚨 ALERTA DE EMERGENCIA', {
+          body: `${emisorData?.nombre || 'Un compañero'} necesita ayuda — ${TIPO_CFG[a.tipo]?.label || a.tipo}`,
+          icon: '/JW.jpg',
+          badge: '/JW.jpg',
+          tag: 'panic-alert',
+          requireInteraction: true,
+        });
+      } catch {
+        // Notification API not available
+      }
+    }
   }, []);
 
   const handleUpdate = useCallback((payload) => {
@@ -127,10 +175,10 @@ export default function PanicAlert() {
     }
 
     // Update respondieron in real time
-    setAlerta(prev => (prev && prev.id === a.id ? { ...prev, respondieron: a.respondieron } : prev));
+    setAlerta(prev => (prev && prev.id === a.id ? { ...prev, respondieron: a.respondieron, tipo: a.tipo } : prev));
   }, [toast]);
 
-  // Subscribe once on mount (when user is available)
+  // Subscribe to Realtime events
   useEffect(() => {
     if (!user) return;
 
@@ -144,6 +192,28 @@ export default function PanicAlert() {
       stopAlarm(audioCtxRef, oscsRef);
       supabase.removeChannel(channel);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Check for existing active alerts when app opens
+  useEffect(() => {
+    if (!user) return;
+    const checkExisting = async () => {
+      const { data } = await supabase
+        .from('alertas_panico')
+        .select('*')
+        .eq('activa', true)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        const existing = data[0];
+        if (existing.usuario_id !== user.id) {
+          handleInsert({ new: existing });
+        }
+      }
+    };
+    checkExisting();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -208,25 +278,35 @@ export default function PanicAlert() {
         {/* Body */}
         <div className="flex-1 px-4 pb-8 space-y-4 max-w-lg mx-auto w-full">
 
-          {/* Emisor + tipo + mensaje */}
+          {/* Emisor + tipo + territory + mensaje */}
           <div
             className="rounded-2xl p-4 space-y-2"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(239,68,68,0.4)' }}
           >
             <p className="text-slate-400 text-xs uppercase tracking-wider">Activado por</p>
             <p className="text-white font-black text-2xl">{emisor?.nombre ?? '...'}</p>
-            <span
-              className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: tipoCfg.bg }}
-            >
-              {tipoCfg.label}
-            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white"
+                style={{ backgroundColor: tipoCfg.bg }}
+              >
+                {tipoCfg.label}
+              </span>
+              {alertTerritorio && (
+                <span
+                  className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white"
+                  style={{ backgroundColor: alertTerritorio.color || '#6B7280' }}
+                >
+                  📍 {alertTerritorio.nombre}
+                </span>
+              )}
+            </div>
             {alerta.mensaje ? (
               <p className="text-slate-200 text-sm italic mt-1">"{alerta.mensaje}"</p>
             ) : null}
           </div>
 
-          {/* Mini map */}
+          {/* Mini map with territory polygon */}
           {hasCoords && (
             <div className="rounded-2xl overflow-hidden" style={{ height: 192 }}>
               <MapContainer
@@ -240,12 +320,24 @@ export default function PanicAlert() {
               >
                 <TileLayer
                   url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+                  attribution='&copy; OpenStreetMap &copy; CARTO'
                 />
                 <TileLayer
                   url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
                   className="neon-labels"
                 />
+                {alertTerritorio?.coordenadas && (
+                  <Polygon
+                    positions={alertTerritorio.coordenadas}
+                    pathOptions={{
+                      color: alertTerritorio.color || '#3B82F6',
+                      fillColor: alertTerritorio.color || '#3B82F6',
+                      fillOpacity: 0.12,
+                      weight: 2,
+                      dashArray: '8 4',
+                    }}
+                  />
+                )}
                 <Marker position={[alerta.latitud, alerta.longitud]} icon={redBlinkIcon} />
               </MapContainer>
             </div>
