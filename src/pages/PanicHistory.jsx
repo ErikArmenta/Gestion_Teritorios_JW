@@ -588,21 +588,25 @@ const PanicHistory = () => {
     y += 6;
     autoTable(doc, {
       startY: y,
-      head: [['Fecha', 'Usuario', 'Tipo', 'Estado', 'Mensaje', 'Respondieron']],
-      body: filtered.map(a => [
-        formatDate(a.created_at),
-        a.app_usuarios?.nombre || `#${a.usuario_id}`,
-        TYPE_CONFIG[a.tipo]?.label || a.tipo,
-        a.activa ? 'Activa' : 'Cerrada',
-        a.mensaje || '—',
-        Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '—',
-      ]),
+      head: [['Fecha', 'Usuario', 'Tipo', 'Estado', 'Territorio', 'Mensaje', 'Respondieron']],
+      body: filtered.map(a => {
+        const terr = findTerritorio(a);
+        return [
+          formatDate(a.created_at),
+          a.app_usuarios?.nombre || `#${a.usuario_id}`,
+          TYPE_CONFIG[a.tipo]?.label || a.tipo,
+          a.activa ? 'Activa' : 'Cerrada',
+          terr?.nombre || '—',
+          a.mensaje || '—',
+          Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '—',
+        ];
+      }),
       headStyles: { fillColor: [31, 41, 55], font: 'helvetica', fontStyle: 'bold', fontSize: 9 },
       bodyStyles: { font: 'helvetica', fontSize: 8 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       margin: { left: 14, right: 14 },
       styles: { cellPadding: 3 },
-      columnStyles: { 4: { cellWidth: 45 }, 5: { cellWidth: 35 } },
+      columnStyles: { 5: { cellWidth: 40 }, 6: { cellWidth: 30 } },
     });
 
     const totalPages = doc.internal.getNumberOfPages();
