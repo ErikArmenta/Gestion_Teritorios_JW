@@ -17,8 +17,33 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Bell, MapPin, Clock, User, Filter, X, ExternalLink, FileText, Table, Shield, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Polygon } from 'react-leaflet';
+import L from 'leaflet';
+import { useData } from '../context/DataContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartTooltip, Legend, Title);
+
+// Red marker for alert location
+const redAlertIcon = L.divIcon({
+  html: `<div style="width:14px;height:14px;background:#EF4444;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,0.3);"></div>`,
+  className: '',
+  iconSize: [14, 14],
+  iconAnchor: [7, 7],
+});
+
+// Point-in-polygon (ray casting)
+function pointInPolygon(lat, lng, coords) {
+  if (!coords || coords.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+    const [yi, xi] = coords[i];
+    const [yj, xj] = coords[j];
+    if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
 
 const TYPE_CONFIG = {
   seguridad:  { label: 'Seguridad',  bg: 'bg-red-600',    text: 'text-white' },
