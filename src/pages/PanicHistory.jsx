@@ -219,6 +219,15 @@ const AlertCard = ({ alerta }) => {
 
 const PanicHistory = () => {
   const { user } = useAuth();
+  const { territorios } = useData();
+
+  const findTerritorio = (alerta) => {
+    if (!alerta?.latitud || !alerta?.longitud || !territorios?.length) return null;
+    return territorios.find(t =>
+      t.coordenadas && t.coordenadas.length >= 3 &&
+      pointInPolygon(alerta.latitud, alerta.longitud, t.coordenadas)
+    ) || null;
+  };
 
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
