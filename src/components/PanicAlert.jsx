@@ -284,12 +284,12 @@ export default function PanicAlert() {
   useEffect(() => {
     if (!user) return;
     const checkActiveAlerts = async () => {
-      const alertQuery = supabase
+      let alertQuery = supabase
         .from('alertas_panico')
         .select('*')
         .eq('activa', true)
         .neq('usuario_id', user.id);
-      if (user.congregacion_id) alertQuery.eq('congregacion_id', user.congregacion_id);
+      if (user.congregacion_id) alertQuery = alertQuery.eq('congregacion_id', user.congregacion_id);
       const { data } = await alertQuery
         .order('created_at', { ascending: false })
         .limit(1);
