@@ -2,11 +2,15 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { supabase } from '../supabaseClient';
 import { offlineStore } from '../utils/offlineStore';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
+  const { user } = useAuth();
+  const congregacionId = user?.congregacion_id;
+
   const [territorios, setTerritorios] = useState([]);
   const [casas, setCasas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,18 +18,30 @@ export const DataProvider = ({ children }) => {
   const [syncing, setSyncing] = useState(false);
   const isOnline = useOnlineStatus();
   const syncingRef = useRef(false);
+  const territoriosRef = useRef([]);
+
+  useEffect(() => { territoriosRef.current = territorios; }, [territorios]);
 
   // ── Fetch con fallback a cache ──
   const fetchData = async () => {
     setLoading(true);
     try {
       if (navigator.onLine) {
-        const [terrRes, casasRes] = await Promise.all([
-          supabase.from('territorios').select('*'),
-          supabase.from('casas').select('*'),
-        ]);
+        // Territorios filtrados por congregación
+        const terrQuery = congregacionId
+          ? supabase.from('territorios').select('*').eq('congregacion_id', congregacionId)
+          : supabase.from('territorios').select('*');
+        const terrRes = await terrQuery;
         const terrData = terrRes.error ? [] : (terrRes.data || []);
-        const casasData = casasRes.error ? [] : (casasRes.data || []);
+
+        // Casas filtradas por territorio (que ya pertenecen a la congregación)
+        const terrIds = terrData.map(t => t.id);
+        let casasData = [];
+        if (terrIds.length > 0) {
+          const casasRes = await supabase.from('casas').select('*').in('territorio_id', terrIds);
+          casasData = casasRes.error ? [] : (casasRes.data || []);
+        }
+
         setTerritorios(terrData);
         setCasas(casasData);
         // Cache para uso offline
@@ -126,9 +142,13 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     if (!isOnline) return;
 
+    const terrChannel = congregacionId
+      ? { event: '*', schema: 'public', table: 'territorios', filter: `congregacion_id=eq.${congregacionId}` }
+      : { event: '*', schema: 'public', table: 'territorios' };
+
     const terrSub = supabase
       .channel('public:territorios')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'territorios' }, (payload) => {
+      .on('postgres_changes', terrChannel, (payload) => {
         if (payload.eventType === 'INSERT') {
           setTerritorios(prev => { const next = [...prev, payload.new]; offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
         } else if (payload.eventType === 'UPDATE') {
@@ -143,6 +163,8 @@ export const DataProvider = ({ children }) => {
       .channel('public:casas')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'casas' }, (payload) => {
         if (payload.eventType === 'INSERT') {
+          // Solo procesar si el territorio pertenece a la congregación del usuario
+          if (congregacionId && !territoriosRef.current.some(t => t.id === payload.new.territorio_id)) return;
           setCasas(prev => {
             // Remover el placeholder offline si existe con la misma dirección/territorio
             const cleaned = prev.filter(c => !(c._offline && c.direccion === payload.new.direccion && c.territorio_id === payload.new.territorio_id));
@@ -151,6 +173,7 @@ export const DataProvider = ({ children }) => {
             return next;
           });
         } else if (payload.eventType === 'UPDATE') {
+          if (congregacionId && !territoriosRef.current.some(t => t.id === payload.new.territorio_id)) return;
           setCasas(prev => { const next = prev.map(c => c.id === payload.new.id ? payload.new : c); offlineStore.cacheCasas(next).catch(() => {}); return next; });
         } else if (payload.eventType === 'DELETE') {
           setCasas(prev => { const next = prev.filter(c => c.id !== payload.old.id); offlineStore.cacheCasas(next).catch(() => {}); return next; });

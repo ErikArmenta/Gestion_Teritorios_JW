@@ -38,9 +38,20 @@ export const AuthProvider = ({ children }) => {
       nombre: data.nombre,
       usuario: data.usuario,
       rol: data.rol,
-      foto_url: data.foto_url || null
+      foto_url: data.foto_url || null,
+      congregacion_id: data.congregacion_id || null,
+      congregacion_nombre: null,
     };
-    
+
+    if (data.congregacion_id) {
+      const { data: congData } = await supabase
+        .from('congregaciones')
+        .select('nombre')
+        .eq('id', data.congregacion_id)
+        .single();
+      sessionUser.congregacion_nombre = congData?.nombre || null;
+    }
+
     setUser(sessionUser);
     localStorage.setItem('territorial_user', JSON.stringify(sessionUser));
     return sessionUser;

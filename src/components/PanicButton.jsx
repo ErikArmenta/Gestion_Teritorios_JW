@@ -68,6 +68,7 @@ export default function PanicButton() {
         tipo: 'seguridad',
         mensaje: '¡Necesito ayuda!',
         activa: true,
+        congregacion_id: user.congregacion_id || null,
       })
       .select('id')
       .single();
@@ -101,6 +102,7 @@ export default function PanicButton() {
             mensaje: '¡Necesito ayuda!',
             activa: true,
             created_at: new Date().toISOString(),
+            congregacion_id: user.congregacion_id || null,
           },
         });
         console.log('[PanicButton] Broadcast enviado para alerta:', data.id);

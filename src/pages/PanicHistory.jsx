@@ -319,9 +319,11 @@ const PanicHistory = () => {
   const fetchAlertas = async () => {
     setLoading(true);
     console.log('[PanicHistory] Fetching alertas...');
-    const { data, error, status, statusText } = await supabase
+    const histQuery = supabase
       .from('alertas_panico')
-      .select('*, app_usuarios!alertas_panico_usuario_id_fkey(nombre)')
+      .select('*, app_usuarios!alertas_panico_usuario_id_fkey(nombre)');
+    if (user?.congregacion_id) histQuery.eq('congregacion_id', user.congregacion_id);
+    const { data, error, status, statusText } = await histQuery
       .order('created_at', { ascending: false });
 
     console.log('[PanicHistory] Response:', { data: data?.length, error, status, statusText });

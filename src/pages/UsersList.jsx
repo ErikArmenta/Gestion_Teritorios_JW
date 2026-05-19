@@ -33,10 +33,9 @@ const UsersList = () => {
 
   const fetchUsuarios = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('app_usuarios')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const query = supabase.from('app_usuarios').select('*');
+    if (user?.congregacion_id) query.eq('congregacion_id', user.congregacion_id);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (!error) setUsuarios(data || []);
     setLoading(false);
   };
@@ -74,6 +73,7 @@ const UsersList = () => {
           nombre: formData.nombre, usuario: formData.usuario,
           password: formData.password, rol: formData.rol,
           activo: true, foto_url,
+          congregacion_id: user.congregacion_id || null,
         }]);
         if (error) throw error;
         toast.success('Usuario creado correctamente');

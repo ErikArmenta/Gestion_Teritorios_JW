@@ -250,10 +250,14 @@ export default function PanicAlert() {
   useEffect(() => {
     if (!user) return;
 
+    const congFilter = user.congregacion_id
+      ? { filter: `congregacion_id=eq.${user.congregacion_id}` }
+      : {};
+
     const channel = supabase
       .channel('alertas-panico')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas_panico' }, handleInsert)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'alertas_panico' }, handleUpdate)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas_panico', ...congFilter }, handleInsert)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'alertas_panico', ...congFilter }, handleUpdate)
       .subscribe((status) => {
         console.log('[PanicAlert] Subscription status:', status);
       });
@@ -280,11 +284,13 @@ export default function PanicAlert() {
   useEffect(() => {
     if (!user) return;
     const checkActiveAlerts = async () => {
-      const { data } = await supabase
+      const alertQuery = supabase
         .from('alertas_panico')
         .select('*')
         .eq('activa', true)
-        .neq('usuario_id', user.id)
+        .neq('usuario_id', user.id);
+      if (user.congregacion_id) alertQuery.eq('congregacion_id', user.congregacion_id);
+      const { data } = await alertQuery
         .order('created_at', { ascending: false })
         .limit(1);
       

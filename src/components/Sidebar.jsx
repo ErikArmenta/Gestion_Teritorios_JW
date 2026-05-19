@@ -81,6 +81,11 @@ const Sidebar = () => {
           <div className="flex-1 overflow-hidden">
             <div className="text-sm font-semibold truncate" style={{ color: '#0F172A' }}>{user.nombre}</div>
             <div className="text-xs truncate" style={{ color: '#94A3B8' }}>{user.rol}</div>
+            {user.congregacion_nombre && (
+              <div className="text-xs truncate mt-0.5 font-medium" style={{ color: '#3B82F6' }}>
+                {user.congregacion_nombre}
+              </div>
+            )}
           </div>
         </div>
         <button
