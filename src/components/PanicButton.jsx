@@ -83,6 +83,29 @@ export default function PanicButton() {
     setAlertId(data.id);
     setAlertActive(true);
     setShowModal(true);
+
+    // Emitir broadcast para notificar a todos los usuarios en tiempo real (sin restricción RLS)
+    const channel = supabase.channel('panic-global');
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channel.send({
+          type: 'broadcast',
+          event: 'nueva-alerta',
+          payload: {
+            id: data.id,
+            usuario_id: user.id,
+            nombre: user.nombre,
+            latitud: lat,
+            longitud: lng,
+            tipo: 'seguridad',
+            mensaje: '¡Necesito ayuda!',
+            activa: true,
+            created_at: new Date().toISOString(),
+          },
+        });
+        console.log('[PanicButton] Broadcast enviado para alerta:', data.id);
+      }
+    });
   }, [user, resetHold]);
 
   const startHold = useCallback((e) => {
