@@ -9,10 +9,11 @@ export const STATUS_COLORS = {
 export const STATUS_OPTIONS = Object.keys(STATUS_COLORS);
 
 export const ROLES = [
-  { value: 'Publicador',       label: 'Publicador (Solo registrar casas)' },
-  { value: 'Ministerial',      label: 'Ministerial (Acceso Operativo)' },
-  { value: 'Anciano',          label: 'Anciano (Acceso Operativo)' },
+  { value: 'Super Admin',      label: 'Super Admin (Gestión Global)' },
   { value: 'Admin Principal',  label: 'Admin Principal (Acceso Total)' },
+  { value: 'Anciano',          label: 'Anciano (Acceso Operativo)' },
+  { value: 'Ministerial',      label: 'Ministerial (Acceso Operativo)' },
+  { value: 'Publicador',       label: 'Publicador (Solo registrar casas)' },
 ];
 
 export const getStatusColor = (estado) => STATUS_COLORS[estado]?.hex || '#9CA3AF';
