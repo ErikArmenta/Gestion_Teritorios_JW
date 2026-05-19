@@ -453,6 +453,9 @@ export default function PanicAlert() {
                   <li key={i} className="flex items-center gap-2 text-sm">
                     <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
                     <span className="text-white font-medium">{r.nombre}</span>
+                    {r.usuario_id === user?.id && (
+                      <span className="text-green-400 text-xs font-bold">(tú)</span>
+                    )}
                     <span className="text-slate-400 text-xs ml-auto">{timeAgo(r.timestamp)}</span>
                   </li>
                 ))}
@@ -468,7 +471,11 @@ export default function PanicAlert() {
               className="w-full py-4 rounded-2xl font-black text-white text-lg tracking-wide transition-opacity disabled:opacity-50"
               style={{ backgroundColor: '#16A34A' }}
             >
-              {respondiendo ? 'Registrando...' : '\u2705 VOY EN CAMINO'}
+              {respondiendo
+                ? 'Registrando...'
+                : respondieron.some(r => r.usuario_id === user?.id)
+                  ? '✅ YA RESPONDISTE'
+                  : '✅ VOY EN CAMINO'}
             </button>
 
             <div className="flex gap-3">
