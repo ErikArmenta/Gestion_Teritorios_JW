@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, LogOut, User } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
@@ -15,12 +15,13 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    { path: '/', name: 'Mapa Principal', icon: <Map size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-    { path: '/register', name: 'Registrar Casa', icon: <Home size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-    { path: '/stats', name: 'Estadísticas', icon: <BarChart2 size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/list', name: 'Lista de Casas', icon: <List size={18} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/users', name: 'Usuarios', icon: <Users size={18} />, roles: ['Admin Principal'] },
-    { path: '/alerts', name: 'Alertas', icon: <Bell size={18} />, roles: ['Admin Principal'] },
+    { path: '/', name: 'Mapa Principal', icon: <Map size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+    { path: '/register', name: 'Registrar Casa', icon: <Home size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+    { path: '/stats', name: 'Estadísticas', icon: <BarChart2 size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
+    { path: '/list', name: 'Lista de Casas', icon: <List size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
+    { path: '/users', name: 'Usuarios', icon: <Users size={18} />, roles: ['Super Admin', 'Admin Principal'] },
+    { path: '/alerts', name: 'Alertas', icon: <Bell size={18} />, roles: ['Super Admin', 'Admin Principal'] },
+    { path: '/congregaciones', name: 'Congregaciones', icon: <Building2 size={18} />, roles: ['Super Admin'] },
   ];
 
   const visibleMenu = menuItems.filter(item => item.roles.includes(user.rol));
