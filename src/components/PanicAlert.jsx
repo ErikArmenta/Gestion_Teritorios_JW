@@ -183,13 +183,12 @@ export default function PanicAlert() {
     }
   }, [showModal, alerta?.created_at]);
 
-  const handleInsert = useCallback(async (payload) => {
-    const a = payload.new;
+  const procesarAlerta = useCallback(async (a) => {
     if (!a.activa) return;
     // Don't show alert to the user who triggered it
     if (a.usuario_id === userRef.current?.id) return;
 
-    console.log('[PanicAlert] New alert received!', a.id);
+    console.log('[PanicAlert] Processing alert:', a.id);
 
     // Alarm + vibration
     playAlarm(audioCtxRef, oscsRef);
@@ -224,6 +223,10 @@ export default function PanicAlert() {
     setShowModal(true);
   }, []);
 
+  const handleInsert = useCallback(async (payload) => {
+    await procesarAlerta(payload.new);
+  }, [procesarAlerta]);
+
   const handleUpdate = useCallback((payload) => {
     const a = payload.new;
 
@@ -255,9 +258,20 @@ export default function PanicAlert() {
         console.log('[PanicAlert] Subscription status:', status);
       });
 
+    // Broadcast channel: receives alerts instantly regardless of RLS
+    const broadcastChannel = supabase
+      .channel('panic-global')
+      .on('broadcast', { event: 'nueva-alerta' }, async (payload) => {
+        await procesarAlerta(payload.payload);
+      })
+      .subscribe((status) => {
+        console.log('[PanicAlert] Broadcast status:', status);
+      });
+
     return () => {
       stopAlarm(audioCtxRef, oscsRef);
       supabase.removeChannel(channel);
+      supabase.removeChannel(broadcastChannel);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
