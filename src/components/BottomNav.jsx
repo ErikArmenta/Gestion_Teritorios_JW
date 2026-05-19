@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
-  { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-  { path: '/register', name: 'Registrar', icon: <Home size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-  { path: '/stats', name: 'Stats', icon: <BarChart2 size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
-  { path: '/list', name: 'Lista', icon: <List size={20} />, roles: ['Admin Principal', 'Anciano', 'Ministerial'] },
-  { path: '/users', name: 'Usuarios', icon: <Users size={20} />, roles: ['Admin Principal'] },
-  { path: '/alerts', name: 'Alertas', icon: <Bell size={20} />, roles: ['Admin Principal'] },
+  { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+  { path: '/register', name: 'Registrar', icon: <Home size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+  { path: '/stats', name: 'Stats', icon: <BarChart2 size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
+  { path: '/list', name: 'Lista', icon: <List size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
+  { path: '/users', name: 'Usuarios', icon: <Users size={20} />, roles: ['Super Admin', 'Admin Principal'] },
+  { path: '/alerts', name: 'Alertas', icon: <Bell size={20} />, roles: ['Super Admin', 'Admin Principal'] },
+  { path: '/congregaciones', name: 'Congregaciones', icon: <Building2 size={20} />, roles: ['Super Admin'] },
 ];
 
 const BLUE = '#2563EB';
