@@ -210,6 +210,9 @@ const UsersList = () => {
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Usuario</th>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Contraseña</th>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Rol</th>
+                  {user?.rol === 'Super Admin' && (
+                    <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Congregación</th>
+                  )}
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Estado</th>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>Acciones</th>
                 </tr>
@@ -231,6 +234,13 @@ const UsersList = () => {
                         {u.rol}
                       </span>
                     </td>
+                    {user?.rol === 'Super Admin' && (
+                      <td className="px-4 py-3">
+                        <span className="badge text-xs" style={{ background: 'rgba(59,130,246,0.1)', color: '#2563EB' }}>
+                          {u.congregaciones?.nombre || '-'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <span className="badge text-xs" style={u.activo
                         ? { background: 'rgba(5,150,105,0.1)', color: '#059669' }
@@ -275,6 +285,11 @@ const UsersList = () => {
                       : { background: 'rgba(100,116,139,0.12)', color: '#94A3B8' }}>
                       {u.rol}
                     </span>
+                    {user?.rol === 'Super Admin' && (
+                      <span className="badge text-xs" style={{ background: 'rgba(59,130,246,0.1)', color: '#2563EB' }}>
+                        {u.congregaciones?.nombre || '-'}
+                      </span>
+                    )}
                     <span className="badge text-xs" style={u.activo
                       ? { background: 'rgba(16,185,129,0.15)', color: '#34D399' }
                       : { background: 'rgba(239,68,68,0.12)', color: '#F87171' }}>
@@ -327,6 +342,15 @@ const UsersList = () => {
                   {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
+              {user?.rol === 'Super Admin' && (
+                <div className="form-group">
+                  <label className="form-label">Congregación *</label>
+                  <select required value={formData.congregacion_id} onChange={e => setFormData(f => ({ ...f, congregacion_id: e.target.value }))}>
+                    <option value="">Seleccionar congregación...</option>
+                    {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="form-group">
                 <label className="form-label">Foto de Perfil</label>
                 {(formData.foto_url || photoFile) && (
