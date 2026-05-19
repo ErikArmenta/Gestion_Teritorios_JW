@@ -9,7 +9,7 @@ export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
   const { user } = useAuth();
-  const congregacionId = user?.congregacion_id;
+  const congregacionId = user?.rol === 'Super Admin' ? null : user?.congregacion_id;
 
   const [territorios, setTerritorios] = useState([]);
   const [casas, setCasas] = useState([]);
