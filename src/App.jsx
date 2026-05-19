@@ -7,6 +7,7 @@ import DashboardStats from './pages/DashboardStats';
 import HousesList from './pages/HousesList';
 import UsersList from './pages/UsersList';
 import PanicHistory from './pages/PanicHistory';
+import CongregacionesList from './pages/CongregacionesList';
 import Login from './pages/Login';
 import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
@@ -70,23 +71,28 @@ const AppLayout = () => {
           <Route path="/" element={<TerritoriesMap />} />
           <Route path="/register" element={<RegisterHouse />} />
           <Route path="/stats" element={
-            <ProtectedRoute allowedRoles={['Admin Principal', 'Anciano', 'Ministerial']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial']}>
               <DashboardStats />
             </ProtectedRoute>
           } />
           <Route path="/list" element={
-            <ProtectedRoute allowedRoles={['Admin Principal', 'Anciano', 'Ministerial']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial']}>
               <HousesList />
             </ProtectedRoute>
           } />
           <Route path="/users" element={
-            <ProtectedRoute allowedRoles={['Admin Principal']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin Principal']}>
               <UsersList />
             </ProtectedRoute>
           } />
           <Route path="/alerts" element={
-            <ProtectedRoute allowedRoles={['Admin Principal']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin Principal']}>
               <PanicHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="/congregaciones" element={
+            <ProtectedRoute allowedRoles={['Super Admin']}>
+              <CongregacionesList />
             </ProtectedRoute>
           } />
         </Routes>
