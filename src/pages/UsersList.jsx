@@ -26,15 +26,21 @@ const UsersList = () => {
     setPhotoPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [photoFile]);
+  const [congregaciones, setCongregaciones] = useState([]);
   const [formData, setFormData] = useState({
     id: null, nombre: '', usuario: '', password: '',
-    rol: 'Publicador', activo: true, foto_url: null,
+    rol: 'Publicador', activo: true, foto_url: null, congregacion_id: '',
   });
 
   const fetchUsuarios = async () => {
     setLoading(true);
-    const query = supabase.from('app_usuarios').select('*');
-    if (user?.congregacion_id) query.eq('congregacion_id', user.congregacion_id);
+    let query;
+    if (user?.rol === 'Super Admin') {
+      query = supabase.from('app_usuarios').select('*, congregaciones(nombre)');
+    } else {
+      query = supabase.from('app_usuarios').select('*');
+      if (user?.congregacion_id) query = query.eq('congregacion_id', user.congregacion_id);
+    }
     const { data, error } = await query.order('created_at', { ascending: false });
     if (!error) setUsuarios(data || []);
     setLoading(false);
@@ -42,8 +48,14 @@ const UsersList = () => {
 
   useEffect(() => { fetchUsuarios(); }, []);
 
+  useEffect(() => {
+    if (user?.rol !== 'Super Admin') return;
+    supabase.from('congregaciones').select('id, nombre').order('nombre')
+      .then(({ data }) => setCongregaciones(data || []));
+  }, [user]);
+
   const openNew = () => {
-    setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null });
+    setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null, congregacion_id: '' });
     setPhotoFile(null);
     setShowModal(true);
   };
@@ -69,11 +81,14 @@ const UsersList = () => {
         if (error) throw error;
         toast.success('Usuario actualizado correctamente');
       } else {
+        const congId = user.rol === 'Super Admin'
+          ? (formData.congregacion_id || null)
+          : (user.congregacion_id || null);
         const { error } = await supabase.from('app_usuarios').insert([{
           nombre: formData.nombre, usuario: formData.usuario,
           password: formData.password, rol: formData.rol,
           activo: true, foto_url,
-          congregacion_id: user.congregacion_id || null,
+          congregacion_id: congId,
         }]);
         if (error) throw error;
         toast.success('Usuario creado correctamente');
@@ -100,7 +115,7 @@ const UsersList = () => {
     }
   };
 
-  if (user?.rol !== 'Admin Principal') {
+  if (user?.rol !== 'Admin Principal' && user?.rol !== 'Super Admin') {
     return (
       <div className="flex items-center justify-center h-48">
         <div className="text-center">
