@@ -250,7 +250,7 @@ export default function PanicAlert() {
   useEffect(() => {
     if (!user) return;
 
-    const congFilter = user.congregacion_id
+    const congFilter = (user.congregacion_id && user.rol !== 'Super Admin')
       ? { filter: `congregacion_id=eq.${user.congregacion_id}` }
       : {};
 
@@ -289,7 +289,7 @@ export default function PanicAlert() {
         .select('*')
         .eq('activa', true)
         .neq('usuario_id', user.id);
-      if (user.congregacion_id) alertQuery = alertQuery.eq('congregacion_id', user.congregacion_id);
+      if (user.congregacion_id && user.rol !== 'Super Admin') alertQuery = alertQuery.eq('congregacion_id', user.congregacion_id);
       const { data } = await alertQuery
         .order('created_at', { ascending: false })
         .limit(1);
