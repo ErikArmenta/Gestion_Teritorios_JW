@@ -103,6 +103,10 @@ export const DataProvider = ({ children }) => {
               }
             }
             const casaData = { ...item.data, foto_url };
+            // Asegurar congregacion_id si no viene en la data offline
+            if (!casaData.congregacion_id && congregacionId) {
+              casaData.congregacion_id = congregacionId;
+            }
             // Eliminar campos temporales
             delete casaData.id; // Remover ID temporal negativo
             delete casaData._offline;
@@ -196,7 +200,8 @@ export const DataProvider = ({ children }) => {
 
   // ── CRUD functions con soporte offline ──
   const addTerritorio = async (territorio) => {
-    const { error } = await supabase.from('territorios').insert([territorio]);
+    const payload = congregacionId ? { ...territorio, congregacion_id: congregacionId } : territorio;
+    const { error } = await supabase.from('territorios').insert([payload]);
     if (error) throw error;
   };
 
