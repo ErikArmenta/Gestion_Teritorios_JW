@@ -666,7 +666,36 @@ const PanicHistory = () => {
         bodyColor: '#475569',
         borderColor: 'rgba(0,0,0,0.08)',
         borderWidth: 1,
-        padding: 10,
+        padding: 12,
+        titleFont: { size: 13, weight: '600' },
+        bodyFont: { size: 11 },
+        callbacks: {
+          title: (items) => {
+            return `📅 ${items[0].label}`;
+          },
+          label: (ctx) => {
+            return ` Total: ${ctx.raw} alerta${ctx.raw !== 1 ? 's' : ''}`;
+          },
+          afterBody: (items) => {
+            const mesKey = items[0].label;
+            const detalles = detallePorMes[mesKey] || [];
+            if (detalles.length === 0) return [];
+            const lines = ['', '── Detalle ──'];
+            // Agrupar por persona
+            const porPersona = {};
+            detalles.forEach(d => {
+              if (!porPersona[d.nombre]) porPersona[d.nombre] = [];
+              porPersona[d.nombre].push(`${d.tipo} → ${d.territorio}`);
+            });
+            Object.entries(porPersona).forEach(([nombre, alertasArr]) => {
+              lines.push(`👤 ${nombre} (${alertasArr.length})`);
+              alertasArr.forEach(info => {
+                lines.push(`   • ${info}`);
+              });
+            });
+            return lines;
+          },
+        },
       },
     },
     scales: {
