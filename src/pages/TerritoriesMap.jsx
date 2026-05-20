@@ -5,6 +5,7 @@ import 'leaflet-draw';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
+import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_COLORS } from '../utils/constants';
 import { Trash2, Pencil, X, Check } from 'lucide-react';
 
@@ -349,40 +350,38 @@ const TerritoriesMap = () => {
 
       {/* Modal nuevo territorio */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-[9999] p-4" style={{ backdropFilter: 'blur(4px)' }}>
-          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in" style={{ borderRadius: '1.25rem' }}>
-            <h3 className="text-lg font-bold mb-5">Nuevo Territorio</h3>
-            <form onSubmit={handleSaveNew}>
-              <div className="form-group">
-                <label className="form-label">Nombre *</label>
-                <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Zona Norte" />
+        <ModalOverlay onClose={() => { setShowNewModal(false); setNewPolygonCoords(null); }} maxWidth="max-w-lg">
+          <h3 className="text-lg font-bold mb-5">Nuevo Territorio</h3>
+          <form onSubmit={handleSaveNew}>
+            <div className="form-group">
+              <label className="form-label">Nombre *</label>
+              <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Zona Norte" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Responsable *</label>
+              <input required value={formData.responsable} onChange={e => setFormData(f => ({ ...f, responsable: e.target.value }))} placeholder="Nombre del hermano responsable" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Descripción</label>
+              <textarea rows={3} value={formData.descripcion} onChange={e => setFormData(f => ({ ...f, descripcion: e.target.value }))} placeholder="Notas sobre este territorio..." />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Color del polígono</label>
+              <div className="flex items-center gap-3">
+                <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 rounded-xl cursor-pointer" style={{ border: '1px solid rgba(0,0,0,0.15)' }} />
+                <span className="text-sm" style={{ color: '#475569' }}>Color visible en el mapa</span>
               </div>
-              <div className="form-group">
-                <label className="form-label">Responsable *</label>
-                <input required value={formData.responsable} onChange={e => setFormData(f => ({ ...f, responsable: e.target.value }))} placeholder="Nombre del hermano responsable" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Descripción</label>
-                <textarea rows={3} value={formData.descripcion} onChange={e => setFormData(f => ({ ...f, descripcion: e.target.value }))} placeholder="Notas sobre este territorio..." />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Color del polígono</label>
-                <div className="flex items-center gap-3">
-                  <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 rounded-xl cursor-pointer" style={{ border: '1px solid rgba(0,0,0,0.15)' }} />
-                  <span className="text-sm" style={{ color: '#475569' }}>Color visible en el mapa</span>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button type="button" className="btn btn-outline flex-1" onClick={() => { setShowNewModal(false); setNewPolygonCoords(null); }}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary flex-1">
-                  Guardar Territorio
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button type="button" className="btn btn-outline flex-1" onClick={() => { setShowNewModal(false); setNewPolygonCoords(null); }}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary flex-1">
+                Guardar Territorio
+              </button>
+            </div>
+          </form>
+        </ModalOverlay>
       )}
 
       {/* Modal confirmar eliminación */}
