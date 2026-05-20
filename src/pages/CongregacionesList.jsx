@@ -6,6 +6,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
+import ModalOverlay from '../components/ModalOverlay';
 import { Building2, Pencil, Trash2 } from 'lucide-react';
 
 const CongregacionesList = () => {
@@ -30,14 +31,6 @@ const CongregacionesList = () => {
 
   useEffect(() => { fetchCongregaciones(); }, []);
 
-  useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [showModal]);
 
   const openNew = () => {
     setFormData({ id: null, nombre: '', clave: '' });
@@ -222,34 +215,32 @@ const CongregacionesList = () => {
 
       {/* Modal crear/editar */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-start sm:items-center justify-center z-[9998] p-4 pt-10 sm:pt-4 overflow-y-auto" style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}>
-          <div className="card w-full max-w-md animate-scale-in mb-10" style={{ borderRadius: '1.25rem' }}>
-            <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Congregación' : 'Nueva Congregación'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Nombre *</label>
-                <input
-                  required
-                  value={formData.nombre}
-                  onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))}
-                  placeholder="Ej. Congregación Norte"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Clave</label>
-                <input
-                  value={formData.clave}
-                  onChange={e => setFormData(f => ({ ...f, clave: e.target.value }))}
-                  placeholder="Clave o código (opcional)"
-                />
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
-                <button type="submit" className="btn btn-primary flex-1">Guardar</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ModalOverlay onClose={() => setShowModal(false)} maxWidth="max-w-md">
+          <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Congregación' : 'Nueva Congregación'}</h3>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">Nombre *</label>
+              <input
+                required
+                value={formData.nombre}
+                onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))}
+                placeholder="Ej. Congregación Norte"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Clave</label>
+              <input
+                value={formData.clave}
+                onChange={e => setFormData(f => ({ ...f, clave: e.target.value }))}
+                placeholder="Clave o código (opcional)"
+              />
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
+              <button type="submit" className="btn btn-primary flex-1">Guardar</button>
+            </div>
+          </form>
+        </ModalOverlay>
       )}
 
       {/* Confirm delete */}
