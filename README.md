@@ -14,3 +14,41 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+<!-- AUTO:START -->
+> **Sección generada automáticamente por FoxLabs Documentation Agent**
+> Última actualización: 2026-05-20
+
+## Stack
+
+- React 19.2.6
+- Supabase
+- Tailwind CSS
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+## Scripts
+
+- `npm run dev` — vite
+- `npm run build` — vite build
+- `npm run lint` — eslint .
+
+## Estructura
+
+```
+src/
+  assets/
+  components/
+  context/
+  hooks/
+  pages/
+  utils/
+```
+
+<!-- AUTO:END -->
