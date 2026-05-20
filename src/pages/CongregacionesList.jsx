@@ -30,6 +30,15 @@ const CongregacionesList = () => {
 
   useEffect(() => { fetchCongregaciones(); }, []);
 
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showModal]);
+
   const openNew = () => {
     setFormData({ id: null, nombre: '', clave: '' });
     setShowModal(true);
