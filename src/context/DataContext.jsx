@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { offlineStore } from '../utils/offlineStore';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
@@ -9,7 +9,13 @@ export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
   const { user } = useAuth();
-  const congregacionId = user?.rol === 'Super Admin' ? null : user?.congregacion_id;
+  const congregacionId = useMemo(() => {
+    if (!user) return null;
+    return user.rol === 'Super Admin' ? null : user.congregacion_id;
+  }, [user?.id, user?.rol, user?.congregacion_id]);
+
+  const congregacionIdRef = useRef(congregacionId);
+  useEffect(() => { congregacionIdRef.current = congregacionId; }, [congregacionId]);
 
   const [territorios, setTerritorios] = useState([]);
   const [casas, setCasas] = useState([]);
