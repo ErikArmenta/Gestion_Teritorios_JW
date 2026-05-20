@@ -796,56 +796,94 @@ const PanicHistory = () => {
       columnStyles: { 5: { cellWidth: 40 }, 6: { cellWidth: 30 } },
     });
 
-    // Gráfico Donut (Por Tipo)
+    // ── GRÁFICOS EN PDF ──
+    // Cada gráfico va en su propia página para evitar empalmes
+
+    // Gráfico 1: Donut — Por Tipo de Emergencia
     if (chartDonutRef.current) {
-      doc.addPage(); y = 20;
-      doc.setFontSize(14);
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('4. Gráfico: Alertas por Tipo de Emergencia', 14, y);
-      y += 4;
+      doc.text('4. Distribución por Tipo de Emergencia', 14, y);
+      y += 8;
+      // Etiquetas manuales debajo del título
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      const tipoLabels = [
+        `Seguridad: ${porTipo.seguridad || 0}`,
+        `Médica: ${porTipo.medica || 0}`,
+        `Accidente: ${porTipo.accidente || 0}`,
+      ];
+      doc.text(tipoLabels.join('   |   '), 14, y);
+      y += 8;
       const donutImg = chartDonutRef.current.toBase64Image();
-      doc.addImage(donutImg, 'PNG', 30, y, pageW - 60, 80);
-      y += 88;
+      // Centrar el donut con buen tamaño
+      const donutW = Math.min(pageW - 60, 120);
+      const donutX = (pageW - donutW) / 2;
+      doc.addImage(donutImg, 'PNG', donutX, y, donutW, donutW * 0.75);
     }
 
-    // Gráfico Bar Mensual
+    // Gráfico 2: Bar — Alertas por Mes
     if (chartBarRef.current) {
-      if (y > 160) { doc.addPage(); y = 20; }
-      doc.setFontSize(14);
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('5. Gráfico: Alertas por Mes', 14, y);
-      y += 4;
+      doc.text('5. Alertas por Mes', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      const meses = Object.entries(porMes);
+      const mesLabels = meses.map(([mes, count]) => `${mes}: ${count}`).join('   |   ');
+      doc.text(mesLabels, 14, y);
+      y += 8;
       const barImg = chartBarRef.current.toBase64Image();
-      doc.addImage(barImg, 'PNG', 14, y, pageW - 28, 80);
-      y += 88;
+      const barW = pageW - 30;
+      doc.addImage(barImg, 'PNG', 15, y, barW, barW * 0.45);
     }
 
-    // Gráfico Bar Territorios
+    // Gráfico 3: Bar — Alertas por Territorio
     if (chartTerrRef.current) {
-      if (y > 160) { doc.addPage(); y = 20; }
-      doc.setFontSize(14);
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('6. Gráfico: Alertas por Territorio', 14, y);
-      y += 4;
+      doc.text('6. Alertas por Territorio', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      const terrLabels = rankingTerritorios.slice(0, 5).map(t => `${t.nombre}: ${t.total}`).join('   |   ');
+      doc.text(terrLabels, 14, y);
+      y += 8;
       const terrImg = chartTerrRef.current.toBase64Image();
-      doc.addImage(terrImg, 'PNG', 14, y, pageW - 28, 80);
-      y += 88;
+      const terrW = pageW - 30;
+      doc.addImage(terrImg, 'PNG', 15, y, terrW, terrW * 0.5);
     }
 
-    // Gráfico Línea Tendencia
+    // Gráfico 4: Línea — Tendencia
     if (chartLineRef.current) {
-      if (y > 160) { doc.addPage(); y = 20; }
-      doc.setFontSize(14);
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('7. Gráfico: Tendencia de Alertas', 14, y);
-      y += 4;
+      doc.text('7. Tendencia de Alertas', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Período: últimos 6 meses  |  Total: ${totalAlertas} alertas`, 14, y);
+      y += 8;
       const lineImg = chartLineRef.current.toBase64Image();
-      doc.addImage(lineImg, 'PNG', 14, y, pageW - 28, 80);
-      y += 88;
+      const lineW = pageW - 30;
+      doc.addImage(lineImg, 'PNG', 15, y, lineW, lineW * 0.45);
     }
 
     const totalPages = doc.internal.getNumberOfPages();
