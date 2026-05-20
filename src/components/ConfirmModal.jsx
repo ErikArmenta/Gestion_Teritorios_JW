@@ -27,7 +27,7 @@ const ConfirmModal = ({
       onClick={(e) => { if (e.target === e.currentTarget && onCancel) onCancel(); }}
     >
       <div
-        className="w-full max-w-sm animate-scale-in"
+        className="w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[50vw] lg:max-w-[35vw] xl:max-w-[28vw] animate-scale-in"
         style={{
           background: '#FFFFFF',
           borderRadius: '1.25rem',

@@ -350,7 +350,7 @@ const TerritoriesMap = () => {
 
       {/* Modal nuevo territorio */}
       {showNewModal && (
-        <ModalOverlay onClose={() => { setShowNewModal(false); setNewPolygonCoords(null); }} maxWidth="max-w-lg">
+        <ModalOverlay onClose={() => { setShowNewModal(false); setNewPolygonCoords(null); }} size="default">
           <h3 className="text-lg font-bold mb-5">Nuevo Territorio</h3>
           <form onSubmit={handleSaveNew}>
             <div className="form-group">

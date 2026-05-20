@@ -322,7 +322,7 @@ const UsersList = () => {
 
       {/* Modal crear/editar */}
       {showModal && (
-        <ModalOverlay onClose={() => setShowModal(false)} maxWidth="max-w-md">
+        <ModalOverlay onClose={() => setShowModal(false)} size="default">
           <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">

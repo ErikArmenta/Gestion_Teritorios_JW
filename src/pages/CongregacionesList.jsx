@@ -215,7 +215,7 @@ const CongregacionesList = () => {
 
       {/* Modal crear/editar */}
       {showModal && (
-        <ModalOverlay onClose={() => setShowModal(false)} maxWidth="max-w-md">
+        <ModalOverlay onClose={() => setShowModal(false)} size="small">
           <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Congregación' : 'Nueva Congregación'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
