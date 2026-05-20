@@ -26,6 +26,16 @@ const UsersList = () => {
     setPhotoPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [photoFile]);
+
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showModal]);
+
   const [congregaciones, setCongregaciones] = useState([]);
   const [formData, setFormData] = useState({
     id: null, nombre: '', usuario: '', password: '',
