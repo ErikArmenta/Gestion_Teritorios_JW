@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
+import ModalOverlay from '../components/ModalOverlay';
 import { ROLES } from '../utils/constants';
 import { Eye, EyeOff, Pencil, Trash2, UserPlus } from 'lucide-react';
 
@@ -26,15 +27,6 @@ const UsersList = () => {
     setPhotoPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [photoFile]);
-
-  useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [showModal]);
 
   const [congregaciones, setCongregaciones] = useState([]);
   const [formData, setFormData] = useState({
@@ -330,77 +322,75 @@ const UsersList = () => {
 
       {/* Modal crear/editar */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-start sm:items-center justify-center z-[9998] p-4 pt-10 sm:pt-4 overflow-y-auto" style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}>
-          <div className="card w-full max-w-md animate-scale-in mb-10" style={{ borderRadius: '1.25rem' }}>
-            <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
-            <form onSubmit={handleSubmit}>
+        <ModalOverlay onClose={() => setShowModal(false)} maxWidth="max-w-md">
+          <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">Nombre Completo *</label>
+              <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej. Juan Pérez" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Usuario de Acceso *</label>
+              <input required value={formData.usuario} onChange={e => setFormData(f => ({ ...f, usuario: e.target.value }))} placeholder="Para iniciar sesión" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Contraseña *</label>
+              <input required value={formData.password} onChange={e => setFormData(f => ({ ...f, password: e.target.value }))} type="text" placeholder="Contraseña de acceso" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Rol del Sistema *</label>
+              <select value={formData.rol} onChange={e => setFormData(f => ({ ...f, rol: e.target.value }))}>
+                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            {user?.rol === 'Super Admin' && (
               <div className="form-group">
-                <label className="form-label">Nombre Completo *</label>
-                <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej. Juan Pérez" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Usuario de Acceso *</label>
-                <input required value={formData.usuario} onChange={e => setFormData(f => ({ ...f, usuario: e.target.value }))} placeholder="Para iniciar sesión" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Contraseña *</label>
-                <input required value={formData.password} onChange={e => setFormData(f => ({ ...f, password: e.target.value }))} type="text" placeholder="Contraseña de acceso" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Rol del Sistema *</label>
-                <select value={formData.rol} onChange={e => setFormData(f => ({ ...f, rol: e.target.value }))}>
-                  {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                <label className="form-label">Congregación *</label>
+                <select required value={formData.congregacion_id} onChange={e => setFormData(f => ({ ...f, congregacion_id: e.target.value }))}>
+                  <option value="">Seleccionar congregación...</option>
+                  {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
-              {user?.rol === 'Super Admin' && (
-                <div className="form-group">
-                  <label className="form-label">Congregación *</label>
-                  <select required value={formData.congregacion_id} onChange={e => setFormData(f => ({ ...f, congregacion_id: e.target.value }))}>
-                    <option value="">Seleccionar congregación...</option>
-                    {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                  </select>
+            )}
+            <div className="form-group">
+              <label className="form-label">Foto de Perfil</label>
+              {(formData.foto_url || photoFile) && (
+                <div className="flex justify-center mb-3">
+                  <img
+                    src={photoPreview || formData.foto_url}
+                    alt="Preview"
+                    className="w-20 h-20 rounded-full object-cover"
+                    style={{ border: '3px solid rgba(59,130,246,0.4)' }}
+                  />
                 </div>
               )}
-              <div className="form-group">
-                <label className="form-label">Foto de Perfil</label>
-                {(formData.foto_url || photoFile) && (
-                  <div className="flex justify-center mb-3">
-                    <img
-                      src={photoPreview || formData.foto_url}
-                      alt="Preview"
-                      className="w-20 h-20 rounded-full object-cover"
-                      style={{ border: '3px solid rgba(59,130,246,0.4)' }}
-                    />
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={e => setPhotoFile(e.target.files[0] || null)}
-                  className="cursor-pointer w-full rounded-xl text-xs"
-                  style={{ border: '2px dashed rgba(0,0,0,0.12)', padding: '0.75rem', background: 'rgba(0,0,0,0.02)', color: '#64748B' }}
-                />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e => setPhotoFile(e.target.files[0] || null)}
+                className="cursor-pointer w-full rounded-xl text-xs"
+                style={{ border: '2px dashed rgba(0,0,0,0.12)', padding: '0.75rem', background: 'rgba(0,0,0,0.02)', color: '#64748B' }}
+              />
+            </div>
+            {formData.id && (
+              <div className="form-group flex justify-center">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium" style={{ color: '#64748B' }}>
+                  <input
+                    type="checkbox"
+                    className="w-auto accent-blue-500"
+                    checked={formData.activo}
+                    onChange={e => setFormData(f => ({ ...f, activo: e.target.checked }))}
+                  />
+                  Permitir acceso al sistema (Activo)
+                </label>
               </div>
-              {formData.id && (
-                <div className="form-group flex justify-center">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium" style={{ color: '#64748B' }}>
-                    <input
-                      type="checkbox"
-                      className="w-auto accent-blue-500"
-                      checked={formData.activo}
-                      onChange={e => setFormData(f => ({ ...f, activo: e.target.checked }))}
-                    />
-                    Permitir acceso al sistema (Activo)
-                  </label>
-                </div>
-              )}
-              <div className="flex gap-3 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
-                <button type="submit" className="btn btn-primary flex-1">Guardar</button>
-              </div>
-            </form>
-          </div>
-        </div>
+            )}
+            <div className="flex gap-3 mt-6">
+              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
+              <button type="submit" className="btn btn-primary flex-1">Guardar</button>
+            </div>
+          </form>
+        </ModalOverlay>
       )}
 
       {/* Confirm delete */}
