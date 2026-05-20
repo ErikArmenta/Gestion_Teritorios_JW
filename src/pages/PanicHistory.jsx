@@ -241,10 +241,10 @@ const AlertCard = ({ alerta, territorios }) => {
               center={[alerta.latitud, alerta.longitud]}
               zoom={15}
               style={{ width: '100%', height: '100%' }}
-              zoomControl={false}
+              zoomControl={true}
               attributionControl={false}
-              dragging={false}
-              scrollWheelZoom={false}
+              dragging={true}
+              scrollWheelZoom={true}
             >
               <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
