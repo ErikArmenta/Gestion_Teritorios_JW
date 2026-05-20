@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle } from 'lucide-react';
 
 const ConfirmModal = ({
@@ -16,13 +17,13 @@ const ConfirmModal = ({
     return () => window.removeEventListener('keydown', handler);
   }, [onCancel]);
 
-  return (
+  const modal = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
       }}
       onClick={(e) => { if (e.target === e.currentTarget && onCancel) onCancel(); }}
     >
@@ -32,7 +33,7 @@ const ConfirmModal = ({
           background: '#FFFFFF',
           borderRadius: '1.25rem',
           padding: '1.5rem',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0,0,0,0.05)',
+          boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0,0,0,0.08)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -59,6 +60,8 @@ const ConfirmModal = ({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 };
 
 export default ConfirmModal;
