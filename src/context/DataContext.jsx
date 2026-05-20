@@ -147,14 +147,14 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     fetchData();
     offlineStore.getPendingQueue().then(q => setPendingCount(q.length)).catch(() => {});
-  }, []);
+  }, [congregacionId]);
 
   // ── Realtime (solo cuando online) ──
   useEffect(() => {
     if (!isOnline) return;
 
-    const terrChannel = congregacionId
-      ? { event: '*', schema: 'public', table: 'territorios', filter: `congregacion_id=eq.${congregacionId}` }
+    const terrChannel = congregacionIdRef.current
+      ? { event: '*', schema: 'public', table: 'territorios', filter: `congregacion_id=eq.${congregacionIdRef.current}` }
       : { event: '*', schema: 'public', table: 'territorios' };
 
     const terrSub = supabase
@@ -196,7 +196,7 @@ export const DataProvider = ({ children }) => {
       supabase.removeChannel(terrSub);
       supabase.removeChannel(casasSub);
     };
-  }, [isOnline]);
+  }, [isOnline, congregacionId]);
 
   // ── Cuando vuelve la conexión, sincronizar pendientes ──
   useEffect(() => {
