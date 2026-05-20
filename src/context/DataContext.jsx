@@ -30,12 +30,13 @@ export const DataProvider = ({ children }) => {
 
   // ── Fetch con fallback a cache ──
   const fetchData = async () => {
+    if (!user) { setLoading(false); return; }
     setLoading(true);
     try {
       if (navigator.onLine) {
         // Territorios filtrados por congregación
-        const terrQuery = congregacionId
-          ? supabase.from('territorios').select('*').eq('congregacion_id', congregacionId)
+        const terrQuery = congregacionIdRef.current
+          ? supabase.from('territorios').select('*').eq('congregacion_id', congregacionIdRef.current)
           : supabase.from('territorios').select('*');
         const terrRes = await terrQuery;
         const terrData = terrRes.error ? [] : (terrRes.data || []);
@@ -110,8 +111,8 @@ export const DataProvider = ({ children }) => {
             }
             const casaData = { ...item.data, foto_url };
             // Asegurar congregacion_id si no viene en la data offline
-            if (!casaData.congregacion_id && congregacionId) {
-              casaData.congregacion_id = congregacionId;
+            if (!casaData.congregacion_id && congregacionIdRef.current) {
+              casaData.congregacion_id = congregacionIdRef.current;
             }
             // Eliminar campos temporales
             delete casaData.id; // Remover ID temporal negativo
