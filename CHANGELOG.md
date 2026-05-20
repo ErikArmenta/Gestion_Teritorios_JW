@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-05-20 — Mejora v15
+
+- `CHANGELOG.md`
+- `PanicAlert.jsx`
+- `DashboardStats.jsx`
+- `PanicHistory.jsx`
+
 ## 2026-05-20 — Mejora y graficos nuevos
 
 - `CHANGELOG.md`
