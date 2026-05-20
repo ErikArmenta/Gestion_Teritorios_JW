@@ -147,7 +147,7 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     fetchData();
     offlineStore.getPendingQueue().then(q => setPendingCount(q.length)).catch(() => {});
-  }, [congregacionId]);
+  }, [congregacionId, user?.id]);
 
   // ── Realtime (solo cuando online) ──
   useEffect(() => {
