@@ -1189,12 +1189,12 @@ const PanicHistory = () => {
       )}
 
       {/* Results count */}
-      <p className="text-xs font-semibold mb-3 px-1" style={{ color: '#94A3B8' }}>
+      <p className="text-lg sm:text-xl font-bold mb-4 px-1" style={{ color: '#0F172A' }}>
         {loading ? (
           <span style={{ color: '#60A5FA' }}>Cargando...</span>
         ) : (
           <>
-            <span style={{ color: '#E2E8F0' }}>{filtered.length}</span>{' '}
+            <span style={{ color: '#3B82F6' }}>{filtered.length}</span>{' '}
             alerta{filtered.length !== 1 ? 's' : ''} encontrada{filtered.length !== 1 ? 's' : ''}
           </>
         )}
