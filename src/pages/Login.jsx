@@ -32,25 +32,37 @@ const Login = () => {
       }}
     >
       <div className="w-full max-w-sm animate-fade-in">
+        {/* Logo FUERA del card, encima */}
+        <div className="flex flex-col items-center mb-[-3rem] relative z-10">
+          <div
+            className="w-36 h-36 rounded-3xl overflow-hidden shadow-xl animate-logo-entrance"
+            style={{
+              boxShadow: '0 0 0 3px rgba(59,130,246,0.4), 0 12px 40px rgba(59,130,246,0.25), 0 0 60px rgba(59,130,246,0.15)',
+            }}
+          >
+            <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
+          </div>
+        </div>
+
         {/* Card glassmorphism */}
         <div
-          className="rounded-3xl p-8 sm:p-10 shadow-2xl"
+          className="rounded-3xl pt-20 pb-8 px-8 sm:px-10 shadow-2xl animate-fade-in"
           style={{
             background: 'rgba(255,255,255,0.05)',
             backdropFilter: 'blur(24px)',
             border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 25px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+            animationDelay: '0.2s',
           }}
         >
-          {/* Logo */}
+          {/* Título */}
           <div className="flex flex-col items-center mb-8">
-            <div
-              className="w-36 h-36 rounded-3xl overflow-hidden mb-5 shadow-xl"
-              style={{ boxShadow: '0 0 0 3px rgba(59,130,246,0.4), 0 12px 40px rgba(59,130,246,0.25)' }}
+            <h1
+              className="text-3xl font-bold text-white tracking-tight text-center"
+              style={{
+                textShadow: '0 0 15px rgba(255,255,255,0.6), 0 0 40px rgba(255,255,255,0.3), 0 0 80px rgba(255,255,255,0.15)',
+              }}
             >
-              <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
-            </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight text-center">
               Gestión Territorial
             </h1>
             <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.38)' }}>
@@ -133,8 +145,22 @@ const Login = () => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          Desarrollado por <span style={{ color: 'rgba(255,255,255,0.35)' }}>Master Engenering EA</span>
+        <p
+          className="text-center text-xs mt-10"
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            textShadow: '0 0 10px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.3), 0 0 60px rgba(255,255,255,0.15)',
+          }}
+        >
+          Desarrollado por{' '}
+          <span
+            style={{
+              color: 'rgba(255,255,255,0.9)',
+              textShadow: '0 0 8px rgba(255,255,255,0.6), 0 0 25px rgba(255,255,255,0.4)',
+            }}
+          >
+            Master Engenering EA
+          </span>
         </p>
       </div>
     </div>

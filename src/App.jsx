@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Bell } from 'lucide-react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TerritoriesMap from './pages/TerritoriesMap';
@@ -38,9 +40,10 @@ const AppLayout = () => {
     }
   }, []);
 
-  // Show notification permission banner if not yet decided
+  // Show notification modal once per session
   useEffect(() => {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    const dismissed = sessionStorage.getItem('notif_banner_dismissed');
+    if (!dismissed) {
       setShowNotifBanner(true);
     }
   }, []);
@@ -98,32 +101,61 @@ const AppLayout = () => {
         </Routes>
       </main>
 
-      {/* Notification permission banner */}
-      {showNotifBanner && (
+      {/* Notification permission modal */}
+      {showNotifBanner && createPortal(
         <div
-          className="fixed top-0 left-0 right-0 z-[9990] flex items-center justify-between gap-3 px-4 py-3 text-sm"
-          style={{ backgroundColor: '#EFF6FF', borderBottom: '1px solid rgba(59,130,246,0.25)' }}
+          className="fixed inset-0 z-[9997] flex items-center justify-center p-4"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
         >
-          <span className="leading-snug" style={{ color: '#1E40AF' }}>
-            Activa las notificaciones para recibir alertas de emergencia de tus compañeros incluso con la app cerrada.
-          </span>
-          <div className="flex gap-2 shrink-0">
-            <button
-              onClick={handleAllowNotifications}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
-              style={{ backgroundColor: '#2563EB' }}
-            >
-              Activar
-            </button>
-            <button
-              onClick={() => setShowNotifBanner(false)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold"
-              style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: '#64748B' }}
-            >
-              Ahora no
-            </button>
+          <div
+            className="w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[50vw] lg:max-w-[35vw] xl:max-w-[28vw] animate-scale-in"
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '1.25rem',
+              padding: '1.75rem',
+              boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.35)',
+            }}
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                   style={{ background: 'rgba(59,130,246,0.1)' }}>
+                <Bell size={28} style={{ color: '#2563EB' }} />
+              </div>
+              <h3 className="text-lg font-bold mb-2" style={{ color: '#0F172A' }}>
+                Activar Notificaciones
+              </h3>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: '#64748B' }}>
+                Activa las notificaciones para recibir alertas de emergencia
+                de tus compañeros incluso con la app cerrada.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem('notif_banner_dismissed', 'true');
+                    setShowNotifBanner(false);
+                  }}
+                  className="btn btn-outline flex-1"
+                >
+                  Ahora no
+                </button>
+                <button
+                  onClick={() => {
+                    handleAllowNotifications();
+                    sessionStorage.setItem('notif_banner_dismissed', 'true');
+                  }}
+                  className="btn btn-primary flex-1"
+                >
+                  Activar
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Panic module — always visible when authenticated */}

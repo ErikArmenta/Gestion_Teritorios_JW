@@ -349,6 +349,15 @@ export default function PanicAlert() {
 
   if (!showModal || !alerta) return null;
 
+  const neonWhite = {
+    color: 'rgba(255,255,255,0.95)',
+    textShadow: '0 0 10px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.25)',
+  };
+  const neonSubtle = {
+    color: 'rgba(255,255,255,0.75)',
+    textShadow: '0 0 8px rgba(255,255,255,0.3), 0 0 20px rgba(255,255,255,0.15)',
+  };
+
   const respondieron = Array.isArray(alerta.respondieron) ? alerta.respondieron : [];
   const tipoCfg      = TIPO_CFG[alerta.tipo] || { bg: '#6B7280', label: alerta.tipo, icon: '🔔' };
   const hasCoords    = alerta.latitud != null && alerta.longitud != null;
@@ -371,7 +380,7 @@ export default function PanicAlert() {
       `}</style>
 
       <div
-        className="fixed inset-0 z-[99999] flex flex-col overflow-y-auto"
+        className="fixed inset-0 z-[99999] flex flex-col overflow-y-auto md:items-center md:justify-center"
         style={{ backgroundColor: 'rgba(60,0,0,0.97)' }}
       >
         {/* Header */}
@@ -386,22 +395,25 @@ export default function PanicAlert() {
           >
             <span className="text-3xl">{tipoCfg.icon}</span>
           </div>
-          <h1 className="text-3xl font-black text-white animate-pulse tracking-tight leading-tight">
+          <h1
+            className="text-3xl font-black text-white animate-pulse tracking-tight leading-tight"
+            style={{ textShadow: '0 0 20px rgba(255,255,255,0.7), 0 0 60px rgba(239,68,68,0.5)' }}
+          >
             &#9888;&#65039; ALERTA DE EMERGENCIA
           </h1>
-          <p className="text-red-300 text-sm mt-2">{elapsedText}</p>
+          <p className="text-sm mt-2" style={{ color: '#FCA5A5', textShadow: '0 0 10px rgba(252,165,165,0.5)' }}>{elapsedText}</p>
         </div>
 
         {/* Body */}
-        <div className="flex-1 px-4 pb-8 space-y-4 max-w-lg mx-auto w-full">
+        <div className="flex-1 px-4 pb-8 space-y-4 max-w-lg mx-auto w-full md:flex-initial">
 
           {/* Emisor + tipo + territorio + mensaje */}
           <div
             className="rounded-2xl p-4 space-y-3"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(239,68,68,0.4)' }}
           >
-            <p className="text-slate-400 text-xs uppercase tracking-wider">Activado por</p>
-            <p className="text-white font-black text-2xl">{emisor?.nombre ?? '...'}</p>
+            <p className="text-xs uppercase tracking-wider" style={neonSubtle}>Activado por</p>
+            <p className="font-black text-2xl" style={neonWhite}>{emisor?.nombre ?? '...'}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white"
@@ -423,7 +435,7 @@ export default function PanicAlert() {
               )}
             </div>
             {alerta.mensaje ? (
-              <p className="text-slate-200 text-sm italic mt-1">"{alerta.mensaje}"</p>
+              <p className="text-sm italic mt-1" style={neonWhite}>"{alerta.mensaje}"</p>
             ) : null}
           </div>
 
@@ -448,21 +460,21 @@ export default function PanicAlert() {
             className="rounded-2xl p-4 space-y-2"
             style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
           >
-            <p className="text-slate-400 text-xs uppercase tracking-wider">
+            <p className="text-xs uppercase tracking-wider" style={neonSubtle}>
               Respondedores ({respondieron.length})
             </p>
             {respondieron.length === 0 ? (
-              <p className="text-slate-500 text-sm">Nadie ha respondido aún</p>
+              <p className="text-sm" style={neonSubtle}>Nadie ha respondido aún</p>
             ) : (
               <ul className="space-y-1.5">
                 {respondieron.map((r, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm">
                     <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" />
-                    <span className="text-white font-medium">{r.nombre}</span>
+                    <span className="font-medium" style={neonWhite}>{r.nombre}</span>
                     {r.usuario_id === user?.id && (
                       <span className="text-green-400 text-xs font-bold">(tú)</span>
                     )}
-                    <span className="text-slate-400 text-xs ml-auto">{timeAgo(r.timestamp)}</span>
+                    <span className="text-xs ml-auto" style={neonSubtle}>{timeAgo(r.timestamp)}</span>
                   </li>
                 ))}
               </ul>

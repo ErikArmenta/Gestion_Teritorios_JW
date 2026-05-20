@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -38,6 +38,10 @@ const DashboardStats = () => {
     );
   }
 
+  const chartDonutRef = useRef(null);
+  const chartBarRef = useRef(null);
+  const chartEspRef = useRef(null);
+
   const totalCasas = casas.length;
   const atendidos = casas.filter(c => c.estado === 'Atendido').length;
   const noAtendidos = casas.filter(c => c.estado === 'No atendió').length;
@@ -64,6 +68,51 @@ const DashboardStats = () => {
       especiales: c.filter(h => h.tiene_caso_especial).length
     };
   });
+
+  // --- Casos Especiales Chart ---
+  const especialesData = {
+    labels: terrData.filter(t => t.especiales > 0).map(t => t.nombre),
+    datasets: [{
+      label: 'Casos Especiales',
+      data: terrData.filter(t => t.especiales > 0).map(t => t.especiales),
+      backgroundColor: 'rgba(124,58,237,0.8)',
+      borderRadius: 7,
+      borderSkipped: false,
+    }],
+  };
+
+  const especialesOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(255,255,255,0.98)',
+        borderColor: 'rgba(0,0,0,0.1)',
+        borderWidth: 1,
+        titleFont: { size: 13, family: 'Inter', weight: '600' },
+        bodyFont: { size: 12, family: 'Inter' },
+        padding: 12,
+        cornerRadius: 10,
+        titleColor: '#0F172A',
+        bodyColor: '#64748B',
+        callbacks: {
+          label: (ctx) => {
+            const terr = terrData.find(t => t.nombre === ctx.label);
+            return [
+              ` Casos especiales: ${ctx.raw}`,
+              ` Total casas: ${terr?.total || 0}`,
+              ` % del territorio: ${terr?.total > 0 ? ((ctx.raw / terr.total) * 100).toFixed(1) : 0}%`,
+            ];
+          },
+        },
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B' } },
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#64748B', stepSize: 1 } },
+    },
+  };
 
   // --- Donut Chart ---
   const donutData = {
@@ -248,6 +297,45 @@ const DashboardStats = () => {
         styles: { cellPadding: 4 },
         columnStyles: { 3: { cellWidth: 60 } }
       });
+    }
+
+    // Gráfico Donut
+    if (chartDonutRef.current) {
+      if (y > 160) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('5. Gráfico: Distribución por Estado', 14, y);
+      y += 4;
+      const donutImg = chartDonutRef.current.toBase64Image();
+      doc.addImage(donutImg, 'PNG', 30, y, pageW - 60, 80);
+      y += 88;
+    }
+
+    // Gráfico Bar (Actividad por Territorio)
+    if (chartBarRef.current) {
+      if (y > 160) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('6. Gráfico: Actividad por Territorio', 14, y);
+      y += 4;
+      const barImg = chartBarRef.current.toBase64Image();
+      doc.addImage(barImg, 'PNG', 14, y, pageW - 28, 80);
+      y += 88;
+    }
+
+    // Gráfico Casos Especiales
+    if (chartEspRef.current && especiales > 0) {
+      if (y > 160) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('7. Gráfico: Casos Especiales por Territorio', 14, y);
+      y += 4;
+      const espImg = chartEspRef.current.toBase64Image();
+      doc.addImage(espImg, 'PNG', 14, y, pageW - 28, 80);
+      y += 88;
     }
 
     const totalPages = doc.internal.getNumberOfPages();
@@ -445,7 +533,7 @@ const DashboardStats = () => {
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalCasas > 0
-              ? <Doughnut data={donutData} options={donutOptions} />
+              ? <Doughnut ref={chartDonutRef} data={donutData} options={donutOptions} />
               : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos registrados</p>}
           </div>
         </div>
@@ -456,8 +544,27 @@ const DashboardStats = () => {
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {terrData.length > 0
-              ? <Bar data={barData} options={barOptions} />
+              ? <Bar ref={chartBarRef} data={barData} options={barOptions} />
               : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin territorios registrados</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Gráfico de Casos Especiales */}
+      <div className="grid grid-cols-1 gap-5 mb-5">
+        <div className="card">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Casos Especiales por Territorio</h3>
+            <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(124,58,237,0.1)', color: '#7C3AED' }}>
+              {especiales} total
+            </span>
+          </div>
+          <div className="relative h-64 sm:h-72 md:h-80">
+            {especiales > 0
+              ? <Bar ref={chartEspRef} data={especialesData} options={especialesOptions} />
+              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>No hay casos especiales registrados</p>}
           </div>
         </div>
       </div>

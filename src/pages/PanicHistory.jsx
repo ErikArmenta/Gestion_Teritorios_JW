@@ -5,7 +5,7 @@
  * 2. La relación con app_usuarios debe existir (FK usuario_id → app_usuarios.id)
  * 3. Verificar en consola del navegador los logs [PanicHistory]
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { supabase } from '../supabaseClient';
@@ -13,15 +13,16 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
-  ArcElement, Tooltip as ChartTooltip, Legend, Title
+  ArcElement, Tooltip as ChartTooltip, Legend, Title,
+  PointElement, LineElement, Filler
 } from 'chart.js';
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Bell, MapPin, Clock, User, Filter, X, ExternalLink, FileText, Table, Shield, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartTooltip, Legend, Title);
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartTooltip, Legend, Title, PointElement, LineElement, Filler);
 
 // Red blinking marker for mini-maps
 const redDotIcon = L.divIcon({
@@ -309,6 +310,11 @@ const PanicHistory = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [fetchError, setFetchError] = useState(null);
 
+  const chartDonutRef = useRef(null);
+  const chartBarRef = useRef(null);
+  const chartTerrRef = useRef(null);
+  const chartLineRef = useRef(null);
+
   // Filters
   const [filterFechaInicio, setFilterFechaInicio] = useState('');
   const [filterFechaFin, setFilterFechaFin] = useState('');
@@ -407,6 +413,18 @@ const PanicHistory = () => {
     return acc;
   }, {});
   const rankingUsuarios = Object.values(porUsuario).sort((a, b) => b.count - a.count);
+
+  const porTerritorio = {};
+  alertas.forEach(a => {
+    const terr = findTerritorio(a.latitud, a.longitud, territorios);
+    const terrNombre = terr?.nombre || 'Sin territorio';
+    if (!porTerritorio[terrNombre]) {
+      porTerritorio[terrNombre] = { nombre: terrNombre, total: 0, tipos: {} };
+    }
+    porTerritorio[terrNombre].total += 1;
+    porTerritorio[terrNombre].tipos[a.tipo] = (porTerritorio[terrNombre].tipos[a.tipo] || 0) + 1;
+  });
+  const rankingTerritorios = Object.values(porTerritorio).sort((a, b) => b.total - a.total);
 
   const porMes = {};
   const ahora = new Date();
@@ -542,6 +560,107 @@ const PanicHistory = () => {
     },
   };
 
+  const barTerrData = {
+    labels: rankingTerritorios.map(t => t.nombre),
+    datasets: [
+      {
+        label: 'Seguridad',
+        data: rankingTerritorios.map(t => t.tipos.seguridad || 0),
+        backgroundColor: 'rgba(239,68,68,0.8)',
+        borderRadius: 5,
+        borderSkipped: false,
+      },
+      {
+        label: 'Médica',
+        data: rankingTerritorios.map(t => t.tipos.medica || 0),
+        backgroundColor: 'rgba(59,130,246,0.8)',
+        borderRadius: 5,
+        borderSkipped: false,
+      },
+      {
+        label: 'Accidente',
+        data: rankingTerritorios.map(t => t.tipos.accidente || 0),
+        backgroundColor: 'rgba(249,115,22,0.8)',
+        borderRadius: 5,
+        borderSkipped: false,
+      },
+    ],
+  };
+
+  const barTerrOptions = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: { padding: 12, usePointStyle: true, pointStyleWidth: 8, font: { size: 11 } },
+      },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#0F172A',
+        bodyColor: '#475569',
+        borderColor: 'rgba(0,0,0,0.08)',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          afterBody: (items) => {
+            const idx = items[0].dataIndex;
+            const terr = rankingTerritorios[idx];
+            return [
+              `───────────`,
+              `Total: ${terr.total} alertas`,
+              ...Object.entries(terr.tipos).map(([tipo, count]) =>
+                `${TYPE_CONFIG[tipo]?.label || tipo}: ${count}`
+              ),
+            ];
+          },
+        },
+      },
+    },
+    scales: {
+      x: { stacked: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { stepSize: 1, font: { size: 11 }, color: '#94A3B8' }, beginAtZero: true },
+      y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#475569' } },
+    },
+  };
+
+  const lineData = {
+    labels: Object.keys(porMes),
+    datasets: [{
+      label: 'Alertas',
+      data: Object.values(porMes),
+      borderColor: '#EF4444',
+      backgroundColor: 'rgba(239,68,68,0.1)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: '#EF4444',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 8,
+    }],
+  };
+
+  const lineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#0F172A',
+        bodyColor: '#475569',
+        borderColor: 'rgba(0,0,0,0.08)',
+        borderWidth: 1,
+        padding: 10,
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94A3B8' } },
+      y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#94A3B8', stepSize: 1 }, beginAtZero: true },
+    },
+  };
+
   // ── Export functions ──
   const generateAlertPDF = () => {
     const doc = new jsPDF('p', 'mm', 'letter');
@@ -633,6 +752,58 @@ const PanicHistory = () => {
       styles: { cellPadding: 3 },
       columnStyles: { 5: { cellWidth: 40 }, 6: { cellWidth: 30 } },
     });
+
+    // Gráfico Donut (Por Tipo)
+    if (chartDonutRef.current) {
+      doc.addPage(); y = 20;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('4. Gráfico: Alertas por Tipo de Emergencia', 14, y);
+      y += 4;
+      const donutImg = chartDonutRef.current.toBase64Image();
+      doc.addImage(donutImg, 'PNG', 30, y, pageW - 60, 80);
+      y += 88;
+    }
+
+    // Gráfico Bar Mensual
+    if (chartBarRef.current) {
+      if (y > 160) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('5. Gráfico: Alertas por Mes', 14, y);
+      y += 4;
+      const barImg = chartBarRef.current.toBase64Image();
+      doc.addImage(barImg, 'PNG', 14, y, pageW - 28, 80);
+      y += 88;
+    }
+
+    // Gráfico Bar Territorios
+    if (chartTerrRef.current) {
+      if (y > 160) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('6. Gráfico: Alertas por Territorio', 14, y);
+      y += 4;
+      const terrImg = chartTerrRef.current.toBase64Image();
+      doc.addImage(terrImg, 'PNG', 14, y, pageW - 28, 80);
+      y += 88;
+    }
+
+    // Gráfico Línea Tendencia
+    if (chartLineRef.current) {
+      if (y > 160) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      doc.text('7. Gráfico: Tendencia de Alertas', 14, y);
+      y += 4;
+      const lineImg = chartLineRef.current.toBase64Image();
+      doc.addImage(lineImg, 'PNG', 14, y, pageW - 28, 80);
+      y += 88;
+    }
 
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
@@ -751,7 +922,7 @@ const PanicHistory = () => {
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
-              ? <Doughnut data={donutAlertData} options={donutOptions} />
+              ? <Doughnut ref={chartDonutRef} data={donutAlertData} options={donutOptions} />
               : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin alertas registradas</p>}
           </div>
         </div>
@@ -762,7 +933,33 @@ const PanicHistory = () => {
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
-              ? <Bar data={barAlertData} options={barOptions} />
+              ? <Bar ref={chartBarRef} data={barAlertData} options={barOptions} />
+              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Nuevos gráficos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+        <div className="card">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#DC2626' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Alertas por Territorio</h3>
+          </div>
+          <div className="relative h-64 sm:h-72 md:h-80">
+            {rankingTerritorios.length > 0
+              ? <Bar ref={chartTerrRef} data={barTerrData} options={barTerrOptions} />
+              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos</p>}
+          </div>
+        </div>
+        <div className="card">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
+            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Tendencia de Alertas</h3>
+          </div>
+          <div className="relative h-64 sm:h-72 md:h-80">
+            {totalAlertas > 0
+              ? <Line ref={chartLineRef} data={lineData} options={lineOptions} />
               : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos</p>}
           </div>
         </div>
