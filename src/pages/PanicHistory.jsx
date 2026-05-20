@@ -439,6 +439,20 @@ const PanicHistory = () => {
     if (porMes[key] !== undefined) porMes[key] += 1;
   });
 
+  // Detalle por mes: quién mandó alertas y en qué territorio
+  const detallePorMes = {};
+  alertas.forEach(a => {
+    const d = new Date(a.created_at);
+    const key = d.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+    if (!detallePorMes[key]) detallePorMes[key] = [];
+    const terr = findTerritorio(a.latitud, a.longitud, territorios);
+    detallePorMes[key].push({
+      nombre: a.app_usuarios?.nombre || `Usuario #${a.usuario_id}`,
+      tipo: TYPE_CONFIG[a.tipo]?.label || a.tipo,
+      territorio: terr?.nombre || 'Sin territorio',
+    });
+  });
+
   const tiempos = alertas
     .filter(a => a.cerrada_at)
     .map(a => (new Date(a.cerrada_at) - new Date(a.created_at)) / 1000 / 60);

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-20 — Mejora y graficos nuevos
+
+- `CHANGELOG.md`
+- `App.jsx`
+- `PanicAlert.jsx`
+- `index.css`
+- `DashboardStats.jsx`
+- ... y 2 archivos más
+
 ## 2026-05-20 — PUSH git
 
 
