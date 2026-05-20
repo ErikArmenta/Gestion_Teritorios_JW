@@ -299,43 +299,73 @@ const DashboardStats = () => {
       });
     }
 
-    // Gráfico Donut
+    // ── GRÁFICOS EN PDF ──
+    // Cada gráfico en su propia página
+
+    // Gráfico 1: Donut — Distribución por Estado
     if (chartDonutRef.current) {
-      if (y > 160) { doc.addPage(); y = 20; }
-      doc.setFontSize(14);
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('5. Gráfico: Distribución por Estado', 14, y);
-      y += 4;
+      doc.text('5. Distribución por Estado', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      const estadoLabels = Object.entries(statusCounts)
+        .filter(([, v]) => v > 0)
+        .map(([k, v]) => `${k}: ${v} (${((v / totalCasas) * 100).toFixed(1)}%)`)
+        .join('   |   ');
+      doc.text(estadoLabels, 14, y, { maxWidth: pageW - 28 });
+      y += 10;
       const donutImg = chartDonutRef.current.toBase64Image();
-      doc.addImage(donutImg, 'PNG', 30, y, pageW - 60, 80);
-      y += 88;
+      const donutW = Math.min(pageW - 60, 120);
+      const donutX = (pageW - donutW) / 2;
+      doc.addImage(donutImg, 'PNG', donutX, y, donutW, donutW * 0.75);
     }
 
-    // Gráfico Bar (Actividad por Territorio)
+    // Gráfico 2: Bar — Actividad por Territorio
     if (chartBarRef.current) {
-      if (y > 160) { doc.addPage(); y = 20; }
-      doc.setFontSize(14);
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('6. Gráfico: Actividad por Territorio', 14, y);
-      y += 4;
+      doc.text('6. Actividad por Territorio', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      const terrResumen = terrData.slice(0, 5).map(t => `${t.nombre}: ${t.total}`).join('   |   ');
+      doc.text(terrResumen, 14, y, { maxWidth: pageW - 28 });
+      y += 10;
       const barImg = chartBarRef.current.toBase64Image();
-      doc.addImage(barImg, 'PNG', 14, y, pageW - 28, 80);
-      y += 88;
+      const barW = pageW - 30;
+      doc.addImage(barImg, 'PNG', 15, y, barW, barW * 0.45);
     }
 
-    // Gráfico Casos Especiales
+    // Gráfico 3: Casos Especiales
     if (chartEspRef.current && especiales > 0) {
-      if (y > 160) { doc.addPage(); y = 20; }
-      doc.setFontSize(14);
+      doc.addPage();
+      y = 20;
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('7. Gráfico: Casos Especiales por Territorio', 14, y);
-      y += 4;
+      doc.text('7. Casos Especiales por Territorio', 14, y);
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      const espResumen = terrData.filter(t => t.especiales > 0)
+        .map(t => `${t.nombre}: ${t.especiales}`)
+        .join('   |   ');
+      doc.text(`Total: ${especiales} casos  |  ${espResumen}`, 14, y, { maxWidth: pageW - 28 });
+      y += 10;
       const espImg = chartEspRef.current.toBase64Image();
-      doc.addImage(espImg, 'PNG', 14, y, pageW - 28, 80);
-      y += 88;
+      const espW = pageW - 30;
+      doc.addImage(espImg, 'PNG', 15, y, espW, espW * 0.45);
     }
 
     const totalPages = doc.internal.getNumberOfPages();
