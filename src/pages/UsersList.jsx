@@ -321,7 +321,7 @@ const UsersList = () => {
       {/* Modal crear/editar */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-start sm:items-center justify-center z-[9998] p-4 pt-10 sm:pt-4 overflow-y-auto" style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}>
-          <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in" style={{ borderRadius: '1.25rem' }}>
+          <div className="card w-full max-w-md animate-scale-in mb-10" style={{ borderRadius: '1.25rem' }}>
             <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
