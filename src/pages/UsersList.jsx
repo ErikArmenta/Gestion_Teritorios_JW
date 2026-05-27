@@ -6,7 +6,8 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { ROLES } from '../utils/constants';
-import { Eye, EyeOff, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Eye, EyeOff, Pencil, Trash2, UserPlus, X, Search } from 'lucide-react';
 
 const UsersList = () => {
   const { user } = useAuth();
@@ -20,6 +21,9 @@ const UsersList = () => {
   const [showPassId, setShowPassId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [expandedPhoto, setExpandedPhoto] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!photoFile) { setPhotoPreview(null); return; }
@@ -70,6 +74,7 @@ const UsersList = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
       let foto_url = formData.foto_url;
       if (photoFile) foto_url = await uploadPhoto(photoFile);
@@ -101,6 +106,8 @@ const UsersList = () => {
       fetchUsuarios();
     } catch (err) {
       toast.error(err.message?.includes('unique') ? 'El nombre de usuario ya existe.' : ('Error: ' + err.message));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -131,7 +138,16 @@ const UsersList = () => {
   const AvatarCell = ({ u }) => (
     <div className="relative w-10 h-10">
       {u.foto_url ? (
-        <img src={u.foto_url} alt={u.nombre} className="w-10 h-10 rounded-full object-cover" style={{ border: '2px solid rgba(0,0,0,0.1)' }} />
+        <img
+          src={u.foto_url}
+          alt={u.nombre}
+          className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+          style={{ border: '2px solid rgba(0,0,0,0.1)' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpandedPhoto({ url: u.foto_url, nombre: u.nombre });
+          }}
+        />
       ) : (
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold text-white">
           {u.nombre?.charAt(0).toUpperCase() || '?'}
@@ -159,6 +175,30 @@ const UsersList = () => {
       </button>
     </div>
   );
+
+  useEffect(() => {
+    if (!expandedPhoto) return;
+    document.body.style.overflow = 'hidden';
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setExpandedPhoto(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [expandedPhoto]);
+
+  const filteredUsuarios = usuarios.filter(u => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      u.nombre?.toLowerCase().includes(q) ||
+      u.usuario?.toLowerCase().includes(q) ||
+      u.rol?.toLowerCase().includes(q) ||
+      u.congregaciones?.nombre?.toLowerCase().includes(q)
+    );
+  });
 
   const activeCount = usuarios.filter(u => u.activo).length;
   const inactiveCount = usuarios.filter(u => !u.activo).length;
@@ -196,6 +236,45 @@ const UsersList = () => {
         </div>
       )}
 
+      {/* Buscador */}
+      {!loading && usuarios.length > 0 && (
+        <div className="mb-5">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: '#94A3B8' }}
+            />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, usuario, rol o congregación..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm"
+              style={{
+                background: 'rgba(0,0,0,0.03)',
+                border: '1px solid rgba(0,0,0,0.08)',
+                color: '#0F172A',
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+                style={{ color: '#94A3B8' }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="text-xs mt-2 px-1" style={{ color: '#94A3B8' }}>
+              {filteredUsuarios.length} de {usuarios.length} usuarios
+            </p>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-14 rounded-xl" />)}
@@ -220,7 +299,7 @@ const UsersList = () => {
                 </tr>
               </thead>
               <tbody>
-                {usuarios.map(u => (
+                {filteredUsuarios.map(u => (
                   <tr key={u.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.025)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -273,7 +352,7 @@ const UsersList = () => {
 
           {/* Cards mobile */}
           <div className="md:hidden space-y-3">
-            {usuarios.map(u => (
+            {filteredUsuarios.map(u => (
               <div key={u.id} className="card p-4" style={{ borderLeft: `3px solid ${u.activo ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.35)'}` }}>
                 <div className="flex items-center gap-3 mb-3">
                   <AvatarCell u={u} />
@@ -317,6 +396,21 @@ const UsersList = () => {
               </div>
             ))}
           </div>
+
+          {/* Estado vacío de búsqueda */}
+          {filteredUsuarios.length === 0 && !loading && (
+            <div className="card p-8 text-center">
+              <Search size={32} style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
+              <p className="text-sm font-semibold" style={{ color: '#475569' }}>
+                No se encontraron usuarios
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
+                {searchQuery
+                  ? `Sin resultados para "${searchQuery}"`
+                  : 'No hay usuarios registrados'}
+              </p>
+            </div>
+          )}
         </>
       )}
 
@@ -387,7 +481,14 @@ const UsersList = () => {
             )}
             <div className="flex gap-3 mt-6">
               <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
-              <button type="submit" className="btn btn-primary flex-1">Guardar</button>
+              <button type="submit" className="btn btn-primary flex-1" disabled={saving}>
+                {saving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Guardando...
+                  </span>
+                ) : 'Guardar'}
+              </button>
             </div>
           </form>
         </ModalOverlay>
@@ -403,6 +504,52 @@ const UsersList = () => {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />
+      )}
+
+      {/* Modal foto de perfil expandida */}
+      {expandedPhoto && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+          onClick={() => setExpandedPhoto(null)}
+        >
+          <div
+            className="relative animate-scale-in flex flex-col items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{
+                background: 'rgba(255,255,255,0.95)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                color: '#475569',
+              }}
+              onClick={() => setExpandedPhoto(null)}
+            >
+              <X size={16} />
+            </button>
+            <img
+              src={expandedPhoto.url}
+              alt={expandedPhoto.nombre}
+              className="w-56 h-56 sm:w-72 sm:h-72 rounded-full object-cover"
+              style={{
+                boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.5)',
+                border: '4px solid rgba(255,255,255,0.2)',
+              }}
+            />
+            <p
+              className="mt-4 text-lg font-bold text-center"
+              style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+            >
+              {expandedPhoto.nombre}
+            </p>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

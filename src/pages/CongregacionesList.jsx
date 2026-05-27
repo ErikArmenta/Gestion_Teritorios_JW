@@ -18,6 +18,7 @@ const CongregacionesList = () => {
   const [showModal, setShowModal]           = useState(false);
   const [deleteTarget, setDeleteTarget]     = useState(null);
   const [formData, setFormData]             = useState({ id: null, nombre: '', clave: '' });
+  const [saving, setSaving]                 = useState(false);
 
   const fetchCongregaciones = async () => {
     setLoading(true);
@@ -44,6 +45,7 @@ const CongregacionesList = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
       if (formData.id) {
         const { error } = await supabase
@@ -63,6 +65,8 @@ const CongregacionesList = () => {
       fetchCongregaciones();
     } catch (err) {
       toast.error('Error: ' + err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -210,6 +214,19 @@ const CongregacionesList = () => {
               </div>
             ))}
           </div>
+
+          {/* Estado vacío */}
+          {congregaciones.length === 0 && !loading && (
+            <div className="card p-8 text-center">
+              <Building2 size={32} style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
+              <p className="text-sm font-semibold" style={{ color: '#475569' }}>
+                No hay congregaciones registradas
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
+                Crea la primera congregación para comenzar
+              </p>
+            </div>
+          )}
         </>
       )}
 
@@ -237,7 +254,14 @@ const CongregacionesList = () => {
             </div>
             <div className="flex gap-3 mt-6">
               <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
-              <button type="submit" className="btn btn-primary flex-1">Guardar</button>
+              <button type="submit" className="btn btn-primary flex-1" disabled={saving}>
+                {saving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Guardando...
+                  </span>
+                ) : 'Guardar'}
+              </button>
             </div>
           </form>
         </ModalOverlay>

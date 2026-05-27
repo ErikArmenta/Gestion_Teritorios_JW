@@ -309,7 +309,7 @@ const DashboardStats = () => {
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('5. Distribución por Estado', 14, y);
+      doc.text('6. Distribución por Estado', 14, y);
       y += 8;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -333,7 +333,7 @@ const DashboardStats = () => {
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('6. Actividad por Territorio', 14, y);
+      doc.text('7. Actividad por Territorio', 14, y);
       y += 8;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -353,7 +353,7 @@ const DashboardStats = () => {
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(31, 41, 55);
-      doc.text('7. Casos Especiales por Territorio', 14, y);
+      doc.text('8. Casos Especiales por Territorio', 14, y);
       y += 8;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');

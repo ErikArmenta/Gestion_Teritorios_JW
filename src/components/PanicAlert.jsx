@@ -450,8 +450,8 @@ export default function PanicAlert() {
               className="rounded-2xl p-4 text-center"
               style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
             >
-              <p className="text-slate-400 text-sm">📡 Sin coordenadas GPS disponibles</p>
-              <p className="text-slate-500 text-xs mt-1">El usuario no compartió su ubicación</p>
+              <p className="text-sm" style={neonSubtle}>📡 Sin coordenadas GPS disponibles</p>
+              <p className="text-xs mt-1" style={neonSubtle}>El usuario no compartió su ubicación</p>
             </div>
           )}
 

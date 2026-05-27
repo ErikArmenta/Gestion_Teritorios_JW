@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -54,6 +55,20 @@ const BottomNav = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [expandedPhoto, setExpandedPhoto] = useState(null);
+
+  useEffect(() => {
+    if (!expandedPhoto) return;
+    document.body.style.overflow = 'hidden';
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setExpandedPhoto(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [expandedPhoto]);
 
   if (!user) return null;
 
@@ -145,8 +160,9 @@ const BottomNav = () => {
                 <img
                   src={user.foto_url}
                   alt={user.nombre}
-                  className="w-12 h-12 rounded-full object-cover shrink-0"
+                  className="w-12 h-12 rounded-full object-cover shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
                   style={{ boxShadow: '0 0 0 2px rgba(37,99,235,0.35)' }}
+                  onClick={() => setExpandedPhoto({ url: user.foto_url, nombre: user.nombre })}
                 />
               ) : (
                 <div
@@ -201,6 +217,52 @@ const BottomNav = () => {
             </button>
           </div>
         </>
+      )}
+
+      {/* Modal foto de perfil expandida */}
+      {expandedPhoto && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+          onClick={() => setExpandedPhoto(null)}
+        >
+          <div
+            className="relative animate-scale-in flex flex-col items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{
+                background: 'rgba(255,255,255,0.95)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                color: '#475569',
+              }}
+              onClick={() => setExpandedPhoto(null)}
+            >
+              <X size={16} />
+            </button>
+            <img
+              src={expandedPhoto.url}
+              alt={expandedPhoto.nombre}
+              className="w-56 h-56 sm:w-72 sm:h-72 rounded-full object-cover"
+              style={{
+                boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.5)',
+                border: '4px solid rgba(255,255,255,0.2)',
+              }}
+            />
+            <p
+              className="mt-4 text-lg font-bold text-center"
+              style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+            >
+              {expandedPhoto.nombre}
+            </p>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );

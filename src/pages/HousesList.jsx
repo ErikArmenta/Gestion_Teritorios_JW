@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
@@ -15,6 +16,19 @@ const HousesList = () => {
   const [deleteTarget, setDeleteTarget]       = useState(null);
   const [editStatusId, setEditStatusId]       = useState(null);
   const [lightboxUrl, setLightboxUrl]         = useState(null);
+
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    document.body.style.overflow = 'hidden';
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setLightboxUrl(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [lightboxUrl]);
 
   if (loading) {
     return (
@@ -266,24 +280,37 @@ const HousesList = () => {
       )}
 
       {/* Lightbox foto */}
-      {lightboxUrl && (
+      {lightboxUrl && createPortal(
         <div
-          className="fixed inset-0 bg-black/85 flex items-center justify-center z-[99998] p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
           onClick={() => setLightboxUrl(null)}
         >
-          <button
-            className="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2.5 transition-colors border border-white/20"
-            onClick={() => setLightboxUrl(null)}
-          >
-            <X size={18} />
-          </button>
-          <img
-            src={lightboxUrl}
-            alt="Foto de la casa"
-            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          />
-        </div>
+          <div className="relative animate-scale-in" onClick={e => e.stopPropagation()}>
+            <button
+              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{
+                background: 'rgba(255,255,255,0.95)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                color: '#475569',
+              }}
+              onClick={() => setLightboxUrl(null)}
+            >
+              <X size={16} />
+            </button>
+            <img
+              src={lightboxUrl}
+              alt="Foto de la casa"
+              className="max-w-full max-h-[85vh] rounded-2xl object-contain"
+              style={{ boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.5)' }}
+            />
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
