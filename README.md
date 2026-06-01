@@ -17,7 +17,7 @@ If you are developing a production application, we recommend using TypeScript wi
 
 <!-- AUTO:START -->
 > **Sección generada automáticamente por FoxLabs Documentation Agent**
-> Última actualización: 2026-05-20
+> Última actualización: 2026-05-27
 
 ## Stack
 

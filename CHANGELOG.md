@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-27 — Mejora de UX/UI
+
+- `CHANGELOG.md`
+- `BottomNav.jsx`
+- `PanicAlert.jsx`
+- `Sidebar.jsx`
+- `CongregacionesList.jsx`
+- ... y 3 archivos más
+
 ## 2026-05-20 — push gith
 
 
