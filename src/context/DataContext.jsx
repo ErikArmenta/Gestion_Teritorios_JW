@@ -19,6 +19,8 @@ export const DataProvider = ({ children }) => {
 
   const [territorios, setTerritorios] = useState([]);
   const [casas, setCasas] = useState([]);
+  const [asignaciones, setAsignaciones] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -49,8 +51,27 @@ export const DataProvider = ({ children }) => {
           casasData = casasRes.error ? [] : (casasRes.data || []);
         }
 
+        // Asignaciones de territorios con nombre de usuario
+        let asignacionesData = [];
+        if (terrIds.length > 0) {
+          const asigRes = await supabase
+            .from('territorio_asignaciones')
+            .select('*, app_usuarios(id, nombre)')
+            .in('territorio_id', terrIds);
+          asignacionesData = asigRes.error ? [] : (asigRes.data || []);
+        }
+
+        // Usuarios de la congregación (para selects)
+        const usuariosQuery = congregacionIdRef.current
+          ? supabase.from('app_usuarios').select('id, nombre').eq('congregacion_id', congregacionIdRef.current)
+          : supabase.from('app_usuarios').select('id, nombre');
+        const usuariosRes = await usuariosQuery;
+        const usuariosData = usuariosRes.error ? [] : (usuariosRes.data || []);
+
         setTerritorios(terrData);
         setCasas(casasData);
+        setAsignaciones(asignacionesData);
+        setUsuarios(usuariosData);
         // Cache para uso offline
         await offlineStore.cacheTerritorios(terrData).catch(() => {});
         await offlineStore.cacheCasas(casasData).catch(() => {});
@@ -192,9 +213,23 @@ export const DataProvider = ({ children }) => {
       })
       .subscribe();
 
+    const asigSub = supabase
+      .channel('public:territorio_asignaciones')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'territorio_asignaciones' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setAsignaciones(prev => [...prev, payload.new]);
+        } else if (payload.eventType === 'UPDATE') {
+          setAsignaciones(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
+        } else if (payload.eventType === 'DELETE') {
+          setAsignaciones(prev => prev.filter(a => a.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(terrSub);
       supabase.removeChannel(casasSub);
+      supabase.removeChannel(asigSub);
     };
   }, [isOnline, congregacionId]);
 
@@ -305,13 +340,33 @@ export const DataProvider = ({ children }) => {
     return data || [];
   };
 
+  // ── Asignaciones de territorios ──
+  const asignarTerritorio = async (data) => {
+    const { error } = await supabase.from('territorio_asignaciones').insert([data]);
+    if (error) throw error;
+  };
+
+  const desasignarTerritorio = async (id) => {
+    const today = new Date().toISOString().split('T')[0];
+    const { error } = await supabase
+      .from('territorio_asignaciones')
+      .update({ activa: false, fecha_fin: today })
+      .eq('id', id);
+    if (error) throw error;
+  };
+
+  const getAsignacionesTerritorio = (territorioId) => {
+    return asignaciones.filter(a => a.territorio_id === territorioId);
+  };
+
   return (
     <DataContext.Provider value={{
-      territorios, casas, loading,
+      territorios, casas, asignaciones, usuarios, loading,
       addTerritorio, updateTerritorio, deleteTerritorio,
       addCasa, updateCasa, deleteCasa,
       uploadPhoto,
       insertarHistorialVisita, fetchHistorialCasa,
+      asignarTerritorio, desasignarTerritorio, getAsignacionesTerritorio,
       isOnline, pendingCount, syncing, syncPendingQueue,
     }}>
       {children}
