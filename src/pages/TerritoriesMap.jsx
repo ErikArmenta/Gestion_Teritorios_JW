@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Polygon, Marker, Popup, FeatureGroup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Polyline, Marker, Popup, FeatureGroup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet-draw';
 import { useData } from '../context/DataContext';
@@ -8,7 +8,7 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_COLORS, getStatusColor } from '../utils/constants';
-import { Trash2, Pencil, X, Check, Search } from 'lucide-react';
+import { Trash2, Pencil, X, Check, Search, Navigation } from 'lucide-react';
 import EditHouseModal from '../components/EditHouseModal';
 import AsignacionesModal from '../components/AsignacionesModal';
 
@@ -286,6 +286,41 @@ const MapSearch = ({ busqueda, setBusqueda, busquedaDebounced, resultadosBusqued
   );
 };
 
+const distEuclidiana = (a, b) =>
+  Math.sqrt((a.latitud - b.latitud) ** 2 + (a.longitud - b.longitud) ** 2);
+
+const calcularRutaNN = (casasPendientes, startLat = null, startLng = null) => {
+  if (!casasPendientes.length) return [];
+  const pending = [...casasPendientes];
+  const ordered = [];
+
+  if (startLat !== null && startLng !== null) {
+    const startPoint = { latitud: startLat, longitud: startLng };
+    let minDist = Infinity, minIdx = 0;
+    pending.forEach((c, i) => {
+      const d = distEuclidiana(startPoint, c);
+      if (d < minDist) { minDist = d; minIdx = i; }
+    });
+    ordered.push(pending[minIdx]);
+    pending.splice(minIdx, 1);
+  } else {
+    ordered.push(pending.shift());
+  }
+
+  while (pending.length > 0) {
+    const current = ordered[ordered.length - 1];
+    let minDist = Infinity, minIdx = 0;
+    pending.forEach((c, i) => {
+      const d = distEuclidiana(current, c);
+      if (d < minDist) { minDist = d; minIdx = i; }
+    });
+    ordered.push(pending[minIdx]);
+    pending.splice(minIdx, 1);
+  }
+
+  return ordered;
+};
+
 const TerritoriesMap = () => {
   const { territorios, casas, asignaciones, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
   const { user } = useAuth();
@@ -302,6 +337,7 @@ const TerritoriesMap = () => {
   const [gestionarTerritorio, setGestionarTerritorio] = useState(null);
   const [filtroMisTerr, setFiltroMisTerr] = useState(false);
   const filtroInitialized = useRef(false);
+  const [rutaActiva, setRutaActiva] = useState(null); // { territorioId, casasOrdenadas, polylinePoints }
 
   // Búsqueda en mapa
   const [busqueda, setBusqueda] = useState('');
@@ -396,6 +432,50 @@ const TerritoriesMap = () => {
   const confirmDelete = (t) => {
     const count = casas.filter(c => String(c.territorio_id) === String(t.id)).length;
     setDeleteTarget({ id: t.id, nombre: t.nombre, count });
+  };
+
+  const iniciarRuta = (territorioId) => {
+    const pendientes = casas.filter(
+      c => String(c.territorio_id) === String(territorioId) && c.estado === 'Pendiente'
+        && c.latitud && c.longitud
+    );
+    if (!pendientes.length) return;
+
+    let startLat = null, startLng = null;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const ordenadas = calcularRutaNN(pendientes, pos.coords.latitude, pos.coords.longitude);
+          setRutaActiva({
+            territorioId,
+            casasOrdenadas: ordenadas,
+            polylinePoints: ordenadas.map(c => [Number(c.latitud), Number(c.longitud)]),
+          });
+        },
+        () => {
+          const ordenadas = calcularRutaNN(pendientes);
+          setRutaActiva({
+            territorioId,
+            casasOrdenadas: ordenadas,
+            polylinePoints: ordenadas.map(c => [Number(c.latitud), Number(c.longitud)]),
+          });
+        },
+        { timeout: 3000 }
+      );
+    } else {
+      const ordenadas = calcularRutaNN(pendientes);
+      setRutaActiva({
+        territorioId,
+        casasOrdenadas: ordenadas,
+        polylinePoints: ordenadas.map(c => [Number(c.latitud), Number(c.longitud)]),
+      });
+    }
+  };
+
+  const generarUrlGoogleMaps = (casasOrdenadas) => {
+    if (!casasOrdenadas.length) return '#';
+    const waypoints = casasOrdenadas.map(c => `${Number(c.latitud).toFixed(6)},${Number(c.longitud).toFixed(6)}`);
+    return `https://www.google.com/maps/dir/${waypoints.join('/')}`;
   };
 
   const handleDelete = async () => {
@@ -623,6 +703,15 @@ const TerritoriesMap = () => {
                             Gestionar Asignaciones
                           </button>
                         )}
+                        {casas.some(c => String(c.territorio_id) === String(t.id) && c.estado === 'Pendiente') && (
+                          <button
+                            onClick={() => iniciarRuta(t.id)}
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium w-full mt-1"
+                            style={{ background: 'rgba(16,185,129,0.15)', color: '#34D399', border: '1px solid rgba(16,185,129,0.3)' }}
+                          >
+                            <Navigation size={11} /> Ruta de Visitas
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -698,9 +787,173 @@ const TerritoriesMap = () => {
                 </Marker>
               ))}
             </MarkerClusterGroup>
+
+            {/* Ruta de visitas — polyline */}
+            {rutaActiva && rutaActiva.polylinePoints.length > 1 && (
+              <Polyline
+                positions={rutaActiva.polylinePoints}
+                pathOptions={{ color: '#2563EB', dashArray: '6 4', weight: 3, opacity: 0.85 }}
+              />
+            )}
           </MapContainer>
         )}
         </div>
+
+        {/* Panel lateral ruta de visitas */}
+        {rutaActiva && (
+          <div
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              height: '100%',
+              width: '256px',
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--bg-card)',
+              borderLeft: '1px solid var(--border-color)',
+              boxShadow: '-4px 0 16px rgba(0,0,0,0.15)',
+              borderRadius: '0 var(--radius-lg) var(--radius-lg) 0',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                padding: '14px 16px',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexShrink: 0,
+                background: 'rgba(37,99,235,0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Navigation size={15} style={{ color: '#2563EB' }} />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Ruta de Visitas
+                </span>
+              </div>
+              <button
+                onClick={() => setRutaActiva(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={16} style={{ color: 'var(--text-muted)' }} />
+              </button>
+            </div>
+
+            {/* Lista numerada */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px', margin: '0 0 10px 0' }}>
+                {rutaActiva.casasOrdenadas.length} casa{rutaActiva.casasOrdenadas.length !== 1 ? 's' : ''} pendiente{rutaActiva.casasOrdenadas.length !== 1 ? 's' : ''}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {rutaActiva.casasOrdenadas.map((casa, idx) => (
+                  <div
+                    key={casa.id}
+                    style={{
+                      display: 'flex',
+                      gap: '10px',
+                      alignItems: 'flex-start',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      background: 'var(--bg-hover)',
+                      border: '1px solid var(--border-color)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        background: '#2563EB',
+                        color: '#fff',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          margin: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {casa.direccion}
+                      </p>
+                      {casa.nombre_contacto && (
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                          {casa.nombre_contacto}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Botón Google Maps */}
+            <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+              <a
+                href={generarUrlGoogleMaps(rutaActiva.casasOrdenadas)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  width: '100%',
+                  padding: '9px 14px',
+                  borderRadius: '8px',
+                  background: '#2563EB',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  marginBottom: '8px',
+                }}
+              >
+                <Navigation size={13} />
+                Abrir en Google Maps
+              </a>
+              <button
+                onClick={() => setRutaActiva(null)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  width: '100%',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  background: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  border: '1px solid var(--border-color)',
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={13} />
+                Cancelar ruta
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal nuevo territorio */}
