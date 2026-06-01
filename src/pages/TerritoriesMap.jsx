@@ -6,7 +6,7 @@ import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
-import { STATUS_COLORS } from '../utils/constants';
+import { STATUS_COLORS, getStatusColor } from '../utils/constants';
 import { Trash2, Pencil, X, Check } from 'lucide-react';
 import EditHouseModal from '../components/EditHouseModal';
 
@@ -74,6 +74,72 @@ const createHouseIcon = (estado, isOffline = false) => {
     iconAnchor: [14, 32],
     popupAnchor: [0, -30],
   });
+};
+
+const CasaHistorialSection = ({ casaId }) => {
+  const { fetchHistorialCasa } = useData();
+  const [open, setOpen] = useState(false);
+  const [historial, setHistorial] = useState([]);
+  const [fetched, setFetched] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const formatDateCompact = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) +
+      ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleToggle = async () => {
+    if (!fetched) {
+      setLoading(true);
+      try {
+        const data = await fetchHistorialCasa(casaId);
+        setHistorial((data || []).slice(0, 5));
+      } catch {
+        setHistorial([]);
+      } finally {
+        setLoading(false);
+        setFetched(true);
+      }
+    }
+    setOpen(o => !o);
+  };
+
+  return (
+    <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+      <button
+        onClick={handleToggle}
+        style={{ fontSize: '11px', color: '#60A5FA', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+      >
+        <span style={{ fontSize: '9px' }}>{open ? '▲' : '▼'}</span>
+        {loading ? 'Cargando historial...' : (open ? 'Ocultar historial' : 'Ver historial')}
+      </button>
+      {open && !loading && (
+        <div style={{ marginTop: '6px' }}>
+          {historial.length === 0 ? (
+            <p style={{ fontSize: '10px', color: '#64748B', margin: 0 }}>Sin historial de visitas</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {historial.map(h => (
+                <div key={h.id} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getStatusColor(h.estado_nuevo), flexShrink: 0, marginTop: '3px' }} />
+                  <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
+                    <span style={{ color: '#64748B' }}>{formatDateCompact(h.created_at)} — </span>
+                    <span style={{ color: '#CBD5E1', fontWeight: 600 }}>{h.usuario_nombre || 'Usuario'}</span>
+                    <span style={{ color: '#64748B' }}>: {h.estado_anterior} → </span>
+                    <span style={{ color: getStatusColor(h.estado_nuevo), fontWeight: 600 }}>{h.estado_nuevo}</span>
+                    {h.notas && (
+                      <span style={{ display: 'block', color: '#64748B', fontStyle: 'italic' }}>{h.notas}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const TerritoriesMap = () => {
@@ -349,6 +415,9 @@ const TerritoriesMap = () => {
                       >
                         <Pencil size={12} /> Editar
                       </button>
+
+                      {/* Historial de visitas colapsable */}
+                      <CasaHistorialSection casaId={c.id} />
                     </div>
                   </Popup>
                 </Marker>
