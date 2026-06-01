@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   ArcElement, Tooltip, Legend, Title
@@ -24,6 +25,28 @@ const STATUS_COLORS = {
 const DashboardStats = () => {
   const { casas, territorios, loading } = useData();
   const { user } = useAuth();
+
+  const [actividadReciente, setActividadReciente] = useState([]);
+
+  useEffect(() => {
+    const fetchActividad = async () => {
+      const { data, error } = await supabase
+        .from('historial_visitas')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(15);
+      if (!error && data) setActividadReciente(data);
+    };
+    fetchActividad();
+  }, []);
+
+  const formatRelative = (dateStr) => {
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return 'hace un momento';
+    if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
+    return `hace ${Math.floor(diff / 86400)} días`;
+  };
 
   if (loading) {
     return (
@@ -597,6 +620,53 @@ const DashboardStats = () => {
               : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>No hay casos especiales registrados</p>}
           </div>
         </div>
+      </div>
+
+      {/* Actividad Reciente */}
+      <div
+        className="card mb-5"
+        style={{ borderLeft: '3px solid var(--primary-color, #2563EB)' }}
+      >
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#2563EB' }} />
+          <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Actividad Reciente</h3>
+          {actividadReciente.length > 0 && (
+            <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
+              {actividadReciente.length} registros
+            </span>
+          )}
+        </div>
+        {actividadReciente.length === 0 ? (
+          <p className="text-sm" style={{ color: '#94A3B8' }}>Sin actividad reciente</p>
+        ) : (
+          <ul className="space-y-3">
+            {actividadReciente.map((item) => {
+              const casa = casas.find(c => String(c.id) === String(item.casa_id));
+              const direccion = casa?.direccion || `Casa #${item.casa_id}`;
+              return (
+                <li
+                  key={item.id}
+                  className="flex items-start justify-between gap-3 pb-3"
+                  style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+                >
+                  <p className="text-sm leading-snug" style={{ color: '#0F172A' }}>
+                    <strong style={{ color: '#2563EB' }}>{item.usuario_nombre || 'Usuario'}</strong>
+                    {' visitó '}
+                    <span style={{ color: '#475569' }}>{direccion}</span>
+                    {' — '}
+                    <span style={{ color: '#64748B' }}>{item.estado_anterior}</span>
+                    {' → '}
+                    <strong style={{ color: '#0F172A' }}>{item.estado_nuevo}</strong>
+                  </p>
+                  <span className="text-xs shrink-0 tabular-nums" style={{ color: '#94A3B8' }}>
+                    {formatRelative(item.created_at)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       {/* Territory Detail Cards */}
