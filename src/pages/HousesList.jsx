@@ -6,7 +6,7 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
-import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search } from 'lucide-react';
+import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil } from 'lucide-react';
 
 const HousesList = () => {
   const { casas, territorios, deleteCasa, updateCasa, insertarHistorialVisita, loading } = useData();
@@ -22,6 +22,7 @@ const HousesList = () => {
   const [visitaModal, setVisitaModal]         = useState(null); // {id, estadoActual, nuevoEstado}
   const [visitaNotas, setVisitaNotas]         = useState('');
   const [savingVisita, setSavingVisita]       = useState(false);
+  const [editTarget, setEditTarget]           = useState(null); // null | casa
 
   useEffect(() => {
     if (!lightboxUrl) return;
@@ -223,12 +224,20 @@ const HousesList = () => {
                       : <span style={{ color: '#94A3B8' }}>—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => setDeleteTarget(c)}
-                      className="btn btn-danger py-1.5 px-3 text-xs flex items-center gap-1 ml-auto"
-                    >
-                      <Trash2 size={12} /> Eliminar
-                    </button>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setEditTarget(c)}
+                        className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1"
+                      >
+                        <Pencil size={12} /> Editar
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(c)}
+                        className="btn btn-danger py-1.5 px-3 text-xs flex items-center gap-1"
+                      >
+                        <Trash2 size={12} /> Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )) : (
@@ -291,7 +300,13 @@ const HousesList = () => {
               {c.tiene_caso_especial && <div className="font-semibold" style={{ color: '#F59E0B' }}>Caso especial: {c.tipo_caso || 'Sí'}</div>}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setEditTarget(c)}
+                className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1"
+              >
+                <Pencil size={12} /> Editar
+              </button>
               <button onClick={() => setDeleteTarget(c)} className="btn btn-danger py-1.5 px-3 text-xs flex items-center gap-1">
                 <Trash2 size={12} /> Eliminar
               </button>
@@ -348,6 +363,9 @@ const HousesList = () => {
           </div>
         </ModalOverlay>
       )}
+
+      {/* Edit house modal — componente creado en tarea 5 */}
+      {/* editTarget && <EditHouseModal casa={editTarget} onClose={() => setEditTarget(null)} onSaved={() => setEditTarget(null)} /> */}
 
       {/* Confirm delete */}
       {deleteTarget && (
