@@ -463,7 +463,10 @@ const DashboardStats = () => {
       doc.text('Gestión Territorial JW  |  Desarrollado por Master Engenering EA', pageW / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
       doc.text(`Página ${i} de ${totalPages}`, pageW - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
     }
-    doc.save(`Reporte_Territorial_${new Date().toISOString().slice(0, 10)}.pdf`);
+    const sufijoFechaPDF = periodoActivo === 'todo' && !fechaDesde
+      ? 'todo'
+      : `${fechaDesde || 'inicio'}_${fechaHasta || 'hoy'}`;
+    doc.save(`Reporte_Territorial_${sufijoFechaPDF}.pdf`);
   };
 
   // --- Excel Generation ---
