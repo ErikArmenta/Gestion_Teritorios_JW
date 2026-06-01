@@ -8,6 +8,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_COLORS } from '../utils/constants';
 import { Trash2, Pencil, X, Check } from 'lucide-react';
+import EditHouseModal from '../components/EditHouseModal';
 
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -86,6 +87,7 @@ const TerritoriesMap = () => {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm]   = useState({});
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [editCasa, setEditCasa] = useState(null);
 
   const handleDrawCreated = useCallback((e) => {
     const { layerType, layer } = e;
@@ -339,6 +341,14 @@ const TerritoriesMap = () => {
                           ⏳ Pendiente de sincronizar
                         </div>
                       )}
+
+                      {/* Botón Editar */}
+                      <button
+                        onClick={() => setEditCasa(c)}
+                        className="btn btn-outline py-1 px-2 text-xs flex items-center gap-1 mt-2"
+                      >
+                        <Pencil size={12} /> Editar
+                      </button>
                     </div>
                   </Popup>
                 </Marker>
@@ -382,6 +392,15 @@ const TerritoriesMap = () => {
             </div>
           </form>
         </ModalOverlay>
+      )}
+
+      {/* Modal edición de casa */}
+      {editCasa && (
+        <EditHouseModal
+          casa={editCasa}
+          onClose={() => setEditCasa(null)}
+          onSaved={() => setEditCasa(null)}
+        />
       )}
 
       {/* Modal confirmar eliminación */}
