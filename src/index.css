@@ -68,6 +68,35 @@
   --sidebar-surface: #F8FAFC;
 }
 
+/* ── Dark theme ──────────────────────────────────────────────────────────────── */
+[data-theme='dark'] {
+  --bg-deep:    #0B0F19;
+  --bg-primary: #0F172A;
+  --bg-surface: #111827;
+  --bg-card:    #1E293B;
+  --bg-elevated:#1E293B;
+  --bg-hover:   rgba(255,255,255,0.06);
+
+  --text-primary:   #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
+
+  --border-color:  rgba(255,255,255,0.08);
+  --border-focus:  rgba(59,130,246,0.5);
+  --border-subtle: rgba(255,255,255,0.04);
+
+  --sidebar-bg:      #0F172A;
+  --sidebar-surface: #1E293B;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* ── Smooth theme transition ─────────────────────────────────────────────────── */
+body, .card {
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
 /* ── Reset ──────────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
