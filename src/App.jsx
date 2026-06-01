@@ -12,6 +12,7 @@ import PanicHistory from './pages/PanicHistory';
 import CongregacionesList from './pages/CongregacionesList';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import SharedTerritory from './pages/SharedTerritory';
 import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
@@ -185,6 +186,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/shared/:id" element={<SharedTerritory />} />
               <Route path="/*" element={<AppLayout />} />
             </Routes>
           </BrowserRouter>
