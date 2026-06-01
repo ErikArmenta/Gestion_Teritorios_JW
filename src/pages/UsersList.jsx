@@ -8,6 +8,7 @@ import ModalOverlay from '../components/ModalOverlay';
 import { ROLES } from '../utils/constants';
 import { createPortal } from 'react-dom';
 import { Eye, EyeOff, Pencil, Trash2, UserPlus, X, Search } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 const UsersList = () => {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ const UsersList = () => {
   const [expandedPhoto, setExpandedPhoto] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!photoFile) { setPhotoPreview(null); return; }
@@ -200,6 +202,8 @@ const UsersList = () => {
     );
   });
 
+  const usuariosPaginados = filteredUsuarios.slice((currentPage - 1) * 20, currentPage * 20);
+
   const activeCount = usuarios.filter(u => u.activo).length;
   const inactiveCount = usuarios.filter(u => !u.activo).length;
 
@@ -249,7 +253,7 @@ const UsersList = () => {
               type="text"
               placeholder="Buscar por nombre, usuario, rol o congregación..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm"
               style={{
                 background: 'rgba(0,0,0,0.03)',
@@ -259,7 +263,7 @@ const UsersList = () => {
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
                 style={{ color: '#94A3B8' }}
               >
@@ -299,7 +303,7 @@ const UsersList = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsuarios.map(u => (
+                {usuariosPaginados.map(u => (
                   <tr key={u.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.025)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -352,7 +356,7 @@ const UsersList = () => {
 
           {/* Cards mobile */}
           <div className="md:hidden space-y-3">
-            {filteredUsuarios.map(u => (
+            {usuariosPaginados.map(u => (
               <div key={u.id} className="card p-4" style={{ borderLeft: `3px solid ${u.activo ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.35)'}` }}>
                 <div className="flex items-center gap-3 mb-3">
                   <AvatarCell u={u} />
@@ -396,6 +400,16 @@ const UsersList = () => {
               </div>
             ))}
           </div>
+
+          {/* Paginación */}
+          {filteredUsuarios.length > 20 && (
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredUsuarios.length}
+              itemsPerPage={20}
+              onPageChange={setCurrentPage}
+            />
+          )}
 
           {/* Estado vacío de búsqueda */}
           {filteredUsuarios.length === 0 && !loading && (
