@@ -7,7 +7,7 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
-import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil, Upload } from 'lucide-react';
+import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil, Upload, Mic } from 'lucide-react';
 import Pagination from '../components/Pagination';
 import { supabase } from '../supabaseClient';
 
@@ -27,6 +27,7 @@ const HousesList = () => {
   const [savingVisita, setSavingVisita]       = useState(false);
   const [editTarget, setEditTarget]           = useState(null); // null | casa
   const [currentPage, setCurrentPage]         = useState(1);
+  const [audioModal, setAudioModal]           = useState(null); // null | { url, direccion }
   const [importModal, setImportModal]         = useState(false);
   const [importPreview, setImportPreview]     = useState([]); // all parsed rows
   const [importErrors, setImportErrors]       = useState(new Set()); // indices of invalid rows
@@ -299,7 +300,20 @@ const HousesList = () => {
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-primary">{c.direccion}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-primary">
+                    <span className="flex items-center gap-1.5">
+                      {c.direccion}
+                      {c.audio_url && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setAudioModal({ url: c.audio_url, direccion: c.direccion }); }}
+                          title="Reproducir nota de voz"
+                          style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
+                        >
+                          <Mic size={13} style={{ color: '#3B82F6' }} />
+                        </button>
+                      )}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-sm text-secondary">{c.territorio_nombre}</td>
                   <td className="px-4 py-3 text-sm">
                     {editStatusId === c.id ? (
@@ -378,7 +392,18 @@ const HousesList = () => {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm truncate text-primary">{c.direccion}</p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="font-bold text-sm truncate text-primary">{c.direccion}</p>
+                  {c.audio_url && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAudioModal({ url: c.audio_url, direccion: c.direccion }); }}
+                      title="Reproducir nota de voz"
+                      style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
+                    >
+                      <Mic size={13} style={{ color: '#3B82F6' }} />
+                    </button>
+                  )}
+                </div>
                 <p className="text-xs truncate text-secondary">{c.territorio_nombre}</p>
               </div>
               {editStatusId === c.id ? (
@@ -430,6 +455,23 @@ const HousesList = () => {
         )}
         <Pagination currentPage={currentPage} totalItems={filteredCasas.length} itemsPerPage={25} onPageChange={setCurrentPage} />
       </div>
+
+      {/* Mini-modal Nota de voz */}
+      {audioModal && (
+        <ModalOverlay size="small" onClose={() => setAudioModal(null)}>
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Mic size={16} style={{ color: '#3B82F6' }} />
+              <h3 className="text-base font-bold text-primary">Nota de voz</h3>
+            </div>
+            <p className="text-xs text-secondary mb-3 truncate">{audioModal.direccion}</p>
+            <audio controls src={audioModal.url} className="w-full" style={{ width: '100%' }} />
+            <div className="flex justify-end mt-4">
+              <button className="btn btn-outline" onClick={() => setAudioModal(null)}>Cerrar</button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
 
       {/* Mini-modal Registrar Visita */}
       {visitaModal && (

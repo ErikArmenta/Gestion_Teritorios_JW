@@ -788,6 +788,12 @@ const TerritoriesMap = () => {
                           </div>
                         )}
                         {c.notas && <div><strong style={{ color: '#CBD5E1' }}>Notas:</strong> {c.notas}</div>}
+                        {c.audio_url && (
+                          <div style={{ marginTop: '8px' }}>
+                            <strong style={{ color: '#CBD5E1' }}>Nota de voz:</strong>
+                            <audio controls src={c.audio_url} style={{ width: '100%', marginTop: '4px' }} />
+                          </div>
+                        )}
                         <div style={{ color: '#64748B', fontSize: '10px', marginTop: '4px' }}>
                           {Number(c.latitud).toFixed(6)}, {Number(c.longitud).toFixed(6)}
                         </div>
