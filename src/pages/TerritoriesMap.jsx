@@ -8,7 +8,7 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_COLORS, getStatusColor } from '../utils/constants';
-import { Trash2, Pencil, X, Check } from 'lucide-react';
+import { Trash2, Pencil, X, Check, Search } from 'lucide-react';
 import EditHouseModal from '../components/EditHouseModal';
 import AsignacionesModal from '../components/AsignacionesModal';
 
@@ -146,6 +146,146 @@ const CasaHistorialSection = ({ casaId }) => {
 
 const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano'];
 
+const MapSearch = ({ busqueda, setBusqueda, busquedaDebounced, resultadosBusqueda }) => {
+  const map = useMap();
+
+  const handleSelect = (casa) => {
+    if (casa.latitud && casa.longitud) {
+      map.flyTo([Number(casa.latitud), Number(casa.longitud)], 18);
+    }
+    setBusqueda('');
+  };
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: '12px',
+        left: '12px',
+        zIndex: 999,
+        width: '288px',
+        maxWidth: 'calc(100vw - 2rem)',
+        pointerEvents: 'auto',
+      }}
+    >
+      {/* Input */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '12px',
+          border: '1px solid rgba(0,0,0,0.1)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+          padding: '8px 12px',
+        }}
+      >
+        <Search size={15} style={{ color: '#64748B', flexShrink: 0 }} />
+        <input
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+          placeholder="Buscar dirección, contacto..."
+          style={{
+            flex: 1,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            fontSize: '13px',
+            color: '#0F172A',
+            minWidth: 0,
+          }}
+        />
+        {busqueda && (
+          <button
+            onClick={() => setBusqueda('')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+          >
+            <X size={14} style={{ color: '#94A3B8' }} />
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown resultados */}
+      {busquedaDebounced && resultadosBusqueda.length > 0 && (
+        <div
+          style={{
+            marginTop: '4px',
+            background: 'rgba(255,255,255,0.95)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            border: '1px solid rgba(0,0,0,0.1)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+            overflow: 'hidden',
+          }}
+        >
+          {resultadosBusqueda.map((casa, idx) => (
+            <button
+              key={casa.id}
+              onClick={() => handleSelect(casa)}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '10px 12px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                borderBottom: idx < resultadosBusqueda.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                display: 'block',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,99,235,0.06)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#0F172A', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {casa.direccion}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {casa.territorio_nombre}
+                </span>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    padding: '1px 7px',
+                    borderRadius: '9999px',
+                    flexShrink: 0,
+                    background: (STATUS_COLORS[casa.estado]?.hex || '#9CA3AF') + '22',
+                    color: STATUS_COLORS[casa.estado]?.hex || '#64748B',
+                  }}
+                >
+                  {casa.estado}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Sin resultados */}
+      {busquedaDebounced && resultadosBusqueda.length === 0 && (
+        <div
+          style={{
+            marginTop: '4px',
+            background: 'rgba(255,255,255,0.95)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            border: '1px solid rgba(0,0,0,0.1)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+            padding: '12px',
+            fontSize: '12px',
+            color: '#94A3B8',
+            textAlign: 'center',
+          }}
+        >
+          Sin resultados para "{busquedaDebounced}"
+        </div>
+      )}
+    </div>
+  );
+};
+
 const TerritoriesMap = () => {
   const { territorios, casas, asignaciones, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
   const { user } = useAuth();
@@ -162,6 +302,11 @@ const TerritoriesMap = () => {
   const [gestionarTerritorio, setGestionarTerritorio] = useState(null);
   const [filtroMisTerr, setFiltroMisTerr] = useState(false);
   const filtroInitialized = useRef(false);
+
+  // Búsqueda en mapa
+  const [busqueda, setBusqueda] = useState('');
+  const [busquedaDebounced, setBusquedaDebounced] = useState('');
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
 
   useEffect(() => {
     if (filtroInitialized.current) return;
@@ -186,6 +331,29 @@ const TerritoriesMap = () => {
   const casasFiltradas = filtroMisTerr
     ? casas.filter(c => territoriosFiltrados.some(t => String(t.id) === String(c.territorio_id)))
     : casas;
+
+  // Debounce búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBusquedaDebounced(busqueda.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [busqueda]);
+
+  // Filtrar resultados según busquedaDebounced
+  useEffect(() => {
+    if (!busquedaDebounced) {
+      setResultadosBusqueda([]);
+      return;
+    }
+    const q = busquedaDebounced.toLowerCase();
+    const encontrados = casasFiltradas.filter(c =>
+      (c.direccion || '').toLowerCase().includes(q) ||
+      (c.nombre_contacto || '').toLowerCase().includes(q) ||
+      (c.territorio_nombre || '').toLowerCase().includes(q)
+    ).slice(0, 8);
+    setResultadosBusqueda(encontrados);
+  }, [busquedaDebounced, casasFiltradas]);
 
   const handleDrawCreated = useCallback((e) => {
     const { layerType, layer } = e;
@@ -331,6 +499,12 @@ const TerritoriesMap = () => {
               className="neon-labels"
             />
             <GlobalMapFitter territorios={territoriosFiltrados} />
+            <MapSearch
+              busqueda={busqueda}
+              setBusqueda={setBusqueda}
+              busquedaDebounced={busquedaDebounced}
+              resultadosBusqueda={resultadosBusqueda}
+            />
             <FeatureGroup>
               <CustomEditControl onCreated={handleDrawCreated} />
             </FeatureGroup>
