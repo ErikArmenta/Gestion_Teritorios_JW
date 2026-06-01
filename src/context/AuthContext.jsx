@@ -62,8 +62,26 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('territorial_user');
   };
 
+  const updateProfile = async (updates) => {
+    const { error } = await supabase
+      .from('app_usuarios')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    const safeFields = {};
+    if (updates.nombre !== undefined) safeFields.nombre = updates.nombre;
+    if (updates.foto_url !== undefined) safeFields.foto_url = updates.foto_url;
+
+    const updatedUser = { ...user, ...safeFields };
+    setUser(updatedUser);
+    localStorage.setItem('territorial_user', JSON.stringify(updatedUser));
+    return { success: true };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateProfile }}>
       {!loading && children}
     </AuthContext.Provider>
   );
