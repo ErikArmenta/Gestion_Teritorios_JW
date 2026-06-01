@@ -157,20 +157,19 @@ const UsersList = () => {
       )}
       <span
         className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
-        style={{ background: u.activo ? '#10B981' : '#EF4444', borderColor: '#FFFFFF' }}
+        style={{ background: u.activo ? '#10B981' : '#EF4444', borderColor: 'var(--bg-card)' }}
       />
     </div>
   );
 
   const PasswordCell = ({ u }) => (
     <div className="flex items-center gap-1.5">
-      <span className="font-mono text-xs" style={{ color: '#94A3B8' }}>
+      <span className="font-mono text-xs text-muted">
         {showPassId === u.id ? u.password : '••••••••'}
       </span>
       <button
         onClick={() => setShowPassId(showPassId === u.id ? null : u.id)}
-        className="transition-colors p-0.5"
-        style={{ color: '#475569' }}
+        className="transition-colors p-0.5 text-secondary"
         title={showPassId === u.id ? 'Ocultar' : 'Ver contraseña'}
       >
         {showPassId === u.id ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -213,7 +212,7 @@ const UsersList = () => {
       <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Gestión de Usuarios</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Administración de cuentas del sistema</p>
+          <p className="text-sm mt-0.5 text-secondary">Administración de cuentas del sistema</p>
         </div>
         <button className="btn btn-primary flex items-center gap-2" onClick={openNew}>
           <UserPlus size={15} /> Nuevo Usuario
@@ -225,17 +224,17 @@ const UsersList = () => {
         <div className="flex flex-wrap gap-2 mb-5">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
             <span className="text-xs font-bold tabular-nums" style={{ color: '#2563EB' }}>{usuarios.length}</span>
-            <span className="text-xs font-medium" style={{ color: '#64748B' }}>total</span>
+            <span className="text-xs font-medium text-secondary">total</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10B981' }} />
             <span className="text-xs font-bold tabular-nums" style={{ color: '#059669' }}>{activeCount}</span>
-            <span className="text-xs font-medium" style={{ color: '#64748B' }}>activos</span>
+            <span className="text-xs font-medium text-secondary">activos</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#EF4444' }} />
             <span className="text-xs font-bold tabular-nums" style={{ color: '#DC2626' }}>{inactiveCount}</span>
-            <span className="text-xs font-medium" style={{ color: '#64748B' }}>inactivos</span>
+            <span className="text-xs font-medium text-secondary">inactivos</span>
           </div>
         </div>
       )}
@@ -246,8 +245,7 @@ const UsersList = () => {
           <div className="relative">
             <Search
               size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ color: '#94A3B8' }}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted"
             />
             <input
               type="text"
@@ -256,23 +254,22 @@ const UsersList = () => {
               onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm"
               style={{
-                background: 'rgba(0,0,0,0.03)',
-                border: '1px solid rgba(0,0,0,0.08)',
-                color: '#0F172A',
+                background: 'var(--bg-hover)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
               }}
             />
             {searchQuery && (
               <button
                 onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: '#94A3B8' }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
               >
                 <X size={14} />
               </button>
             )}
           </div>
           {searchQuery && (
-            <p className="text-xs mt-2 px-1" style={{ color: '#94A3B8' }}>
+            <p className="text-xs mt-2 px-1 text-muted">
               {filteredUsuarios.length} de {usuarios.length} usuarios
             </p>
           )}
@@ -290,15 +287,15 @@ const UsersList = () => {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Foto</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Nombre</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Usuario</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Contraseña</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Rol</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Foto</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Nombre</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Usuario</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Contraseña</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Rol</th>
                   {user?.rol === 'Super Admin' && (
-                    <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Congregación</th>
+                    <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Congregación</th>
                   )}
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Estado</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Estado</th>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>Acciones</th>
                 </tr>
               </thead>
@@ -309,8 +306,8 @@ const UsersList = () => {
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <td className="px-4 py-3"><AvatarCell u={u} /></td>
-                    <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#0F172A' }}>{u.nombre}</td>
-                    <td className="px-4 py-3 text-sm font-mono" style={{ color: '#64748B' }}>{u.usuario}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-primary">{u.nombre}</td>
+                    <td className="px-4 py-3 text-sm font-mono text-secondary">{u.usuario}</td>
                     <td className="px-4 py-3 text-sm"><PasswordCell u={u} /></td>
                     <td className="px-4 py-3">
                       <span className="badge text-xs" style={u.rol === 'Admin Principal'
@@ -361,8 +358,8 @@ const UsersList = () => {
                 <div className="flex items-center gap-3 mb-3">
                   <AvatarCell u={u} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate" style={{ color: '#0F172A' }}>{u.nombre}</p>
-                    <p className="text-xs font-mono truncate" style={{ color: '#64748B' }}>{u.usuario}</p>
+                    <p className="font-bold text-sm truncate text-primary">{u.nombre}</p>
+                    <p className="text-xs font-mono truncate text-secondary">{u.usuario}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="badge text-xs" style={u.rol === 'Admin Principal'
@@ -415,10 +412,10 @@ const UsersList = () => {
           {filteredUsuarios.length === 0 && !loading && (
             <div className="card p-8 text-center">
               <Search size={32} style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
-              <p className="text-sm font-semibold" style={{ color: '#475569' }}>
+              <p className="text-sm font-semibold text-secondary">
                 No se encontraron usuarios
               </p>
-              <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
+              <p className="text-xs mt-1 text-muted">
                 {searchQuery
                   ? `Sin resultados para "${searchQuery}"`
                   : 'No hay usuarios registrados'}
@@ -477,12 +474,12 @@ const UsersList = () => {
                 accept="image/*"
                 onChange={e => setPhotoFile(e.target.files[0] || null)}
                 className="cursor-pointer w-full rounded-xl text-xs"
-                style={{ border: '2px dashed rgba(0,0,0,0.12)', padding: '0.75rem', background: 'rgba(0,0,0,0.02)', color: '#64748B' }}
+                style={{ border: '2px dashed var(--border-color)', padding: '0.75rem', background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
               />
             </div>
             {formData.id && (
               <div className="form-group flex justify-center">
-                <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium" style={{ color: '#64748B' }}>
+                <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-secondary">
                   <input
                     type="checkbox"
                     className="w-auto accent-blue-500"
@@ -540,7 +537,7 @@ const UsersList = () => {
               style={{
                 background: 'rgba(255,255,255,0.95)',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                color: '#475569',
+                color: 'var(--text-secondary)',
               }}
               onClick={() => setExpandedPhoto(null)}
             >

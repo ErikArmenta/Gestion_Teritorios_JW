@@ -108,7 +108,7 @@ const CongregacionesList = () => {
       <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Congregaciones</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Gestión global de congregaciones</p>
+          <p className="text-sm mt-0.5 text-secondary">Gestión global de congregaciones</p>
         </div>
         <button className="btn btn-primary flex items-center gap-2" onClick={openNew}>
           <Building2 size={15} /> Nueva Congregación
@@ -120,7 +120,7 @@ const CongregacionesList = () => {
         <div className="flex flex-wrap gap-2 mb-5">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
             <span className="text-xs font-bold tabular-nums" style={{ color: '#2563EB' }}>{congregaciones.length}</span>
-            <span className="text-xs font-medium" style={{ color: '#64748B' }}>total</span>
+            <span className="text-xs font-medium text-secondary">total</span>
           </div>
         </div>
       )}
@@ -136,10 +136,10 @@ const CongregacionesList = () => {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Nombre</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Clave</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Usuarios</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Territorios</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Nombre</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Clave</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Usuarios</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Territorios</th>
                   <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>Acciones</th>
                 </tr>
               </thead>
@@ -149,8 +149,8 @@ const CongregacionesList = () => {
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.025)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#0F172A' }}>{c.nombre}</td>
-                    <td className="px-4 py-3 text-sm font-mono" style={{ color: '#64748B' }}>{c.clave || '—'}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-primary">{c.nombre}</td>
+                    <td className="px-4 py-3 text-sm font-mono text-secondary">{c.clave || '—'}</td>
                     <td className="px-4 py-3">
                       <span className="badge text-xs" style={{ background: 'rgba(37,99,235,0.08)', color: '#2563EB' }}>
                         {c.app_usuarios?.[0]?.count ?? 0}
@@ -186,9 +186,9 @@ const CongregacionesList = () => {
               <div key={c.id} className="card p-4" style={{ borderLeft: '3px solid rgba(37,99,235,0.4)' }}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate" style={{ color: '#0F172A' }}>{c.nombre}</p>
+                    <p className="font-bold text-sm truncate text-primary">{c.nombre}</p>
                     {c.clave && (
-                      <p className="text-xs font-mono mt-0.5" style={{ color: '#64748B' }}>{c.clave}</p>
+                      <p className="text-xs font-mono mt-0.5 text-secondary">{c.clave}</p>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1 ml-3">
@@ -219,10 +219,10 @@ const CongregacionesList = () => {
           {congregaciones.length === 0 && !loading && (
             <div className="card p-8 text-center">
               <Building2 size={32} style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
-              <p className="text-sm font-semibold" style={{ color: '#475569' }}>
+              <p className="text-sm font-semibold text-secondary">
                 No hay congregaciones registradas
               </p>
-              <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
+              <p className="text-xs mt-1 text-muted">
                 Crea la primera congregación para comenzar
               </p>
             </div>

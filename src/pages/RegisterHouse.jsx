@@ -171,7 +171,7 @@ const RegisterHouse = () => {
     <div className="animate-page-in">
       <div className="mb-5 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Registrar Nueva Casa</h1>
-        <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Ubica y documenta el punto en el territorio</p>
+        <p className="text-sm mt-0.5 text-secondary">Ubica y documenta el punto en el territorio</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
@@ -179,7 +179,7 @@ const RegisterHouse = () => {
         <div className="card">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>1</div>
-            <h3 className="text-base font-bold" style={{ color: '#0F172A' }}>Datos Generales</h3>
+            <h3 className="text-base font-bold text-primary">Datos Generales</h3>
             <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
           </div>
           <form onSubmit={handleSubmit}>
@@ -203,9 +203,9 @@ const RegisterHouse = () => {
               </select>
             </div>
 
-            <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+            <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid var(--border-color)' }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>2</div>
-              <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Residentes y Casos</h3>
+              <h3 className="text-sm font-bold text-primary">Residentes y Casos</h3>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
@@ -221,7 +221,7 @@ const RegisterHouse = () => {
             </div>
 
             <div className="form-group flex justify-center">
-              <label className="flex items-center gap-2 cursor-pointer text-sm select-none font-medium" style={{ color: '#64748B' }}>
+              <label className="flex items-center gap-2 cursor-pointer text-sm select-none font-medium text-secondary">
                 <input
                   type="checkbox"
                   className="w-auto accent-blue-500"
@@ -257,14 +257,14 @@ const RegisterHouse = () => {
             </div>
 
             {/* Foto */}
-            <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+            <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid var(--border-color)' }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>3</div>
-              <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Evidencia Fotográfica</h3>
+              <h3 className="text-sm font-bold text-primary">Evidencia Fotográfica</h3>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
             {photoPreview && (
-              <div className="relative w-full h-40 mb-3 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
+              <div className="relative w-full h-40 mb-3 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-color)' }}>
                 <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                 <button
                   type="button"
@@ -292,8 +292,8 @@ const RegisterHouse = () => {
 
               {/* Botón para seleccionar de galería */}
               <label className="flex-1 flex flex-col items-center gap-2 p-4 rounded-xl cursor-pointer transition-colors text-sm hover:bg-slate-50/50"
-                     style={{ border: '2px dashed rgba(0,0,0,0.15)', color: '#475569' }}>
-                <Upload size={22} style={{ color: '#94A3B8' }} />
+                     style={{ border: '2px dashed var(--border-color)', color: 'var(--text-secondary)' }}>
+                <Upload size={22} style={{ color: 'var(--text-muted)' }} />
                 <span className="font-medium text-xs">Galería</span>
                 <input
                   ref={photoInputRef}
@@ -326,7 +326,7 @@ const RegisterHouse = () => {
         {/* ── Mapa ── */}
         <div className="card flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="m-0 text-base font-bold flex items-center gap-2" style={{ color: '#0F172A' }}>
+            <h3 className="m-0 text-base font-bold flex items-center gap-2 text-primary">
               <MapPin size={16} style={{ color: '#2563EB' }} /> Geolocalización
             </h3>
             <button
@@ -340,7 +340,7 @@ const RegisterHouse = () => {
               {locating ? 'Obteniendo GPS...' : 'Usar mi ubicación'}
             </button>
           </div>
-          <p className="text-xs mb-3" style={{ color: '#475569' }}>Haz clic en el mapa para posicionar la casa.</p>
+          <p className="text-xs mb-3 text-secondary">Haz clic en el mapa para posicionar la casa.</p>
 
           {insideTerritory === true && (
             <div className="p-2.5 rounded-xl mb-3 text-xs font-medium" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#34D399' }}>
@@ -396,7 +396,7 @@ const RegisterHouse = () => {
                 </CircleMarker>
               ))}
             </MapContainer>
-            <div className="flex items-center justify-center gap-4 mt-2 px-3 py-2 rounded-lg text-xs font-mono" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)', color: '#475569' }}>
+            <div className="flex items-center justify-center gap-4 mt-2 px-3 py-2 rounded-lg text-xs font-mono" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
               <span>Lat: <strong>{position.lat.toFixed(6)}</strong></span>
               <span className="w-px h-4" style={{ background: 'rgba(0,0,0,0.1)' }} />
               <span>Lng: <strong>{position.lng.toFixed(6)}</strong></span>

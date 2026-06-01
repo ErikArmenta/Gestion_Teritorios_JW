@@ -156,7 +156,7 @@ const AlertCard = ({ alerta, territorios }) => {
               <User size={15} style={{ color: tipoAccent }} />
             </div>
             <div>
-              <p className="font-bold text-sm leading-tight" style={{ color: '#1E293B' }}>
+              <p className="font-bold text-sm leading-tight text-primary">
                 {usuario?.nombre || `Usuario #${alerta.usuario_id}`}
               </p>
             </div>
@@ -181,7 +181,7 @@ const AlertCard = ({ alerta, territorios }) => {
               <MapPin size={11} />
               {territorio.nombre}
               {territorio.responsable && (
-                <span style={{ color: '#64748B', fontWeight: 500 }}>· {territorio.responsable}</span>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>· {territorio.responsable}</span>
               )}
             </span>
           </div>
@@ -190,9 +190,9 @@ const AlertCard = ({ alerta, territorios }) => {
         {/* Mensaje */}
         {alerta.mensaje && (
           <p className="mt-3 text-sm rounded-xl px-3 py-2.5 leading-relaxed" style={{
-            color: '#334155',
-            background: 'rgba(0,0,0,0.03)',
-            border: '1px solid rgba(0,0,0,0.07)',
+            color: 'var(--text-primary)',
+            background: 'var(--bg-hover)',
+            border: '1px solid var(--border-color)',
           }}>
             {alerta.mensaje}
           </p>
@@ -200,12 +200,12 @@ const AlertCard = ({ alerta, territorios }) => {
 
         {/* Meta row */}
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
-          <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+          <span className="flex items-center gap-1.5 text-secondary">
             <Clock size={12} style={{ color: '#2563EB' }} />
             {formatDate(alerta.created_at)}
           </span>
           {duracion && (
-            <span className="flex items-center gap-1.5" style={{ color: '#64748B' }}>
+            <span className="flex items-center gap-1.5 text-secondary">
               <Clock size={12} style={{ color: '#2563EB' }} />
               Duración: <strong style={{ color: '#D97706' }}>{duracion}</strong>
             </span>
@@ -273,7 +273,7 @@ const AlertCard = ({ alerta, territorios }) => {
 
         {/* Respondedores */}
         {respondieron.length > 0 && (
-          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-color)' }}>
             <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#059669' }}>
               Respondieron ({respondieron.length})
             </p>
@@ -957,7 +957,7 @@ const PanicHistory = () => {
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Historial de Alertas</h1>
-            <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Analytics y registro completo de alertas</p>
+            <p className="text-sm mt-0.5 text-secondary">Analytics y registro completo de alertas</p>
           </div>
         </div>
         <div className="flex gap-2.5">
@@ -986,8 +986,8 @@ const PanicHistory = () => {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: `${k.accent}20` }}>
                 {k.icon}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: '#94A3B8' }}>{k.label}</p>
-              <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums" style={{ color: '#0F172A' }}>{k.value}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{k.label}</p>
+              <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums text-primary">{k.value}</p>
               <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
             </div>
           </div>
@@ -999,23 +999,23 @@ const PanicHistory = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Por Tipo de Emergencia</h3>
+            <h3 className="text-sm font-bold text-primary">Por Tipo de Emergencia</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
               ? <Doughnut ref={chartDonutRef} data={donutAlertData} options={donutOptions} />
-              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin alertas registradas</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">Sin alertas registradas</p>}
           </div>
         </div>
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F97316' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Alertas por Mes</h3>
+            <h3 className="text-sm font-bold text-primary">Alertas por Mes</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
               ? <Bar ref={chartBarRef} data={barAlertData} options={barOptions} />
-              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">Sin datos</p>}
           </div>
         </div>
       </div>
@@ -1025,23 +1025,23 @@ const PanicHistory = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#DC2626' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Alertas por Territorio</h3>
+            <h3 className="text-sm font-bold text-primary">Alertas por Territorio</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {rankingTerritorios.length > 0
               ? <Bar ref={chartTerrRef} data={barTerrData} options={barTerrOptions} />
-              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">Sin datos</p>}
           </div>
         </div>
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Tendencia de Alertas</h3>
+            <h3 className="text-sm font-bold text-primary">Tendencia de Alertas</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
               ? <Line ref={chartLineRef} data={lineData} options={lineOptions} />
-              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">Sin datos</p>}
           </div>
         </div>
       </div>
@@ -1051,7 +1051,7 @@ const PanicHistory = () => {
         <div className="card mb-5">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#DC2626' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Ranking de Reportes por Usuario</h3>
+            <h3 className="text-sm font-bold text-primary">Ranking de Reportes por Usuario</h3>
             <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
               {rankingUsuarios.length} usuario{rankingUsuarios.length !== 1 ? 's' : ''}
             </span>
@@ -1061,16 +1061,16 @@ const PanicHistory = () => {
               const pct = totalAlertas > 0 ? ((u.count / totalAlertas) * 100).toFixed(0) : 0;
               const barColor = i === 0 ? '#EF4444' : i === 1 ? '#F97316' : i === 2 ? '#F59E0B' : '#94A3B8';
               return (
-                <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <div key={i} className="p-3 rounded-xl" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)' }}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2.5">
                       <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: barColor }}>
                         {i + 1}
                       </span>
-                      <span className="font-bold text-sm" style={{ color: '#0F172A' }}>{u.nombre}</span>
+                      <span className="font-bold text-sm text-primary">{u.nombre}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold tabular-nums" style={{ color: '#475569' }}>{u.count} alerta{u.count !== 1 ? 's' : ''}</span>
+                      <span className="text-xs font-semibold tabular-nums text-secondary">{u.count} alerta{u.count !== 1 ? 's' : ''}</span>
                       <span className="text-xs font-bold tabular-nums px-2 py-0.5 rounded-full" style={{ background: `${barColor}20`, color: barColor }}>{pct}%</span>
                     </div>
                   </div>
@@ -1102,8 +1102,7 @@ const PanicHistory = () => {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="ml-auto flex items-center gap-1 text-xs transition-colors"
-              style={{ color: '#475569' }}
+              className="ml-auto flex items-center gap-1 text-xs transition-colors text-secondary"
             >
               <X size={12} /> Limpiar
             </button>
@@ -1189,7 +1188,7 @@ const PanicHistory = () => {
       )}
 
       {/* Results count */}
-      <p className="text-lg sm:text-xl font-bold mb-4 px-1" style={{ color: '#0F172A' }}>
+      <p className="text-lg sm:text-xl font-bold mb-4 px-1 text-primary">
         {loading ? (
           <span style={{ color: '#60A5FA' }}>Cargando...</span>
         ) : (
@@ -1209,8 +1208,8 @@ const PanicHistory = () => {
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-16 text-center">
-          <Bell size={40} className="mx-auto mb-3 opacity-20" style={{ color: '#64748B' }} />
-          <p className="font-medium" style={{ color: '#94A3B8' }}>No hay alertas{hasFilters ? ' con esos filtros' : ''}</p>
+          <Bell size={40} className="mx-auto mb-3 opacity-20 text-secondary" />
+          <p className="font-medium text-muted">No hay alertas{hasFilters ? ' con esos filtros' : ''}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">

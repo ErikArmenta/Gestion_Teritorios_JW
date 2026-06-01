@@ -88,8 +88,8 @@ const BottomNav = () => {
       <div
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-around items-center h-14"
         style={{
-          backgroundColor: '#FFFFFF',
-          borderTop: '1px solid rgba(0,0,0,0.08)',
+          backgroundColor: 'var(--bg-card)',
+          borderTop: '1px solid var(--border-color)',
           boxShadow: '0 -2px 12px rgba(0,0,0,0.06)',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
@@ -135,7 +135,7 @@ const BottomNav = () => {
           <div
             className="fixed bottom-0 left-0 right-0 z-[70] md:hidden rounded-t-2xl"
             style={{
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--bg-card)',
               boxShadow: '0 -8px 40px rgba(0,0,0,0.15)',
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}
@@ -148,8 +148,7 @@ const BottomNav = () => {
             {/* Close button */}
             <button
               onClick={() => setSheetOpen(false)}
-              className="absolute top-3 right-4 p-1.5 rounded-lg transition-colors"
-              style={{ color: '#94A3B8' }}
+              className="absolute top-3 right-4 p-1.5 rounded-lg transition-colors text-muted"
             >
               <X size={18} />
             </button>
@@ -173,13 +172,13 @@ const BottomNav = () => {
                 </div>
               )}
               <div>
-                <div className="text-sm font-bold" style={{ color: '#0F172A' }}>{user.nombre}</div>
-                <div className="text-xs font-medium mt-0.5" style={{ color: '#94A3B8' }}>{user.rol}</div>
+                <div className="text-sm font-bold text-primary">{user.nombre}</div>
+                <div className="text-xs font-medium mt-0.5 text-muted">{user.rol}</div>
               </div>
             </div>
 
             {/* Divider */}
-            <div className="mx-5 h-px mb-3" style={{ background: 'rgba(0,0,0,0.07)' }} />
+            <div className="mx-5 h-px mb-3" style={{ background: 'var(--border-color)' }} />
 
             {/* Extra menu items (5th, 6th…) */}
             {visibleMenu.slice(4).map(item => (
@@ -200,13 +199,13 @@ const BottomNav = () => {
             ))}
 
             {/* Divider before logout */}
-            <div className="mx-5 h-px my-3" style={{ background: 'rgba(0,0,0,0.07)' }} />
+            <div className="mx-5 h-px my-3" style={{ background: 'var(--border-color)' }} />
 
             {/* Mi Perfil */}
             <button
               onClick={() => { setSheetOpen(false); navigate('/profile'); }}
               className="w-full flex items-center gap-3 px-5 py-3 transition-colors duration-150 text-left"
-              style={{ color: '#475569', background: 'transparent' }}
+              style={{ color: 'var(--text-secondary)', background: 'transparent' }}
             >
               <User size={20} />
               <span className="text-sm font-semibold">Mi Perfil</span>
@@ -249,7 +248,7 @@ const BottomNav = () => {
               style={{
                 background: 'rgba(255,255,255,0.95)',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                color: '#475569',
+                color: 'var(--text-secondary)',
               }}
               onClick={() => setExpandedPhoto(null)}
             >

@@ -51,14 +51,14 @@ const Sidebar = () => {
         >
           <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
         </div>
-        <h2 className="text-lg font-bold text-center leading-snug tracking-tight" style={{ color: '#0F172A' }}>
+        <h2 className="text-lg font-bold text-center leading-snug tracking-tight text-primary">
           Gestión Territorial
         </h2>
-        <span className="text-xs font-medium mt-0.5" style={{ color: '#94A3B8' }}>JW</span>
+        <span className="text-xs font-medium mt-0.5 text-muted">JW</span>
       </div>
 
       {/* Divider */}
-      <div className="mx-5 h-px mb-3" style={{ background: 'rgba(0,0,0,0.07)' }} />
+      <div className="mx-5 h-px mb-3" style={{ background: 'var(--border-color)' }} />
 
       {/* Nav links */}
       <nav className="flex flex-col gap-0.5 flex-1 px-3">
@@ -80,7 +80,7 @@ const Sidebar = () => {
 
       {/* User info + logout */}
       <div className="px-3 pb-6 pt-3">
-        <div className="h-px mb-4" style={{ background: 'rgba(0,0,0,0.07)' }} />
+        <div className="h-px mb-4" style={{ background: 'var(--border-color)' }} />
         <div
           className="flex items-center gap-3 px-2 mb-3 rounded-xl cursor-pointer transition-colors duration-150"
           style={{ padding: '6px 8px' }}
@@ -102,10 +102,10 @@ const Sidebar = () => {
           )}
           <div className="flex-1 overflow-hidden">
             <div className="flex items-center gap-1">
-              <span className="text-sm font-semibold truncate" style={{ color: '#0F172A' }}>{user.nombre}</span>
-              <Pencil size={14} style={{ color: '#94A3B8', flexShrink: 0 }} />
+              <span className="text-sm font-semibold truncate text-primary">{user.nombre}</span>
+              <Pencil size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             </div>
-            <div className="text-xs truncate" style={{ color: '#94A3B8' }}>{user.rol}</div>
+            <div className="text-xs truncate text-muted">{user.rol}</div>
             {user.congregacion_nombre && (
               <div className="text-xs truncate mt-0.5 font-medium" style={{ color: '#3B82F6' }}>
                 {user.congregacion_nombre}
@@ -136,8 +136,8 @@ const Sidebar = () => {
       <div
         className="hidden md:flex md:flex-col md:w-64 md:sticky md:top-0 md:h-screen shrink-0"
         style={{
-          backgroundColor: '#FFFFFF',
-          borderRight: '1px solid rgba(0,0,0,0.07)',
+          backgroundColor: 'var(--bg-card)',
+          borderRight: '1px solid var(--border-color)',
           boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
@@ -165,7 +165,7 @@ const Sidebar = () => {
               style={{
                 background: 'rgba(255,255,255,0.95)',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                color: '#475569',
+                color: 'var(--text-secondary)',
               }}
               onClick={() => setExpandedPhoto(null)}
             >
