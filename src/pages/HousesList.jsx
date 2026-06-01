@@ -7,6 +7,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
 import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 const HousesList = () => {
   const { casas, territorios, deleteCasa, updateCasa, insertarHistorialVisita, loading } = useData();
@@ -23,6 +24,7 @@ const HousesList = () => {
   const [visitaNotas, setVisitaNotas]         = useState('');
   const [savingVisita, setSavingVisita]       = useState(false);
   const [editTarget, setEditTarget]           = useState(null); // null | casa
+  const [currentPage, setCurrentPage]         = useState(1);
 
   useEffect(() => {
     if (!lightboxUrl) return;
@@ -54,6 +56,8 @@ const HousesList = () => {
     const matchStatus    = filterStatus    === 'Todos' || c.estado === filterStatus;
     return matchSearch && matchTerritory && matchStatus;
   });
+
+  const paginatedCasas = filteredCasas.slice((currentPage - 1) * 25, currentPage * 25);
 
   const handleDelete = async () => {
     try {
@@ -139,15 +143,15 @@ const HousesList = () => {
             <input
               placeholder="Buscar dirección, contacto o zona..."
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="pl-9"
             />
           </div>
-          <select value={filterTerritory} onChange={e => setFilterTerritory(e.target.value)}>
+          <select value={filterTerritory} onChange={e => { setFilterTerritory(e.target.value); setCurrentPage(1); }}>
             <option value="Todos">Todos los territorios</option>
             {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
           </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}>
             <option value="Todos">Todos los estados</option>
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
@@ -170,7 +174,7 @@ const HousesList = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredCasas.length > 0 ? filteredCasas.map(c => (
+              {filteredCasas.length > 0 ? paginatedCasas.map(c => (
                 <tr key={c.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.025)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -250,11 +254,12 @@ const HousesList = () => {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalItems={filteredCasas.length} itemsPerPage={25} onPageChange={setCurrentPage} />
       </div>
 
       {/* Cards — mobile */}
       <div className="md:hidden space-y-3">
-        {filteredCasas.length > 0 ? filteredCasas.map(c => (
+        {filteredCasas.length > 0 ? paginatedCasas.map(c => (
           <div key={c.id} className="card p-4" style={{ borderLeft: `3px solid ${getStatusColor(c.estado)}60` }}>
             <div className="flex items-start gap-3 mb-2">
               {c.foto_url ? (
@@ -317,6 +322,7 @@ const HousesList = () => {
             No se encontraron casas con los filtros actuales.
           </div>
         )}
+        <Pagination currentPage={currentPage} totalItems={filteredCasas.length} itemsPerPage={25} onPageChange={setCurrentPage} />
       </div>
 
       {/* Mini-modal Registrar Visita */}
