@@ -107,3 +107,62 @@ CREATE POLICY "usuarios_ven_sus_notificaciones"
 ```
 
 > **Nota sobre RLS:** Si la app usa un cliente Supabase con `anon key` sin autenticación nativa de Supabase (auth custom), deshabilitar RLS en esta tabla y controlar el acceso a nivel de aplicación, o usar `service_role` key para inserciones desde Edge Functions / triggers.
+
+---
+
+## Migración 4 — Territorios Compartidos + Campo audio_url en Casas
+
+### 4a — Tabla territorio_compartidos
+
+Permite generar links temporales de solo lectura para compartir un territorio sin requerir login.
+
+```sql
+CREATE TABLE territorio_compartidos (
+  id             UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  territorio_id  BIGINT REFERENCES territorios(id) ON DELETE CASCADE,
+  creado_por     BIGINT REFERENCES app_usuarios(id),
+  expira_en      TIMESTAMPTZ NOT NULL,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Notas:**
+- `id`: UUID generado automáticamente — se usa como token del link (`/shared/{uuid}`).
+- `territorio_id`: al eliminar un territorio, sus links compartidos se eliminan en cascada.
+- `creado_por`: referencia al usuario que generó el link. Sin `ON DELETE CASCADE` para conservar el registro si el usuario es eliminado.
+- `expira_en`: la app genera links con expiración de 24 horas. La página `/shared/:id` verifica este campo antes de mostrar el contenido.
+- **El cliente debe ejecutar este SQL antes de activar la función "Compartir" en el mapa de territorios.**
+
+**RLS sugerida:**
+
+```sql
+-- Permitir SELECT público (sin auth) para que funcione la página compartida
+ALTER TABLE territorio_compartidos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "lectura_publica_compartidos"
+  ON territorio_compartidos FOR SELECT
+  USING (true);
+
+-- Solo usuarios autenticados (via app) pueden insertar
+CREATE POLICY "insertar_compartidos_autenticados"
+  ON territorio_compartidos FOR INSERT
+  WITH CHECK (true);
+```
+
+---
+
+### 4b — Campo audio_url en tabla casas
+
+Agrega soporte para notas de voz grabadas por el publicador al registrar o editar una casa.
+
+```sql
+ALTER TABLE casas ADD COLUMN IF NOT EXISTS audio_url TEXT;
+```
+
+**Notas:**
+- `audio_url`: URL del archivo de audio almacenado en el bucket `notas_voz` de Supabase Storage.
+- El bucket `notas_voz` debe crearse manualmente en **Supabase Dashboard → Storage → New bucket**.
+  - Nombre: `notas_voz`
+  - Visibilidad: pública (para reproducción directa desde `<audio src>`) o privada con URLs firmadas.
+- `IF NOT EXISTS` evita error si el campo ya fue agregado previamente.
+- **El cliente debe ejecutar este SQL y crear el bucket antes de usar la función de notas de voz.**
