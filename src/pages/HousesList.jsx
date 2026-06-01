@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
+import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
 import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search } from 'lucide-react';
 
 const HousesList = () => {
-  const { casas, territorios, deleteCasa, updateCasa, loading } = useData();
+  const { casas, territorios, deleteCasa, updateCasa, insertarHistorialVisita, loading } = useData();
+  const { user } = useAuth();
   const toast = useToast();
 
   const [searchTerm, setSearchTerm]           = useState('');
@@ -16,6 +19,9 @@ const HousesList = () => {
   const [deleteTarget, setDeleteTarget]       = useState(null);
   const [editStatusId, setEditStatusId]       = useState(null);
   const [lightboxUrl, setLightboxUrl]         = useState(null);
+  const [visitaModal, setVisitaModal]         = useState(null); // {id, estadoActual, nuevoEstado}
+  const [visitaNotas, setVisitaNotas]         = useState('');
+  const [savingVisita, setSavingVisita]       = useState(false);
 
   useEffect(() => {
     if (!lightboxUrl) return;
@@ -67,6 +73,29 @@ const HousesList = () => {
       toast.error('Error al actualizar el estado');
     } finally {
       setEditStatusId(null);
+    }
+  };
+
+  const handleConfirmVisita = async () => {
+    if (!visitaModal) return;
+    setSavingVisita(true);
+    try {
+      await insertarHistorialVisita({
+        casa_id: visitaModal.id,
+        usuario_id: user?.id || null,
+        usuario_nombre: user?.nombre || 'Usuario',
+        estado_anterior: visitaModal.estadoActual,
+        estado_nuevo: visitaModal.nuevoEstado,
+        notas: visitaNotas.trim() || null,
+      });
+      await updateCasa(visitaModal.id, { estado: visitaModal.nuevoEstado });
+      toast.success('Visita registrada correctamente');
+      setVisitaModal(null);
+      setVisitaNotas('');
+    } catch {
+      toast.error('Error al registrar la visita');
+    } finally {
+      setSavingVisita(false);
     }
   };
 
@@ -167,7 +196,11 @@ const HousesList = () => {
                         autoFocus
                         defaultValue={c.estado}
                         onBlur={() => setEditStatusId(null)}
-                        onChange={e => handleStatusChange(c.id, e.target.value)}
+                        onChange={e => {
+                          setVisitaModal({ id: c.id, estadoActual: c.estado, nuevoEstado: e.target.value });
+                          setVisitaNotas('');
+                          setEditStatusId(null);
+                        }}
                         className="text-xs py-1 px-2 rounded-lg w-auto"
                         style={{ border: '1px solid rgba(59,130,246,0.5)' }}
                       >
@@ -233,7 +266,11 @@ const HousesList = () => {
                   autoFocus
                   defaultValue={c.estado}
                   onBlur={() => setEditStatusId(null)}
-                  onChange={e => handleStatusChange(c.id, e.target.value)}
+                  onChange={e => {
+                    setVisitaModal({ id: c.id, estadoActual: c.estado, nuevoEstado: e.target.value });
+                    setVisitaNotas('');
+                    setEditStatusId(null);
+                  }}
                   className="text-xs py-1 px-1.5 rounded-lg shrink-0 w-auto"
                   style={{ border: '1px solid rgba(59,130,246,0.5)' }}
                 >
@@ -266,6 +303,51 @@ const HousesList = () => {
           </div>
         )}
       </div>
+
+      {/* Mini-modal Registrar Visita */}
+      {visitaModal && (
+        <ModalOverlay size="small" onClose={() => { setVisitaModal(null); setVisitaNotas(''); }}>
+          <div>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#0F172A' }}>Registrar Visita</h3>
+            <p className="text-sm mb-4" style={{ color: '#475569' }}>
+              Estado:{' '}
+              <span className="font-semibold" style={{ color: getStatusColor(visitaModal.estadoActual) }}>{visitaModal.estadoActual}</span>
+              {' → '}
+              <span className="font-semibold" style={{ color: getStatusColor(visitaModal.nuevoEstado) }}>{visitaModal.nuevoEstado}</span>
+            </p>
+            <textarea
+              rows={3}
+              placeholder="Notas de la visita (opcional)..."
+              value={visitaNotas}
+              onChange={e => setVisitaNotas(e.target.value)}
+              className="w-full resize-none"
+              style={{ fontSize: '0.875rem' }}
+            />
+            <div className="flex gap-2 justify-end mt-4">
+              <button
+                className="btn btn-outline"
+                onClick={() => { setVisitaModal(null); setVisitaNotas(''); }}
+                disabled={savingVisita}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary flex items-center gap-2"
+                onClick={handleConfirmVisita}
+                disabled={savingVisita}
+              >
+                {savingVisita && (
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                )}
+                Registrar Visita
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
 
       {/* Confirm delete */}
       {deleteTarget && (
