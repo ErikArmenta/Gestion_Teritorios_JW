@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, FeatureGroup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet-draw';
@@ -160,6 +160,32 @@ const TerritoriesMap = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editCasa, setEditCasa] = useState(null);
   const [gestionarTerritorio, setGestionarTerritorio] = useState(null);
+  const [filtroMisTerr, setFiltroMisTerr] = useState(false);
+  const filtroInitialized = useRef(false);
+
+  useEffect(() => {
+    if (filtroInitialized.current) return;
+    if (asignaciones.length === 0) return;
+    filtroInitialized.current = true;
+    if (user?.rol === 'Publicador') {
+      const tieneAsignaciones = asignaciones.some(
+        a => String(a.usuario_id) === String(user.id) && a.activa
+      );
+      setFiltroMisTerr(tieneAsignaciones);
+    }
+  }, [asignaciones, user]);
+
+  const territoriosFiltrados = filtroMisTerr
+    ? territorios.filter(t =>
+        asignaciones.some(
+          a => String(a.territorio_id) === String(t.id) && String(a.usuario_id) === String(user?.id) && a.activa
+        )
+      )
+    : territorios;
+
+  const casasFiltradas = filtroMisTerr
+    ? casas.filter(c => territoriosFiltrados.some(t => String(t.id) === String(c.territorio_id)))
+    : casas;
 
   const handleDrawCreated = useCallback((e) => {
     const { layerType, layer } = e;
@@ -248,7 +274,45 @@ const TerritoriesMap = () => {
       </div>
 
       {/* Map card */}
-      <div className="card flex-1 min-h-0 p-0 overflow-hidden" style={{ minHeight: '420px' }}>
+      <div className="flex-1 min-h-0 relative" style={{ minHeight: '420px' }}>
+        {/* Toggle Ver todos / Mis territorios */}
+        <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 1000, display: 'flex', gap: '4px' }}>
+          <button
+            onClick={() => setFiltroMisTerr(false)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: filtroMisTerr ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent',
+              background: filtroMisTerr ? 'rgba(15,23,42,0.85)' : '#2563EB',
+              color: filtroMisTerr ? '#94A3B8' : '#fff',
+              backdropFilter: 'blur(8px)',
+              transition: 'all 0.2s',
+            }}
+          >
+            Ver todos
+          </button>
+          <button
+            onClick={() => setFiltroMisTerr(true)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: filtroMisTerr ? '1px solid transparent' : '1px solid rgba(255,255,255,0.15)',
+              background: filtroMisTerr ? '#2563EB' : 'rgba(15,23,42,0.85)',
+              color: filtroMisTerr ? '#fff' : '#94A3B8',
+              backdropFilter: 'blur(8px)',
+              transition: 'all 0.2s',
+            }}
+          >
+            Mis territorios
+          </button>
+        </div>
+        <div className="card h-full p-0 overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[420px] gap-3">
             <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-500 rounded-full animate-spin" style={{ borderWidth: 3 }} />
@@ -266,13 +330,13 @@ const TerritoriesMap = () => {
               url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
               className="neon-labels"
             />
-            <GlobalMapFitter territorios={territorios} />
+            <GlobalMapFitter territorios={territoriosFiltrados} />
             <FeatureGroup>
               <CustomEditControl onCreated={handleDrawCreated} />
             </FeatureGroup>
 
             {/* Polígonos de territorios */}
-            {territorios.map((t) => (
+            {territoriosFiltrados.map((t) => (
               <Polygon
                 key={t.id}
                 positions={t.coordenadas}
@@ -394,7 +458,7 @@ const TerritoriesMap = () => {
 
             {/* Marcadores de casas */}
             <MarkerClusterGroup chunkedLoading maxClusterRadius={40}>
-              {casas.map((c) => (
+              {casasFiltradas.map((c) => (
                 <Marker key={c.id} position={[c.latitud, c.longitud]} icon={createHouseIcon(c.estado, c._offline)}>
                   <Popup className="ficha-tecnica" maxWidth={300} minWidth={240}>
                     <div className="min-w-[220px] max-w-[280px]">
@@ -462,6 +526,7 @@ const TerritoriesMap = () => {
             </MarkerClusterGroup>
           </MapContainer>
         )}
+        </div>
       </div>
 
       {/* Modal nuevo territorio */}
