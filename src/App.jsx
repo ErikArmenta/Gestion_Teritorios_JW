@@ -20,6 +20,7 @@ import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import NotificationBell from './components/NotificationBell';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -176,6 +177,7 @@ const AppLayout = () => {
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <DataProvider>
         <NotificationProvider>
@@ -190,6 +192,7 @@ function App() {
         </NotificationProvider>
       </DataProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

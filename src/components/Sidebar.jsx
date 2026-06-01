@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [expandedPhoto, setExpandedPhoto] = useState(null);
 
@@ -113,6 +115,18 @@ const Sidebar = () => {
             )}
           </div>
         </div>
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-full mb-2 text-sm font-medium transition-colors duration-200"
+          style={{
+            background: 'var(--bg-hover)',
+            color: 'var(--text-secondary)',
+            border: 'none',
+          }}
+        >
+          {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+          {theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
+        </button>
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200"

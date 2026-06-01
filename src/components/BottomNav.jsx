@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2 } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const menuItems = [
   { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
@@ -53,6 +54,7 @@ const NavItem = ({ item }) => (
 
 const BottomNav = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expandedPhoto, setExpandedPhoto] = useState(null);
@@ -200,6 +202,18 @@ const BottomNav = () => {
 
             {/* Divider before logout */}
             <div className="mx-5 h-px my-3" style={{ background: 'var(--border-color)' }} />
+
+            {/* Toggle tema */}
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-5 py-3 transition-colors duration-150 text-left"
+              style={{ color: 'var(--text-secondary)', background: 'transparent' }}
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+              <span className="text-sm font-semibold">
+                {theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
+              </span>
+            </button>
 
             {/* Mi Perfil */}
             <button
