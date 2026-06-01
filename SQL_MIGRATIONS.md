@@ -61,3 +61,49 @@ CREATE INDEX idx_asig_usuario ON territorio_asignaciones(usuario_id);
 - `asignado_por`: si el usuario que asignó es eliminado, el campo queda en NULL pero el registro se conserva.
 - `activa`: usar `false` + `fecha_fin` para desasignar sin perder el historial.
 - Para desasignar: `UPDATE territorio_asignaciones SET activa = false, fecha_fin = CURRENT_DATE WHERE id = [id];`
+
+---
+
+## Migración 3 — Notificaciones Internas
+
+Almacena notificaciones in-app para cada usuario: asignaciones, cambios de estado, alertas del sistema.
+
+```sql
+CREATE TABLE notificaciones (
+  id                   BIGSERIAL PRIMARY KEY,
+  usuario_destino_id   BIGINT REFERENCES app_usuarios(id) ON DELETE CASCADE,
+  tipo                 TEXT NOT NULL CHECK (tipo IN ('asignacion', 'estado_casa', 'sistema', 'alerta')),
+  titulo               TEXT NOT NULL,
+  mensaje              TEXT,
+  leida                BOOLEAN DEFAULT FALSE,
+  metadata             JSONB DEFAULT '{}',
+  created_at           TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_notif_usuario ON notificaciones(usuario_destino_id);
+CREATE INDEX idx_notif_leida   ON notificaciones(usuario_destino_id, leida);
+```
+
+**Notas:**
+- `usuario_destino_id`: al eliminar un usuario, sus notificaciones se eliminan en cascada.
+- `tipo`: valores permitidos: `'asignacion'`, `'estado_casa'`, `'sistema'`, `'alerta'`.
+- `metadata`: campo JSONB libre para datos extra (ej. `{"casa_id": 42, "territorio_id": 7}`).
+- `leida`: usar `false` para no leídas; el badge de la campana muestra el conteo de registros con `leida = false`.
+
+**RLS sugerida (Row Level Security):**
+
+```sql
+-- Habilitar RLS en la tabla
+ALTER TABLE notificaciones ENABLE ROW LEVEL SECURITY;
+
+-- Política: cada usuario solo puede ver sus propias notificaciones
+CREATE POLICY "usuarios_ven_sus_notificaciones"
+  ON notificaciones FOR SELECT
+  USING (usuario_destino_id = auth.uid()::bigint);
+
+-- Política: solo el sistema (service_role) puede insertar notificaciones
+-- Las inserciones desde el frontend deben hacerse con el cliente de servicio,
+-- o bien agregar una política INSERT para roles de admin si se insertan desde el cliente.
+```
+
+> **Nota sobre RLS:** Si la app usa un cliente Supabase con `anon key` sin autenticación nativa de Supabase (auth custom), deshabilitar RLS en esta tabla y controlar el acceso a nivel de aplicación, o usar `service_role` key para inserciones desde Edge Functions / triggers.
