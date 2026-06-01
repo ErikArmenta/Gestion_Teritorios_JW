@@ -8,7 +8,8 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_COLORS, getStatusColor } from '../utils/constants';
-import { Trash2, Pencil, X, Check, Search, Navigation } from 'lucide-react';
+import { Trash2, Pencil, X, Check, Search, Navigation, Share2, Copy } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import EditHouseModal from '../components/EditHouseModal';
 import AsignacionesModal from '../components/AsignacionesModal';
 
@@ -338,6 +339,8 @@ const TerritoriesMap = () => {
   const [filtroMisTerr, setFiltroMisTerr] = useState(false);
   const filtroInitialized = useRef(false);
   const [rutaActiva, setRutaActiva] = useState(null); // { territorioId, casasOrdenadas, polylinePoints }
+  const [compartirModal, setCompartirModal] = useState(null); // null | { territorioId, link }
+  const [compartirLoading, setCompartirLoading] = useState(false);
 
   // Búsqueda en mapa
   const [busqueda, setBusqueda] = useState('');
@@ -476,6 +479,28 @@ const TerritoriesMap = () => {
     if (!casasOrdenadas.length) return '#';
     const waypoints = casasOrdenadas.map(c => `${Number(c.latitud).toFixed(6)},${Number(c.longitud).toFixed(6)}`);
     return `https://www.google.com/maps/dir/${waypoints.join('/')}`;
+  };
+
+  const handleCompartir = async (t) => {
+    setCompartirLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('territorio_compartidos')
+        .insert({
+          territorio_id: t.id,
+          creado_por: user.id,
+          expira_en: new Date(Date.now() + 86400000).toISOString(),
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      const link = window.location.origin + '/shared/' + data.id;
+      setCompartirModal({ territorioId: t.id, territorioNombre: t.nombre, link });
+    } catch (err) {
+      toast.error('Error al compartir: ' + (err.message || err));
+    } finally {
+      setCompartirLoading(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -710,6 +735,16 @@ const TerritoriesMap = () => {
                             style={{ background: 'rgba(16,185,129,0.15)', color: '#34D399', border: '1px solid rgba(16,185,129,0.3)' }}
                           >
                             <Navigation size={11} /> Ruta de Visitas
+                          </button>
+                        )}
+                        {ADMIN_ROLES.includes(user?.rol) && (
+                          <button
+                            onClick={() => handleCompartir(t)}
+                            disabled={compartirLoading}
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium w-full mt-1"
+                            style={{ background: 'rgba(124,58,237,0.15)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.3)', opacity: compartirLoading ? 0.6 : 1, cursor: compartirLoading ? 'not-allowed' : 'pointer' }}
+                          >
+                            <Share2 size={11} /> {compartirLoading ? 'Generando...' : 'Compartir'}
                           </button>
                         )}
                       </div>
@@ -1003,6 +1038,60 @@ const TerritoriesMap = () => {
           onClose={() => setEditCasa(null)}
           onSaved={() => setEditCasa(null)}
         />
+      )}
+
+      {/* Modal compartir territorio */}
+      {compartirModal && (
+        <ModalOverlay onClose={() => setCompartirModal(null)} size="small">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <Share2 size={18} style={{ color: '#7C3AED' }} />
+            <h3 className="text-lg font-bold">Compartir Territorio</h3>
+          </div>
+          <p className="text-sm text-secondary mb-4">
+            {compartirModal.territorioNombre}
+          </p>
+          <div className="form-group">
+            <label className="form-label">Enlace de acceso</label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                readOnly
+                value={compartirModal.link}
+                style={{ flex: 1, fontSize: '12px', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'text' }}
+                onFocus={e => e.target.select()}
+              />
+              <button
+                className="btn btn-outline"
+                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', fontSize: '13px' }}
+                onClick={() => {
+                  navigator.clipboard.writeText(compartirModal.link);
+                  toast.success('Enlace copiado al portapapeles');
+                }}
+              >
+                <Copy size={13} /> Copiar
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-muted mt-2 mb-5">
+            Este enlace expira en 24 horas.
+          </p>
+          <div className="flex gap-3">
+            <button
+              className="btn btn-outline flex-1"
+              onClick={() => setCompartirModal(null)}
+            >
+              Cerrar
+            </button>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent('Territorio compartido: ' + compartirModal.link)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary flex-1"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', textDecoration: 'none' }}
+            >
+              <Share2 size={14} /> WhatsApp
+            </a>
+          </div>
+        </ModalOverlay>
       )}
 
       {/* Modal confirmar eliminación */}
