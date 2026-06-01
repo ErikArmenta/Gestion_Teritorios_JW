@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
@@ -81,14 +81,19 @@ const Sidebar = () => {
       {/* User info + logout */}
       <div className="px-3 pb-6 pt-3">
         <div className="h-px mb-4" style={{ background: 'rgba(0,0,0,0.07)' }} />
-        <div className="flex items-center gap-3 px-2 mb-3">
+        <div
+          className="flex items-center gap-3 px-2 mb-3 rounded-xl cursor-pointer transition-colors duration-150"
+          style={{ padding: '6px 8px' }}
+          onClick={() => navigate('/profile')}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(37,99,235,0.06)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        >
           {user.foto_url ? (
             <img
               src={user.foto_url}
               alt={user.nombre}
-              className="w-9 h-9 rounded-full object-cover shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+              className="w-9 h-9 rounded-full object-cover shrink-0"
               style={{ boxShadow: '0 0 0 2px rgba(37,99,235,0.35)' }}
-              onClick={() => setExpandedPhoto({ url: user.foto_url, nombre: user.nombre })}
             />
           ) : (
             <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
@@ -96,7 +101,10 @@ const Sidebar = () => {
             </div>
           )}
           <div className="flex-1 overflow-hidden">
-            <div className="text-sm font-semibold truncate" style={{ color: '#0F172A' }}>{user.nombre}</div>
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-semibold truncate" style={{ color: '#0F172A' }}>{user.nombre}</span>
+              <Pencil size={14} style={{ color: '#94A3B8', flexShrink: 0 }} />
+            </div>
             <div className="text-xs truncate" style={{ color: '#94A3B8' }}>{user.rol}</div>
             {user.congregacion_nombre && (
               <div className="text-xs truncate mt-0.5 font-medium" style={{ color: '#3B82F6' }}>

@@ -11,6 +11,7 @@ import UsersList from './pages/UsersList';
 import PanicHistory from './pages/PanicHistory';
 import CongregacionesList from './pages/CongregacionesList';
 import Login from './pages/Login';
+import Profile from './pages/Profile';
 import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
@@ -98,6 +99,7 @@ const AppLayout = () => {
               <CongregacionesList />
             </ProtectedRoute>
           } />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
 
