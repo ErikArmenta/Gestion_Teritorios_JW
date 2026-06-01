@@ -19,6 +19,8 @@ import BottomNav from './components/BottomNav';
 import { DataProvider } from './context/DataContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
+import { NotificationProvider } from './context/NotificationContext';
+import NotificationBell from './components/NotificationBell';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -71,6 +73,10 @@ const AppLayout = () => {
       <main
         className="flex-1 p-4 pb-24 md:p-8 md:pb-8 overflow-y-auto flex flex-col"
       >
+        {/* Top bar: NotificationBell */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+          <NotificationBell />
+        </div>
         <Routes>
           <Route path="/" element={<TerritoriesMap />} />
           <Route path="/register" element={<RegisterHouse />} />
@@ -172,6 +178,7 @@ function App() {
   return (
     <AuthProvider>
       <DataProvider>
+        <NotificationProvider>
         <ToastProvider>
           <BrowserRouter>
             <Routes>
@@ -180,6 +187,7 @@ function App() {
             </Routes>
           </BrowserRouter>
         </ToastProvider>
+        </NotificationProvider>
       </DataProvider>
     </AuthProvider>
   );
