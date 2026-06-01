@@ -27,6 +27,9 @@ const DashboardStats = () => {
   const { user } = useAuth();
 
   const [actividadReciente, setActividadReciente] = useState([]);
+  const [periodoActivo, setPeriodoActivo] = useState('todo');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
 
   useEffect(() => {
     const fetchActividad = async () => {
@@ -39,6 +42,47 @@ const DashboardStats = () => {
     };
     fetchActividad();
   }, []);
+
+  const getPeriodRange = (periodo) => {
+    const now = new Date();
+    const toDateStr = (d) => d.toISOString().slice(0, 10);
+    switch (periodo) {
+      case 'hoy': {
+        const today = toDateStr(now);
+        return { desde: today, hasta: today };
+      }
+      case 'semana': {
+        const d = new Date(now);
+        const day = d.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        d.setDate(d.getDate() + diff);
+        return { desde: toDateStr(d), hasta: toDateStr(now) };
+      }
+      case 'mes': {
+        const first = new Date(now.getFullYear(), now.getMonth(), 1);
+        return { desde: toDateStr(first), hasta: toDateStr(now) };
+      }
+      case 'trimestre': {
+        const d = new Date(now);
+        d.setMonth(d.getMonth() - 3);
+        return { desde: toDateStr(d), hasta: toDateStr(now) };
+      }
+      default:
+        return { desde: '', hasta: '' };
+    }
+  };
+
+  const handlePeriodo = (periodo) => {
+    setPeriodoActivo(periodo);
+    if (periodo === 'todo') {
+      setFechaDesde('');
+      setFechaHasta('');
+    } else {
+      const { desde, hasta } = getPeriodRange(periodo);
+      setFechaDesde(desde);
+      setFechaHasta(hasta);
+    }
+  };
 
   const formatRelative = (dateStr) => {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -65,14 +109,31 @@ const DashboardStats = () => {
   const chartBarRef = useRef(null);
   const chartEspRef = useRef(null);
 
-  const totalCasas = casas.length;
-  const atendidos = casas.filter(c => c.estado === 'Atendido').length;
-  const noAtendidos = casas.filter(c => c.estado === 'No atendió').length;
-  const pendientes = casas.filter(c => c.estado === 'Pendiente').length;
-  const especiales = casas.filter(c => c.tiene_caso_especial).length;
+  // Casas filtradas por período
+  const casasFiltradas = (() => {
+    if (periodoActivo === 'todo' && !fechaDesde && !fechaHasta) return casas;
+    const tieneFecha = casas.length > 0 && casas[0].created_at;
+    if (!tieneFecha) {
+      if (casas.length > 0) console.warn('[DashboardStats] Las casas no tienen campo created_at. Mostrando todos los datos sin filtro de fecha.');
+      return casas;
+    }
+    return casas.filter(c => {
+      const fecha = c.created_at?.slice(0, 10);
+      if (!fecha) return false;
+      if (fechaDesde && fecha < fechaDesde) return false;
+      if (fechaHasta && fecha > fechaHasta) return false;
+      return true;
+    });
+  })();
+
+  const totalCasas = casasFiltradas.length;
+  const atendidos = casasFiltradas.filter(c => c.estado === 'Atendido').length;
+  const noAtendidos = casasFiltradas.filter(c => c.estado === 'No atendió').length;
+  const pendientes = casasFiltradas.filter(c => c.estado === 'Pendiente').length;
+  const especiales = casasFiltradas.filter(c => c.tiene_caso_especial).length;
   const porcAtendidos = totalCasas > 0 ? ((atendidos / totalCasas) * 100).toFixed(1) : 0;
 
-  const statusCounts = casas.reduce((acc, c) => {
+  const statusCounts = casasFiltradas.reduce((acc, c) => {
     acc[c.estado] = (acc[c.estado] || 0) + 1;
     return acc;
   }, {});
@@ -81,7 +142,7 @@ const DashboardStats = () => {
   const statusValues = Object.values(statusCounts);
 
   const terrData = territorios.map(t => {
-    const c = casas.filter(h => String(h.territorio_id) === String(t.id));
+    const c = casasFiltradas.filter(h => String(h.territorio_id) === String(t.id));
     return {
       nombre: t.nombre,
       total: c.length,
@@ -225,7 +286,10 @@ const DashboardStats = () => {
     doc.setFont('helvetica', 'normal');
     doc.text('Reporte Ejecutivo de Cobertura y Actividad', pageW / 2, 27, { align: 'center' });
     doc.setFontSize(9);
-    doc.text(`Generado: ${new Date().toLocaleString('es-MX')}  |  Usuario: ${user?.nombre || 'N/A'}`, pageW / 2, 36, { align: 'center' });
+    const periodoLabel = periodoActivo === 'todo' && !fechaDesde
+      ? 'Todos los datos'
+      : `${fechaDesde || '—'} al ${fechaHasta || '—'}`;
+    doc.text(`Período: ${periodoLabel}  |  Generado: ${new Date().toLocaleString('es-MX')}  |  Usuario: ${user?.nombre || 'N/A'}`, pageW / 2, 36, { align: 'center' });
     y = 52;
 
     doc.setTextColor(31, 41, 55);
@@ -302,7 +366,7 @@ const DashboardStats = () => {
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    const casosEsp = casas.filter(c => c.tiene_caso_especial);
+    const casosEsp = casasFiltradas.filter(c => c.tiene_caso_especial);
     if (casosEsp.length > 0) {
       if (y > 230) { doc.addPage(); y = 20; }
       doc.setFontSize(14);
@@ -405,7 +469,12 @@ const DashboardStats = () => {
   // --- Excel Generation ---
   const generateExcel = () => {
     const wb = XLSX.utils.book_new();
+    const periodoExcel = periodoActivo === 'todo' && !fechaDesde
+      ? 'Todos los datos'
+      : `${fechaDesde || '—'} al ${fechaHasta || '—'}`;
     const resumenData = [
+      ['Período', periodoExcel],
+      [],
       ['Indicador', 'Valor'],
       ['Total de Viviendas', totalCasas],
       ['Atendidos', atendidos],
@@ -420,7 +489,7 @@ const DashboardStats = () => {
     XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
 
     const headers = ['Dirección', 'Territorio', 'Estado', 'Contacto', 'Teléfono', 'Caso Especial', 'Tipo Caso', 'Detalles', 'Notas', 'Latitud', 'Longitud'];
-    const rows = casas.map(c => [
+    const rows = casasFiltradas.map(c => [
       c.direccion, c.territorio_nombre, c.estado, c.nombre_contacto || '',
       c.telefono || '', c.tiene_caso_especial ? 'Sí' : 'No',
       c.tipo_caso || '', c.detalles_caso || '', c.notas || '',
@@ -436,7 +505,10 @@ const DashboardStats = () => {
     ws3['!cols'] = terrHeaders.map(() => ({ wch: 16 }));
     XLSX.utils.book_append_sheet(wb, ws3, 'Por Territorio');
 
-    XLSX.writeFile(wb, `Datos_Territorial_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const sufijo = periodoActivo === 'todo' && !fechaDesde
+      ? 'todo'
+      : `${fechaDesde || 'inicio'}_${fechaHasta || 'hoy'}`;
+    XLSX.writeFile(wb, `Datos_Territorial_${sufijo}.xlsx`);
   };
 
   const kpiCards = [
@@ -494,6 +566,86 @@ const DashboardStats = () => {
             <Table size={15} /> Exportar Excel
           </button>
         </div>
+      </div>
+
+      {/* Filtros de período */}
+      <div className="card mb-5 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          {[
+            { id: 'hoy',       label: 'Hoy' },
+            { id: 'semana',    label: 'Esta semana' },
+            { id: 'mes',       label: 'Este mes' },
+            { id: 'trimestre', label: 'Últimos 3 meses' },
+            { id: 'todo',      label: 'Todo' },
+          ].map(p => (
+            <button
+              key={p.id}
+              onClick={() => handlePeriodo(p.id)}
+              style={{
+                background: periodoActivo === p.id ? '#2563EB' : 'transparent',
+                color: periodoActivo === p.id ? '#fff' : '#475569',
+                border: `1.5px solid ${periodoActivo === p.id ? '#2563EB' : '#E2E8F0'}`,
+                borderRadius: '9999px',
+                padding: '5px 14px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold" style={{ color: '#64748B' }}>Desde</label>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={e => {
+                setFechaDesde(e.target.value);
+                setPeriodoActivo('');
+              }}
+              style={{
+                border: '1.5px solid #E2E8F0',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '13px',
+                color: '#0F172A',
+                background: '#fff',
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold" style={{ color: '#64748B' }}>Hasta</label>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={e => {
+                setFechaHasta(e.target.value);
+                setPeriodoActivo('');
+              }}
+              style={{
+                border: '1.5px solid #E2E8F0',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '13px',
+                color: '#0F172A',
+                background: '#fff',
+              }}
+            />
+          </div>
+        </div>
+        <p className="text-xs mt-3" style={{ color: '#94A3B8' }}>
+          {periodoActivo === 'todo' && !fechaDesde && !fechaHasta
+            ? 'Mostrando todos los datos'
+            : `Mostrando datos del: ${fechaDesde
+                ? new Date(fechaDesde + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+                : '—'} al ${fechaHasta
+                ? new Date(fechaHasta + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+                : '—'}`}
+        </p>
       </div>
 
       {/* KPI Cards */}
