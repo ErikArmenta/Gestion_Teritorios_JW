@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import * as XLSX from 'xlsx';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
-import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil } from 'lucide-react';
+import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil, Upload } from 'lucide-react';
 import Pagination from '../components/Pagination';
+import { supabase } from '../supabaseClient';
 
 const HousesList = () => {
   const { casas, territorios, deleteCasa, updateCasa, insertarHistorialVisita, loading } = useData();
@@ -25,6 +27,11 @@ const HousesList = () => {
   const [savingVisita, setSavingVisita]       = useState(false);
   const [editTarget, setEditTarget]           = useState(null); // null | casa
   const [currentPage, setCurrentPage]         = useState(1);
+  const [importModal, setImportModal]         = useState(false);
+  const [importPreview, setImportPreview]     = useState([]); // all parsed rows
+  const [importErrors, setImportErrors]       = useState(new Set()); // indices of invalid rows
+  const [importing, setImporting]             = useState(false);
+  const importFileRef                         = useRef(null);
 
   useEffect(() => {
     if (!lightboxUrl) return;
@@ -104,6 +111,95 @@ const HousesList = () => {
     }
   };
 
+  const IMPORT_ALLOWED_ROLES = ['Super Admin', 'Admin Principal'];
+
+  const handleDownloadTemplate = () => {
+    const wb = XLSX.utils.book_new();
+    const wsData = [
+      ['Dirección', 'Territorio', 'Estado', 'Contacto', 'Teléfono', 'Notas'],
+      ['Calle Ejemplo 123', 'Territorio Norte', 'Pendiente', 'Juan Pérez', '555-1234', 'Casa esquina'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Casas');
+    XLSX.writeFile(wb, 'plantilla_casas.xlsx');
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      // Skip header row
+      const dataRows = rows.slice(1).filter(r => r.some(cell => String(cell).trim() !== ''));
+      const parsed = dataRows.map(r => ({
+        direccion:       String(r[0] || '').trim(),
+        territorioNombre: String(r[1] || '').trim(),
+        estado:          String(r[2] || '').trim(),
+        nombre_contacto: String(r[3] || '').trim(),
+        telefono:        String(r[4] || '').trim(),
+        notas:           String(r[5] || '').trim(),
+      }));
+      // Validate
+      const errors = new Set();
+      parsed.forEach((row, i) => {
+        const terr = territorios.find(t => t.nombre.toLowerCase() === row.territorioNombre.toLowerCase());
+        if (!row.direccion || !terr) errors.add(i);
+      });
+      setImportPreview(parsed);
+      setImportErrors(errors);
+    };
+    reader.readAsArrayBuffer(file);
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
+
+  const handleImport = async () => {
+    if (!importPreview.length) return;
+    setImporting(true);
+    try {
+      const validRows = importPreview
+        .map((row, i) => ({ row, i }))
+        .filter(({ i }) => !importErrors.has(i))
+        .map(({ row }) => {
+          const terr = territorios.find(t => t.nombre.toLowerCase() === row.territorioNombre.toLowerCase());
+          const estado = STATUS_OPTIONS.includes(row.estado) ? row.estado : 'Pendiente';
+          return {
+            territorio_id:   terr.id,
+            territorio_nombre: terr.nombre,
+            direccion:       row.direccion,
+            estado,
+            nombre_contacto: row.nombre_contacto || null,
+            telefono:        row.telefono || null,
+            notas:           row.notas || null,
+            latitud:         0,
+            longitud:        0,
+            congregacion_id: user?.congregacion_id || null,
+          };
+        });
+
+      if (!validRows.length) {
+        toast.error('No hay filas válidas para importar');
+        return;
+      }
+
+      const { error } = await supabase.from('casas').insert(validRows);
+      if (error) throw error;
+      toast.success(`${validRows.length} ${validRows.length === 1 ? 'casa importada' : 'casas importadas'} correctamente`);
+      setImportModal(false);
+      setImportPreview([]);
+      setImportErrors(new Set());
+    } catch (err) {
+      toast.error('Error al importar: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const statsRow = [
     { label: 'Atendidos', count: casas.filter(c => c.estado === 'Atendido').length, color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
     { label: 'Sin contacto', count: casas.filter(c => c.estado === 'No atendió').length, color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
@@ -119,9 +215,19 @@ const HousesList = () => {
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Lista de Casas</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Registro de visitas y estados</p>
         </div>
-        <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
-          {filteredCasas.length} / {casas.length}
-        </span>
+        <div className="flex items-center gap-2">
+          {IMPORT_ALLOWED_ROLES.includes(user?.rol) && (
+            <button
+              onClick={() => { setImportPreview([]); setImportErrors(new Set()); setImportModal(true); }}
+              className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1.5"
+            >
+              <Upload size={13} /> Importar Excel
+            </button>
+          )}
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
+            {filteredCasas.length} / {casas.length}
+          </span>
+        </div>
       </div>
 
       {/* Stats mini-bar */}
@@ -372,6 +478,137 @@ const HousesList = () => {
 
       {/* Edit house modal — componente creado en tarea 5 */}
       {/* editTarget && <EditHouseModal casa={editTarget} onClose={() => setEditTarget(null)} onSaved={() => setEditTarget(null)} /> */}
+
+      {/* Import Excel modal */}
+      {importModal && (
+        <ModalOverlay onClose={() => setImportModal(false)}>
+          <div>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#0F172A' }}>Importar casas desde Excel</h3>
+            <p className="text-sm mb-4" style={{ color: '#475569' }}>
+              El archivo debe tener las columnas en este orden:{' '}
+              <span className="font-semibold" style={{ color: '#0F172A' }}>Dirección, Territorio, Estado, Contacto, Teléfono, Notas</span>
+            </p>
+
+            {/* Download template */}
+            <button
+              onClick={handleDownloadTemplate}
+              className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1.5 mb-4"
+            >
+              <Upload size={13} /> Descargar Plantilla
+            </button>
+
+            {/* File input */}
+            <div
+              className="rounded-xl flex flex-col items-center justify-center gap-2 mb-4 cursor-pointer"
+              style={{ border: '2px dashed rgba(37,99,235,0.3)', background: 'rgba(37,99,235,0.04)', padding: '1.5rem' }}
+              onClick={() => importFileRef.current?.click()}
+            >
+              <Upload size={22} style={{ color: '#2563EB' }} />
+              <p className="text-sm font-medium" style={{ color: '#2563EB' }}>
+                {importPreview.length > 0
+                  ? `${importPreview.length} filas cargadas — clic para cambiar archivo`
+                  : 'Seleccionar archivo .xlsx o .csv'}
+              </p>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>Formatos soportados: .xlsx, .csv</p>
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".xlsx,.csv"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+            </div>
+
+            {/* Preview table */}
+            {importPreview.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-semibold mb-2" style={{ color: '#475569' }}>
+                  Vista previa — primeras 5 filas (total: {importPreview.length} filas,{' '}
+                  <span style={{ color: '#EF4444' }}>{importErrors.size} con errores</span>,{' '}
+                  <span style={{ color: '#10B981' }}>{importPreview.length - importErrors.size} válidas</span>)
+                </p>
+                <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr style={{ background: 'rgba(0,0,0,0.03)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                        {['Dirección', 'Territorio', 'Estado', 'Contacto', 'Teléfono', 'Notas'].map(h => (
+                          <th key={h} className="px-3 py-2 text-left font-semibold" style={{ color: '#475569' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importPreview.slice(0, 5).map((row, i) => {
+                        const isError = importErrors.has(i);
+                        const terr = territorios.find(t => t.nombre.toLowerCase() === row.territorioNombre.toLowerCase());
+                        return (
+                          <tr
+                            key={i}
+                            style={{
+                              borderBottom: '1px solid rgba(0,0,0,0.05)',
+                              background: isError ? 'rgba(239,68,68,0.06)' : 'transparent',
+                            }}
+                          >
+                            <td className="px-3 py-2" style={{ color: !row.direccion ? '#EF4444' : '#0F172A' }}>
+                              {row.direccion || <em style={{ color: '#EF4444' }}>vacía</em>}
+                            </td>
+                            <td className="px-3 py-2" style={{ color: !terr ? '#EF4444' : '#0F172A' }}>
+                              {row.territorioNombre || '—'}
+                              {!terr && row.territorioNombre && (
+                                <span style={{ color: '#EF4444' }}> (no encontrado)</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2" style={{ color: '#475569' }}>
+                              {STATUS_OPTIONS.includes(row.estado) ? row.estado : (
+                                <span>{row.estado || '—'} <em style={{ color: '#94A3B8' }}>(→ Pendiente)</em></span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2" style={{ color: '#475569' }}>{row.nombre_contacto || '—'}</td>
+                            <td className="px-3 py-2" style={{ color: '#475569' }}>{row.telefono || '—'}</td>
+                            <td className="px-3 py-2" style={{ color: '#475569' }}>{row.notas || '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {importPreview.length > 5 && (
+                  <p className="text-xs mt-1.5" style={{ color: '#94A3B8' }}>
+                    + {importPreview.length - 5} filas más no mostradas en la vista previa
+                  </p>
+                )}
+                {importErrors.size > 0 && (
+                  <p className="text-xs mt-2 font-medium" style={{ color: '#EF4444' }}>
+                    Las filas en rojo tienen errores: dirección vacía o territorio no encontrado. Solo se importarán las filas válidas.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button
+                className="btn btn-outline"
+                onClick={() => setImportModal(false)}
+                disabled={importing}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary flex items-center gap-2"
+                onClick={handleImport}
+                disabled={importing || importPreview.length === 0 || importPreview.length === importErrors.size}
+              >
+                {importing && (
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                )}
+                Importar {importPreview.length - importErrors.size} {importPreview.length - importErrors.size === 1 ? 'casa válida' : 'casas válidas'}
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
 
       {/* Confirm delete */}
       {deleteTarget && (
