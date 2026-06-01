@@ -559,7 +559,7 @@ const DashboardStats = () => {
       <div className="flex flex-wrap justify-between items-center mb-7 sm:mb-9 gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Estadísticas</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Cobertura y actividad territorial en tiempo real</p>
+          <p className="text-sm mt-0.5 text-secondary">Cobertura y actividad territorial en tiempo real</p>
         </div>
         <div className="flex gap-2.5">
           <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
@@ -586,7 +586,7 @@ const DashboardStats = () => {
               onClick={() => handlePeriodo(p.id)}
               style={{
                 background: periodoActivo === p.id ? '#2563EB' : 'transparent',
-                color: periodoActivo === p.id ? '#fff' : '#475569',
+                color: periodoActivo === p.id ? '#fff' : 'var(--text-secondary)',
                 border: `1.5px solid ${periodoActivo === p.id ? '#2563EB' : '#E2E8F0'}`,
                 borderRadius: '9999px',
                 padding: '5px 14px',
@@ -602,7 +602,7 @@ const DashboardStats = () => {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold" style={{ color: '#64748B' }}>Desde</label>
+            <label className="text-xs font-semibold text-secondary">Desde</label>
             <input
               type="date"
               value={fechaDesde}
@@ -611,17 +611,17 @@ const DashboardStats = () => {
                 setPeriodoActivo('');
               }}
               style={{
-                border: '1.5px solid #E2E8F0',
+                border: '1.5px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '4px 10px',
                 fontSize: '13px',
-                color: '#0F172A',
-                background: '#fff',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-card)',
               }}
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold" style={{ color: '#64748B' }}>Hasta</label>
+            <label className="text-xs font-semibold text-secondary">Hasta</label>
             <input
               type="date"
               value={fechaHasta}
@@ -630,17 +630,17 @@ const DashboardStats = () => {
                 setPeriodoActivo('');
               }}
               style={{
-                border: '1.5px solid #E2E8F0',
+                border: '1.5px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '4px 10px',
                 fontSize: '13px',
-                color: '#0F172A',
-                background: '#fff',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-card)',
               }}
             />
           </div>
         </div>
-        <p className="text-xs mt-3" style={{ color: '#94A3B8' }}>
+        <p className="text-xs mt-3 text-muted">
           {periodoActivo === 'todo' && !fechaDesde && !fechaHasta
             ? 'Mostrando todos los datos'
             : `Mostrando datos del: ${fechaDesde
@@ -670,8 +670,8 @@ const DashboardStats = () => {
               >
                 {k.icon}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: '#94A3B8' }}>{k.label}</p>
-              <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums" style={{ color: '#0F172A' }}>{k.value}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{k.label}</p>
+              <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums text-primary">{k.value}</p>
               <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
             </div>
           </div>
@@ -683,7 +683,7 @@ const DashboardStats = () => {
         <div className="card mb-5 p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#475569' }}>Cobertura Global</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-secondary">Cobertura Global</p>
               <div className="flex items-end gap-2">
                 <p className="num-display text-6xl font-black tabular-nums leading-none" style={{ color: '#059669' }}>{porcAtendidos}</p>
                 <span className="text-2xl font-bold mb-1" style={{ color: '#059669' }}>%</span>
@@ -692,15 +692,15 @@ const DashboardStats = () => {
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#10B981' }} />
-                <span style={{ color: '#64748B' }}><strong style={{ color: '#059669' }}>{atendidos}</strong> atendidos</span>
+                <span className="text-secondary"><strong style={{ color: '#059669' }}>{atendidos}</strong> atendidos</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-                <span style={{ color: '#64748B' }}><strong style={{ color: '#DC2626' }}>{noAtendidos}</strong> sin contacto</span>
+                <span className="text-secondary"><strong style={{ color: '#DC2626' }}>{noAtendidos}</strong> sin contacto</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-                <span style={{ color: '#64748B' }}><strong style={{ color: '#D97706' }}>{pendientes}</strong> pendientes</span>
+                <span className="text-secondary"><strong style={{ color: '#D97706' }}>{pendientes}</strong> pendientes</span>
               </span>
             </div>
           </div>
@@ -725,7 +725,7 @@ const DashboardStats = () => {
               />
             )}
           </div>
-          <div className="flex justify-between text-xs mt-2" style={{ color: '#334155' }}>
+          <div className="flex justify-between text-xs mt-2 text-secondary">
             <span>0%</span>
             <span>100%</span>
           </div>
@@ -737,23 +737,23 @@ const DashboardStats = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#3B82F6' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Distribución por Estado</h3>
+            <h3 className="text-sm font-bold text-primary">Distribución por Estado</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalCasas > 0
               ? <Doughnut ref={chartDonutRef} data={donutData} options={donutOptions} />
-              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin datos registrados</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">Sin datos registrados</p>}
           </div>
         </div>
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#10B981' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Actividad por Territorio</h3>
+            <h3 className="text-sm font-bold text-primary">Actividad por Territorio</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {terrData.length > 0
               ? <Bar ref={chartBarRef} data={barData} options={barOptions} />
-              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>Sin territorios registrados</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">Sin territorios registrados</p>}
           </div>
         </div>
       </div>
@@ -763,7 +763,7 @@ const DashboardStats = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
-            <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Casos Especiales por Territorio</h3>
+            <h3 className="text-sm font-bold text-primary">Casos Especiales por Territorio</h3>
             <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
                   style={{ background: 'rgba(124,58,237,0.1)', color: '#7C3AED' }}>
               {especiales} total
@@ -772,7 +772,7 @@ const DashboardStats = () => {
           <div className="relative h-64 sm:h-72 md:h-80">
             {especiales > 0
               ? <Bar ref={chartEspRef} data={especialesData} options={especialesOptions} />
-              : <p className="text-center pt-24 text-sm" style={{ color: '#475569' }}>No hay casos especiales registrados</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">No hay casos especiales registrados</p>}
           </div>
         </div>
       </div>
@@ -784,7 +784,7 @@ const DashboardStats = () => {
       >
         <div className="flex items-center gap-2.5 mb-5">
           <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#2563EB' }} />
-          <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Actividad Reciente</h3>
+          <h3 className="text-sm font-bold text-primary">Actividad Reciente</h3>
           {actividadReciente.length > 0 && (
             <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
                   style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
@@ -793,7 +793,7 @@ const DashboardStats = () => {
           )}
         </div>
         {actividadReciente.length === 0 ? (
-          <p className="text-sm" style={{ color: '#94A3B8' }}>Sin actividad reciente</p>
+          <p className="text-sm text-muted">Sin actividad reciente</p>
         ) : (
           <ul className="space-y-3">
             {actividadReciente.map((item) => {
@@ -803,18 +803,18 @@ const DashboardStats = () => {
                 <li
                   key={item.id}
                   className="flex items-start justify-between gap-3 pb-3"
-                  style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+                  style={{ borderBottom: '1px solid var(--border-color)' }}
                 >
-                  <p className="text-sm leading-snug" style={{ color: '#0F172A' }}>
+                  <p className="text-sm leading-snug text-primary">
                     <strong style={{ color: '#2563EB' }}>{item.usuario_nombre || 'Usuario'}</strong>
                     {' visitó '}
-                    <span style={{ color: '#475569' }}>{direccion}</span>
+                    <span className="text-secondary">{direccion}</span>
                     {' — '}
-                    <span style={{ color: '#64748B' }}>{item.estado_anterior}</span>
+                    <span className="text-secondary">{item.estado_anterior}</span>
                     {' → '}
-                    <strong style={{ color: '#0F172A' }}>{item.estado_nuevo}</strong>
+                    <strong className="text-primary">{item.estado_nuevo}</strong>
                   </p>
-                  <span className="text-xs shrink-0 tabular-nums" style={{ color: '#94A3B8' }}>
+                  <span className="text-xs shrink-0 tabular-nums text-muted">
                     {formatRelative(item.created_at)}
                   </span>
                 </li>
@@ -828,7 +828,7 @@ const DashboardStats = () => {
       <div className="card">
         <div className="flex items-center gap-2.5 mb-6">
           <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-          <h3 className="text-sm font-bold" style={{ color: '#0F172A' }}>Detalle por Territorio</h3>
+          <h3 className="text-sm font-bold text-primary">Detalle por Territorio</h3>
           <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
             {terrData.length} zonas
           </span>
@@ -847,14 +847,14 @@ const DashboardStats = () => {
                 key={i}
                 className="p-4 sm:p-5 rounded-2xl transition-all duration-200 cursor-default hover:-translate-y-0.5"
                 style={{
-                  background: 'rgba(0,0,0,0.02)',
-                  border: '1px solid rgba(0,0,0,0.07)',
+                  background: 'var(--bg-hover)',
+                  border: '1px solid var(--border-color)',
                   borderLeft: `3px solid ${pctColor}80`,
                 }}
               >
                 {/* Header: nombre + badge total */}
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <strong className="text-sm font-bold leading-snug" style={{ color: '#0F172A' }}>{t.nombre}</strong>
+                  <strong className="text-sm font-bold leading-snug text-primary">{t.nombre}</strong>
                   <span className="text-xs tabular-nums font-bold px-2.5 py-1 rounded-full shrink-0" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
                     {t.total} casas
                   </span>
@@ -866,7 +866,7 @@ const DashboardStats = () => {
                     {pct}
                   </p>
                   <span className="text-lg font-bold mt-1" style={{ color: pctColor }}>%</span>
-                  <span className="text-xs ml-2 mt-1" style={{ color: '#475569' }}>cobertura</span>
+                  <span className="text-xs ml-2 mt-1 text-secondary">cobertura</span>
                 </div>
 
                 {/* Barra de progreso */}
@@ -878,25 +878,25 @@ const DashboardStats = () => {
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(16,185,129,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10B981' }} />
-                    <span className="text-xs" style={{ color: '#64748B' }}>
+                    <span className="text-xs text-secondary">
                       <strong className="tabular-nums" style={{ color: '#059669' }}>{t.atendidos}</strong> atend.
                     </span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-                    <span className="text-xs" style={{ color: '#64748B' }}>
+                    <span className="text-xs text-secondary">
                       <strong className="tabular-nums" style={{ color: '#DC2626' }}>{t.noAtendidos}</strong> s/cont.
                     </span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-                    <span className="text-xs" style={{ color: '#64748B' }}>
+                    <span className="text-xs text-secondary">
                       <strong className="tabular-nums" style={{ color: '#D97706' }}>{t.pendientes}</strong> pend.
                     </span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(124,58,237,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
-                    <span className="text-xs" style={{ color: '#64748B' }}>
+                    <span className="text-xs text-secondary">
                       <strong className="tabular-nums" style={{ color: '#7C3AED' }}>{t.especiales}</strong> esp.
                     </span>
                   </div>
@@ -905,7 +905,7 @@ const DashboardStats = () => {
             );
           })}
           {terrData.length === 0 && (
-            <p className="text-sm col-span-full" style={{ color: '#475569' }}>No hay territorios registrados.</p>
+            <p className="text-sm col-span-full text-secondary">No hay territorios registrados.</p>
           )}
         </div>
       </div>

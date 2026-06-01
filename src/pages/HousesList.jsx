@@ -213,7 +213,7 @@ const HousesList = () => {
       <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Lista de Casas</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Registro de visitas y estados</p>
+          <p className="text-sm mt-0.5 text-secondary">Registro de visitas y estados</p>
         </div>
         <div className="flex items-center gap-2">
           {IMPORT_ALLOWED_ROLES.includes(user?.rol) && (
@@ -236,7 +236,7 @@ const HousesList = () => {
           <div key={s.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: s.bg, border: `1px solid ${s.color}25` }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
             <span className="text-xs font-bold tabular-nums" style={{ color: s.color }}>{s.count}</span>
-            <span className="text-xs font-medium" style={{ color: '#64748B' }}>{s.label}</span>
+            <span className="text-xs font-medium text-secondary">{s.label}</span>
           </div>
         ))}
       </div>
@@ -245,7 +245,7 @@ const HousesList = () => {
       <div className="card mb-4 p-4" style={{ borderLeft: '3px solid rgba(59,130,246,0.4)' }}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#475569' }} />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary" />
             <input
               placeholder="Buscar dirección, contacto o zona..."
               value={searchTerm}
@@ -269,38 +269,38 @@ const HousesList = () => {
         <div className="card overflow-x-auto p-0">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest w-16" style={{ color: '#475569' }}>Foto</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Dirección</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Territorio</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Estado</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Contacto</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest" style={{ color: '#475569' }}>Especial</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>Acciones</th>
+              <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-hover)' }}>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest w-16 text-secondary">Foto</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Dirección</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Territorio</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Estado</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Contacto</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Especial</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right text-secondary">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredCasas.length > 0 ? paginatedCasas.map(c => (
-                <tr key={c.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+                <tr key={c.id} className="transition-colors duration-100" style={{ borderBottom: '1px solid var(--border-color)' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.025)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <td className="px-4 py-3" style={{ borderLeft: `3px solid ${getStatusColor(c.estado)}60` }}>
                     {c.foto_url ? (
-                      <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
+                      <button onClick={() => setLightboxUrl(c.foto_url)} className="group relative w-10 h-10 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-color)' }}>
                         <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                           <ZoomIn size={13} className="text-white" />
                         </div>
                       </button>
                     ) : (
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.05)' }}>
-                        <ImageOff size={14} style={{ color: '#94A3B8' }} />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--bg-hover)' }}>
+                        <ImageOff size={14} className="text-muted" />
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#0F172A' }}>{c.direccion}</td>
-                  <td className="px-4 py-3 text-sm" style={{ color: '#64748B' }}>{c.territorio_nombre}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-primary">{c.direccion}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{c.territorio_nombre}</td>
                   <td className="px-4 py-3 text-sm">
                     {editStatusId === c.id ? (
                       <select
@@ -327,11 +327,11 @@ const HousesList = () => {
                       </button>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm" style={{ color: '#64748B' }}>{c.nombre_contacto || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{c.nombre_contacto || '—'}</td>
                   <td className="px-4 py-3 text-sm">
                     {c.tiene_caso_especial
                       ? <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>{c.tipo_caso || 'Especial'}</span>
-                      : <span style={{ color: '#94A3B8' }}>—</span>}
+                      : <span className="text-muted">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
@@ -369,17 +369,17 @@ const HousesList = () => {
           <div key={c.id} className="card p-4" style={{ borderLeft: `3px solid ${getStatusColor(c.estado)}60` }}>
             <div className="flex items-start gap-3 mb-2">
               {c.foto_url ? (
-                <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-xl overflow-hidden shrink-0" style={{ border: '1px solid rgba(0,0,0,0.1)' }}>
+                <button onClick={() => setLightboxUrl(c.foto_url)} className="w-12 h-12 rounded-xl overflow-hidden shrink-0" style={{ border: '1px solid var(--border-color)' }}>
                   <img src={c.foto_url} alt="casa" className="w-full h-full object-cover" />
                 </button>
               ) : (
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(0,0,0,0.05)' }}>
-                  <ImageOff size={16} style={{ color: '#94A3B8' }} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--bg-hover)' }}>
+                  <ImageOff size={16} className="text-muted" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm truncate" style={{ color: '#0F172A' }}>{c.direccion}</p>
-                <p className="text-xs truncate" style={{ color: '#64748B' }}>{c.territorio_nombre}</p>
+                <p className="font-bold text-sm truncate text-primary">{c.direccion}</p>
+                <p className="text-xs truncate text-secondary">{c.territorio_nombre}</p>
               </div>
               {editStatusId === c.id ? (
                 <select
@@ -406,7 +406,7 @@ const HousesList = () => {
               )}
             </div>
 
-            <div className="text-xs space-y-0.5 mb-3" style={{ color: '#64748B' }}>
+            <div className="text-xs space-y-0.5 mb-3 text-secondary">
               {c.nombre_contacto && <div>Contacto: {c.nombre_contacto}</div>}
               {c.tiene_caso_especial && <div className="font-semibold" style={{ color: '#F59E0B' }}>Caso especial: {c.tipo_caso || 'Sí'}</div>}
             </div>
@@ -424,7 +424,7 @@ const HousesList = () => {
             </div>
           </div>
         )) : (
-          <div className="card p-10 text-center text-sm" style={{ color: '#64748B' }}>
+          <div className="card p-10 text-center text-sm text-secondary">
             No se encontraron casas con los filtros actuales.
           </div>
         )}
@@ -435,8 +435,8 @@ const HousesList = () => {
       {visitaModal && (
         <ModalOverlay size="small" onClose={() => { setVisitaModal(null); setVisitaNotas(''); }}>
           <div>
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#0F172A' }}>Registrar Visita</h3>
-            <p className="text-sm mb-4" style={{ color: '#475569' }}>
+            <h3 className="text-lg font-bold mb-1 text-primary">Registrar Visita</h3>
+            <p className="text-sm mb-4 text-secondary">
               Estado:{' '}
               <span className="font-semibold" style={{ color: getStatusColor(visitaModal.estadoActual) }}>{visitaModal.estadoActual}</span>
               {' → '}
@@ -483,10 +483,10 @@ const HousesList = () => {
       {importModal && (
         <ModalOverlay onClose={() => setImportModal(false)}>
           <div>
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#0F172A' }}>Importar casas desde Excel</h3>
-            <p className="text-sm mb-4" style={{ color: '#475569' }}>
+            <h3 className="text-lg font-bold mb-1 text-primary">Importar casas desde Excel</h3>
+            <p className="text-sm mb-4 text-secondary">
               El archivo debe tener las columnas en este orden:{' '}
-              <span className="font-semibold" style={{ color: '#0F172A' }}>Dirección, Territorio, Estado, Contacto, Teléfono, Notas</span>
+              <span className="font-semibold text-primary">Dirección, Territorio, Estado, Contacto, Teléfono, Notas</span>
             </p>
 
             {/* Download template */}
@@ -522,7 +522,7 @@ const HousesList = () => {
             {/* Preview table */}
             {importPreview.length > 0 && (
               <div className="mb-4">
-                <p className="text-xs font-semibold mb-2" style={{ color: '#475569' }}>
+                <p className="text-xs font-semibold mb-2 text-secondary">
                   Vista previa — primeras 5 filas (total: {importPreview.length} filas,{' '}
                   <span style={{ color: '#EF4444' }}>{importErrors.size} con errores</span>,{' '}
                   <span style={{ color: '#10B981' }}>{importPreview.length - importErrors.size} válidas</span>)
@@ -530,9 +530,9 @@ const HousesList = () => {
                 <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
                   <table className="w-full text-xs border-collapse">
                     <thead>
-                      <tr style={{ background: 'rgba(0,0,0,0.03)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                      <tr style={{ background: 'var(--bg-hover)', borderBottom: '1px solid var(--border-color)' }}>
                         {['Dirección', 'Territorio', 'Estado', 'Contacto', 'Teléfono', 'Notas'].map(h => (
-                          <th key={h} className="px-3 py-2 text-left font-semibold" style={{ color: '#475569' }}>{h}</th>
+                          <th key={h} className="px-3 py-2 text-left font-semibold text-secondary">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -544,7 +544,7 @@ const HousesList = () => {
                           <tr
                             key={i}
                             style={{
-                              borderBottom: '1px solid rgba(0,0,0,0.05)',
+                              borderBottom: '1px solid var(--border-color)',
                               background: isError ? 'rgba(239,68,68,0.06)' : 'transparent',
                             }}
                           >
@@ -557,14 +557,14 @@ const HousesList = () => {
                                 <span style={{ color: '#EF4444' }}> (no encontrado)</span>
                               )}
                             </td>
-                            <td className="px-3 py-2" style={{ color: '#475569' }}>
+                            <td className="px-3 py-2 text-secondary">
                               {STATUS_OPTIONS.includes(row.estado) ? row.estado : (
                                 <span>{row.estado || '—'} <em style={{ color: '#94A3B8' }}>(→ Pendiente)</em></span>
                               )}
                             </td>
-                            <td className="px-3 py-2" style={{ color: '#475569' }}>{row.nombre_contacto || '—'}</td>
-                            <td className="px-3 py-2" style={{ color: '#475569' }}>{row.telefono || '—'}</td>
-                            <td className="px-3 py-2" style={{ color: '#475569' }}>{row.notas || '—'}</td>
+                            <td className="px-3 py-2 text-secondary">{row.nombre_contacto || '—'}</td>
+                            <td className="px-3 py-2 text-secondary">{row.telefono || '—'}</td>
+                            <td className="px-3 py-2 text-secondary">{row.notas || '—'}</td>
                           </tr>
                         );
                       })}
@@ -572,7 +572,7 @@ const HousesList = () => {
                   </table>
                 </div>
                 {importPreview.length > 5 && (
-                  <p className="text-xs mt-1.5" style={{ color: '#94A3B8' }}>
+                  <p className="text-xs mt-1.5 text-muted">
                     + {importPreview.length - 5} filas más no mostradas en la vista previa
                   </p>
                 )}
@@ -639,7 +639,7 @@ const HousesList = () => {
               style={{
                 background: 'rgba(255,255,255,0.95)',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                color: '#475569',
+                color: 'var(--text-secondary)',
               }}
               onClick={() => setLightboxUrl(null)}
             >
