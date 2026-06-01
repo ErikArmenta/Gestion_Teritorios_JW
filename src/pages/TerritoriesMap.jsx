@@ -3,12 +3,14 @@ import { MapContainer, TileLayer, Polygon, Marker, Popup, FeatureGroup, useMap }
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet-draw';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_COLORS, getStatusColor } from '../utils/constants';
 import { Trash2, Pencil, X, Check } from 'lucide-react';
 import EditHouseModal from '../components/EditHouseModal';
+import AsignacionesModal from '../components/AsignacionesModal';
 
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -142,18 +144,22 @@ const CasaHistorialSection = ({ casaId }) => {
   );
 };
 
+const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano'];
+
 const TerritoriesMap = () => {
-  const { territorios, casas, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
+  const { territorios, casas, asignaciones, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
+  const { user } = useAuth();
   const toast = useToast();
 
   const [newPolygonCoords, setNewPolygonCoords] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', responsable: '', color: '#3B82F6' });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: '#3B82F6' });
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm]   = useState({});
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editCasa, setEditCasa] = useState(null);
+  const [gestionarTerritorio, setGestionarTerritorio] = useState(null);
 
   const handleDrawCreated = useCallback((e) => {
     const { layerType, layer } = e;
@@ -170,7 +176,7 @@ const TerritoriesMap = () => {
     try {
       await addTerritorio({ ...formData, coordenadas: newPolygonCoords });
       setShowNewModal(false);
-      setFormData({ nombre: '', descripcion: '', responsable: '', color: '#3B82F6' });
+      setFormData({ nombre: '', descripcion: '', color: '#3B82F6' });
       setNewPolygonCoords(null);
       toast.success('Territorio creado correctamente');
     } catch (err) {
@@ -180,7 +186,7 @@ const TerritoriesMap = () => {
 
   const openEdit = (t) => {
     setEditingId(t.id);
-    setEditForm({ nombre: t.nombre, descripcion: t.descripcion || '', responsable: t.responsable || '', color: t.color });
+    setEditForm({ nombre: t.nombre, descripcion: t.descripcion || '', color: t.color });
   };
 
   const handleSaveEdit = async () => {
@@ -287,13 +293,6 @@ const TerritoriesMap = () => {
                         onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))}
                         placeholder="Nombre"
                       />
-                      <input
-                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
-                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
-                        value={editForm.responsable}
-                        onChange={e => setEditForm(f => ({ ...f, responsable: e.target.value }))}
-                        placeholder="Responsable"
-                      />
                       <textarea
                         className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none resize-none"
                         style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
@@ -328,14 +327,43 @@ const TerritoriesMap = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="py-1" style={{ minWidth: 200 }}>
+                    <div className="py-1" style={{ minWidth: 210 }}>
                       <h4 className="font-bold text-sm mb-1" style={{ color: t.color }}>{t.nombre}</h4>
-                      {t.responsable && <p className="text-xs text-slate-300 mb-0.5"><strong>Responsable:</strong> {t.responsable}</p>}
-                      {t.descripcion && <p className="text-xs text-slate-400 mb-1">{t.descripcion}</p>}
+                      {t.descripcion && <p className="text-xs text-slate-400 mb-2">{t.descripcion}</p>}
+
+                      {/* Asignados */}
+                      {(() => {
+                        const activasT = asignaciones.filter(a => String(a.territorio_id) === String(t.id) && a.activa);
+                        return (
+                          <div className="mb-2">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-xs font-semibold" style={{ color: '#CBD5E1' }}>Asignados:</span>
+                              <span
+                                className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
+                                style={{ background: activasT.length > 0 ? 'rgba(37,99,235,0.2)' : 'rgba(100,116,139,0.2)', color: activasT.length > 0 ? '#93C5FD' : '#94A3B8' }}
+                              >
+                                {activasT.length} publicador{activasT.length !== 1 ? 'es' : ''} asignado{activasT.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            {activasT.length === 0 ? (
+                              <p className="text-xs" style={{ color: '#64748B' }}>Sin asignaciones</p>
+                            ) : (
+                              <div className="flex flex-col gap-0.5">
+                                {activasT.map(a => (
+                                  <p key={a.id} className="text-xs" style={{ color: '#94A3B8' }}>
+                                    {a.app_usuarios?.nombre || `Usuario ${a.usuario_id}`}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       <p className="text-xs text-slate-500 mb-3">
                         {casas.filter(c => String(c.territorio_id) === String(t.id)).length} casas registradas
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => openEdit(t)}
                           className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium"
@@ -348,6 +376,15 @@ const TerritoriesMap = () => {
                         >
                           <Trash2 size={11} /> Eliminar
                         </button>
+                        {ADMIN_ROLES.includes(user?.rol) && (
+                          <button
+                            onClick={() => setGestionarTerritorio(t)}
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium"
+                            style={{ background: 'rgba(37,99,235,0.15)', color: '#93C5FD', border: '1px solid rgba(37,99,235,0.3)' }}
+                          >
+                            Gestionar Asignaciones
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -437,10 +474,6 @@ const TerritoriesMap = () => {
               <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Zona Norte" />
             </div>
             <div className="form-group">
-              <label className="form-label">Responsable *</label>
-              <input required value={formData.responsable} onChange={e => setFormData(f => ({ ...f, responsable: e.target.value }))} placeholder="Nombre del hermano responsable" />
-            </div>
-            <div className="form-group">
               <label className="form-label">Descripción</label>
               <textarea rows={3} value={formData.descripcion} onChange={e => setFormData(f => ({ ...f, descripcion: e.target.value }))} placeholder="Notas sobre este territorio..." />
             </div>
@@ -461,6 +494,14 @@ const TerritoriesMap = () => {
             </div>
           </form>
         </ModalOverlay>
+      )}
+
+      {/* Modal gestionar asignaciones */}
+      {gestionarTerritorio && (
+        <AsignacionesModal
+          territorio={gestionarTerritorio}
+          onClose={() => setGestionarTerritorio(null)}
+        />
       )}
 
       {/* Modal edición de casa */}
