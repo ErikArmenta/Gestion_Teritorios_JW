@@ -3,8 +3,10 @@ import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import { MapContainer, TileLayer, Marker, useMapEvents, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import * as turf from '@turf/turf';
-import { Locate, Upload, X, MapPin, Camera } from 'lucide-react';
+import { Locate, Upload, X, MapPin, Camera, Mic, Square, Trash2 } from 'lucide-react';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
+import useVoiceRecorder from '../hooks/useVoiceRecorder';
+import { supabase } from '../supabaseClient';
 
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -45,6 +47,8 @@ const RegisterHouse = () => {
   const [locating, setLocating]       = useState(false);
   const [formData, setFormData]       = useState(EMPTY_FORM);
   const [gpsPermission, setGpsPermission] = useState('prompt'); // 'granted' | 'denied' | 'prompt'
+
+  const { isRecording, audioBlob, audioUrl, recordingTimeFormatted, startRecording, stopRecording, clearRecording } = useVoiceRecorder();
 
   useEffect(() => {
     if (!photoFile) { setPhotoPreview(null); return; }
@@ -134,6 +138,20 @@ const RegisterHouse = () => {
         }
       }
 
+      // Subir nota de voz si existe
+      let audio_url = null;
+      if (audioBlob) {
+        const ext = audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
+        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: audioError } = await supabase.storage
+          .from('notas_voz')
+          .upload(fileName, audioBlob, { contentType: audioBlob.type, upsert: false });
+        if (!audioError) {
+          const { data: urlData } = supabase.storage.from('notas_voz').getPublicUrl(fileName);
+          audio_url = urlData?.publicUrl || null;
+        }
+      }
+
       const casaData = {
         territorio_id:       parseInt(formData.territorio_id, 10),
         direccion:           formData.direccion,
@@ -148,6 +166,7 @@ const RegisterHouse = () => {
         latitud:             position.lat,
         longitud:            position.lng,
         foto_url,
+        audio_url,
       };
 
       await addCasa(casaData, photoBase64);
@@ -159,6 +178,7 @@ const RegisterHouse = () => {
       }
       setFormData(EMPTY_FORM);
       setPhotoFile(null);
+      clearRecording();
       if (photoInputRef.current) photoInputRef.current.value = '';
     } catch (err) {
       toast.error('Error al guardar: ' + (err.message || JSON.stringify(err)));
@@ -254,6 +274,47 @@ const RegisterHouse = () => {
             <div className="form-group">
               <label className="form-label">Notas Generales</label>
               <textarea rows={2} value={formData.notas} onChange={e => setFormData(f => ({ ...f, notas: e.target.value }))} />
+            </div>
+
+            {/* Nota de Voz */}
+            <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>4</div>
+              <h3 className="text-sm font-bold text-primary">Nota de Voz</h3>
+              <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
+            </div>
+
+            <div className="flex flex-col items-center gap-3 mb-2">
+              {!audioUrl ? (
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={isRecording ? stopRecording : startRecording}
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold transition-all shadow-md"
+                    style={{ background: isRecording ? '#DC2626' : '#EF4444' }}
+                  >
+                    {isRecording ? <Square size={20} fill="white" /> : <Mic size={22} />}
+                  </button>
+                  {isRecording ? (
+                    <span className="text-xs font-mono font-bold" style={{ color: '#DC2626' }}>
+                      Grabando... {recordingTimeFormatted}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-secondary">Mantén para grabar una nota de voz</span>
+                  )}
+                </div>
+              ) : (
+                <div className="w-full space-y-2">
+                  <audio controls src={audioUrl} className="w-full" style={{ height: '36px' }} />
+                  <button
+                    type="button"
+                    onClick={clearRecording}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                    style={{ color: '#DC2626', border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.05)' }}
+                  >
+                    <Trash2 size={12} /> Eliminar nota de voz
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Foto */}

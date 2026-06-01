@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { X, Locate, Camera, Upload, MapPin } from 'lucide-react';
+import { X, Locate, Camera, Upload, MapPin, Mic, Square, Trash2 } from 'lucide-react';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -8,6 +8,8 @@ import ModalOverlay from './ModalOverlay';
 import { useData } from '../context/DataContext';
 import { useToast } from './Toast';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
+import useVoiceRecorder from '../hooks/useVoiceRecorder';
+import { supabase } from '../supabaseClient';
 
 L.Marker.prototype.options.icon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 
@@ -57,6 +59,10 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
 
   const [locating, setLocating]   = useState(false);
   const [saving, setSaving]       = useState(false);
+
+  // Nota de voz existente vs nueva grabación
+  const [existingAudioUrl, setExistingAudioUrl] = useState(casa.audio_url || null);
+  const { isRecording, audioBlob, audioUrl, recordingTimeFormatted, startRecording, stopRecording, clearRecording } = useVoiceRecorder();
 
   // Historial
   const [historial, setHistorial]       = useState([]);
@@ -111,6 +117,20 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
         foto_url = null;
       }
 
+      // Subir nueva nota de voz si existe
+      let audio_url = existingAudioUrl;
+      if (audioBlob) {
+        const ext = audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
+        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: audioError } = await supabase.storage
+          .from('notas_voz')
+          .upload(fileName, audioBlob, { contentType: audioBlob.type, upsert: false });
+        if (!audioError) {
+          const { data: urlData } = supabase.storage.from('notas_voz').getPublicUrl(fileName);
+          audio_url = urlData?.publicUrl || null;
+        }
+      }
+
       const territorio = territorios.find(t => String(t.id) === String(formData.territorio_id));
 
       await updateCasa(casa.id, {
@@ -127,6 +147,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
         latitud:             position.lat,
         longitud:            position.lng,
         foto_url,
+        audio_url,
       });
 
       toast.success('Casa actualizada correctamente');
@@ -270,6 +291,70 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                 value={formData.notas}
                 onChange={e => setFormData(f => ({ ...f, notas: e.target.value }))}
               />
+            </div>
+
+            {/* Nota de Voz */}
+            <div className="mt-3">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+                     style={{ background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.35)', color: '#DC2626' }}>
+                  <Mic size={12} />
+                </div>
+                <span className="text-sm font-bold" style={{ color: '#0F172A' }}>Nota de Voz</span>
+                <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
+              </div>
+
+              {/* Audio existente */}
+              {existingAudioUrl && !audioUrl && (
+                <div className="space-y-2 mb-2">
+                  <audio controls src={existingAudioUrl} className="w-full" style={{ height: '36px' }} />
+                  <button
+                    type="button"
+                    onClick={() => setExistingAudioUrl(null)}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                    style={{ color: '#DC2626', border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.05)' }}
+                  >
+                    <Trash2 size={12} /> Eliminar nota de voz
+                  </button>
+                </div>
+              )}
+
+              {/* Nueva grabación */}
+              {!existingAudioUrl && (
+                <div className="flex flex-col items-center gap-2">
+                  {!audioUrl ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={isRecording ? stopRecording : startRecording}
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold transition-all shadow-md"
+                        style={{ background: isRecording ? '#DC2626' : '#EF4444' }}
+                      >
+                        {isRecording ? <Square size={18} fill="white" /> : <Mic size={20} />}
+                      </button>
+                      {isRecording ? (
+                        <span className="text-xs font-mono font-bold" style={{ color: '#DC2626' }}>
+                          Grabando... {recordingTimeFormatted}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-secondary">Toca para grabar una nota de voz</span>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full space-y-2">
+                      <audio controls src={audioUrl} className="w-full" style={{ height: '36px' }} />
+                      <button
+                        type="button"
+                        onClick={clearRecording}
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                        style={{ color: '#DC2626', border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.05)' }}
+                      >
+                        <Trash2 size={12} /> Eliminar grabación
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
