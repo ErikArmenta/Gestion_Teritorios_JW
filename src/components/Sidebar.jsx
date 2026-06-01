@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil, Sun, Moon } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil, Sun, Moon, Database } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -39,6 +39,7 @@ const Sidebar = () => {
     { path: '/users', name: 'Usuarios', icon: <Users size={18} />, roles: ['Super Admin', 'Admin Principal'] },
     { path: '/alerts', name: 'Alertas', icon: <Bell size={18} />, roles: ['Super Admin', 'Admin Principal'] },
     { path: '/congregaciones', name: 'Congregaciones', icon: <Building2 size={18} />, roles: ['Super Admin'] },
+    { path: '/backup', name: 'Backup', icon: <Database size={18} />, roles: ['Super Admin'] },
   ];
 
   const visibleMenu = menuItems.filter(item => item.roles.includes(user.rol));
