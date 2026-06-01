@@ -281,12 +281,37 @@ export const DataProvider = ({ children }) => {
     return data.publicUrl;
   };
 
+  const insertarHistorialVisita = async ({ casa_id, usuario_id, usuario_nombre, estado_anterior, estado_nuevo, notas }) => {
+    const { data, error } = await supabase.from('historial_visitas').insert([{
+      casa_id,
+      usuario_id,
+      usuario_nombre,
+      estado_anterior,
+      estado_nuevo,
+      notas,
+    }]);
+    if (error) throw error;
+    return data;
+  };
+
+  const fetchHistorialCasa = async (casaId) => {
+    const { data, error } = await supabase
+      .from('historial_visitas')
+      .select('*')
+      .eq('casa_id', casaId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) throw error;
+    return data || [];
+  };
+
   return (
     <DataContext.Provider value={{
       territorios, casas, loading,
       addTerritorio, updateTerritorio, deleteTerritorio,
       addCasa, updateCasa, deleteCasa,
       uploadPhoto,
+      insertarHistorialVisita, fetchHistorialCasa,
       isOnline, pendingCount, syncing, syncPendingQueue,
     }}>
       {children}
