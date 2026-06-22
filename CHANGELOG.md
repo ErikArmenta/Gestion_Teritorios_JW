@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-22 — BUG a resolver
+
+- `AsignacionesModal.jsx`
+- `DataContext.jsx`
+
 ## 2026-06-22 — correccion de bugs
 
 - `CHANGELOG.md`
