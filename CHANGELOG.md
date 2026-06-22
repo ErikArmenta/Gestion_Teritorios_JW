@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-06-03 — Push  git
+
+- `README.md`
+
 ## 2026-05-27 — Mejora de UX/UI
 
 - `CHANGELOG.md`

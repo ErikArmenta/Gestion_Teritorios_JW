@@ -11,7 +11,7 @@ export const DataProvider = ({ children }) => {
   const { user } = useAuth();
   const congregacionId = useMemo(() => {
     if (!user) return null;
-    return user.rol === 'Super Admin' ? null : user.congregacion_id;
+    return user.rol === 'Super Admin' ? (user.congregacion_id || null) : user.congregacion_id;
   }, [user?.id, user?.rol, user?.congregacion_id]);
 
   const congregacionIdRef = useRef(congregacionId);
