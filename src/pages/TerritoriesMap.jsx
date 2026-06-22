@@ -323,13 +323,13 @@ const calcularRutaNN = (casasPendientes, startLat = null, startLng = null) => {
 };
 
 const TerritoriesMap = () => {
-  const { territorios, casas, asignaciones, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
+  const { territorios, casas, asignaciones, usuarios, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
   const { user } = useAuth();
   const toast = useToast();
 
   const [newPolygonCoords, setNewPolygonCoords] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: '#3B82F6' });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '' });
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm]   = useState({});
@@ -409,7 +409,7 @@ const TerritoriesMap = () => {
     try {
       await addTerritorio({ ...formData, coordenadas: newPolygonCoords });
       setShowNewModal(false);
-      setFormData({ nombre: '', descripcion: '', color: '#3B82F6' });
+      setFormData({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '' });
       setNewPolygonCoords(null);
       toast.success('Territorio creado correctamente');
     } catch (err) {
@@ -419,7 +419,7 @@ const TerritoriesMap = () => {
 
   const openEdit = (t) => {
     setEditingId(t.id);
-    setEditForm({ nombre: t.nombre, descripcion: t.descripcion || '', color: t.color });
+    setEditForm({ nombre: t.nombre, descripcion: t.descripcion || '', color: t.color, responsable: t.responsable || '' });
   };
 
   const handleSaveEdit = async () => {
@@ -644,6 +644,13 @@ const TerritoriesMap = () => {
                         onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))}
                         placeholder="Descripción"
                       />
+                      <input
+                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
+                        value={editForm.responsable || ''}
+                        onChange={e => setEditForm(f => ({ ...f, responsable: e.target.value }))}
+                        placeholder="Responsable"
+                      />
                       <div className="flex items-center gap-2">
                         <label className="text-xs" style={{ color: '#94A3B8' }}>Color:</label>
                         <input
@@ -694,7 +701,7 @@ const TerritoriesMap = () => {
                               <div className="flex flex-col gap-0.5">
                                 {activasT.map(a => (
                                   <p key={a.id} className="text-xs" style={{ color: '#94A3B8' }}>
-                                    {a.app_usuarios?.nombre || `Usuario ${a.usuario_id}`}
+                                    {a.app_usuarios?.nombre || usuarios.find(u => String(u.id) === String(a.usuario_id))?.nombre || `Usuario ${a.usuario_id}`}
                                   </p>
                                 ))}
                               </div>
@@ -703,9 +710,14 @@ const TerritoriesMap = () => {
                         );
                       })()}
 
-                      <p className="text-xs text-slate-500 mb-3">
+                      <p className="text-xs text-slate-500 mb-1">
                         {casas.filter(c => String(c.territorio_id) === String(t.id)).length} casas registradas
                       </p>
+                      {t.responsable && (
+                        <p className="text-xs mb-3" style={{ color: '#94A3B8' }}>
+                          <span style={{ color: '#CBD5E1' }}>Responsable:</span> {t.responsable}
+                        </p>
+                      )}
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => openEdit(t)}
@@ -1009,6 +1021,10 @@ const TerritoriesMap = () => {
             <div className="form-group">
               <label className="form-label">Descripción</label>
               <textarea rows={3} value={formData.descripcion} onChange={e => setFormData(f => ({ ...f, descripcion: e.target.value }))} placeholder="Notas sobre este territorio..." />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Responsable</label>
+              <input value={formData.responsable} onChange={e => setFormData(f => ({ ...f, responsable: e.target.value }))} placeholder="Nombre del responsable" />
             </div>
             <div className="form-group">
               <label className="form-label">Color del polígono</label>

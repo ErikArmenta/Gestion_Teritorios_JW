@@ -217,9 +217,25 @@ export const DataProvider = ({ children }) => {
       .channel('public:territorio_asignaciones')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'territorio_asignaciones' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setAsignaciones(prev => [...prev, payload.new]);
+          (async () => {
+            const { data: asigData } = await supabase
+              .from('territorio_asignaciones')
+              .select('*, app_usuarios(id, nombre)')
+              .eq('id', payload.new.id)
+              .single();
+            if (asigData) setAsignaciones(prev => [...prev, asigData]);
+            else setAsignaciones(prev => [...prev, payload.new]);
+          })();
         } else if (payload.eventType === 'UPDATE') {
-          setAsignaciones(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
+          (async () => {
+            const { data: asigData } = await supabase
+              .from('territorio_asignaciones')
+              .select('*, app_usuarios(id, nombre)')
+              .eq('id', payload.new.id)
+              .single();
+            const updated = asigData || payload.new;
+            setAsignaciones(prev => prev.map(a => a.id === payload.new.id ? updated : a));
+          })();
         } else if (payload.eventType === 'DELETE') {
           setAsignaciones(prev => prev.filter(a => a.id !== payload.old.id));
         }
@@ -242,13 +258,16 @@ export const DataProvider = ({ children }) => {
 
   // ── CRUD functions con soporte offline ──
   const addTerritorio = async (territorio) => {
-    const payload = congregacionId ? { ...territorio, congregacion_id: congregacionId } : territorio;
+    const congregacionIdFinal = congregacionId || user?.congregacion_id;
+    const payload = congregacionIdFinal ? { ...territorio, congregacion_id: congregacionIdFinal } : territorio;
     const { error } = await supabase.from('territorios').insert([payload]);
     if (error) throw error;
   };
 
   const updateTerritorio = async (id, updates) => {
-    const { error } = await supabase.from('territorios').update(updates).eq('id', id);
+    const congregacionIdFinal = congregacionId || user?.congregacion_id;
+    const safeUpdates = congregacionIdFinal && !updates.congregacion_id ? { ...updates, congregacion_id: congregacionIdFinal } : updates;
+    const { error } = await supabase.from('territorios').update(safeUpdates).eq('id', id);
     if (error) throw error;
   };
 
