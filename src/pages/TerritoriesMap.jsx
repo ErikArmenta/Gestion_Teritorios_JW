@@ -329,7 +329,8 @@ const TerritoriesMap = () => {
 
   const [newPolygonCoords, setNewPolygonCoords] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '' });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
+  const [congregaciones, setCongregaciones] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm]   = useState({});
@@ -358,6 +359,14 @@ const TerritoriesMap = () => {
       setFiltroMisTerr(tieneAsignaciones);
     }
   }, [asignaciones, user]);
+
+  useEffect(() => {
+    if (user?.rol === 'Super Admin' && !user?.congregacion_id) {
+      supabase.from('congregaciones').select('id, nombre').then(({ data }) => {
+        if (data) setCongregaciones(data);
+      });
+    }
+  }, [user?.rol, user?.congregacion_id]);
 
   const territoriosFiltrados = filtroMisTerr
     ? territorios.filter(t =>
@@ -407,9 +416,12 @@ const TerritoriesMap = () => {
     e.preventDefault();
     if (!newPolygonCoords) return;
     try {
-      await addTerritorio({ ...formData, coordenadas: newPolygonCoords });
+      const payload = { ...formData, coordenadas: newPolygonCoords };
+      if (formData.congregacion_id_override) payload.congregacion_id = formData.congregacion_id_override;
+      delete payload.congregacion_id_override;
+      await addTerritorio(payload);
       setShowNewModal(false);
-      setFormData({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '' });
+      setFormData({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
       setNewPolygonCoords(null);
       toast.success('Territorio creado correctamente');
     } catch (err) {
@@ -1026,6 +1038,15 @@ const TerritoriesMap = () => {
               <label className="form-label">Responsable</label>
               <input value={formData.responsable} onChange={e => setFormData(f => ({ ...f, responsable: e.target.value }))} placeholder="Nombre del responsable" />
             </div>
+            {user?.rol === 'Super Admin' && !user?.congregacion_id && (
+              <div className="form-group">
+                <label className="form-label">Congregación *</label>
+                <select required value={formData.congregacion_id_override} onChange={e => setFormData(f => ({ ...f, congregacion_id_override: e.target.value }))}>
+                  <option value="">Seleccionar...</option>
+                  {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <label className="form-label">Color del polígono</label>
               <div className="flex items-center gap-3">
