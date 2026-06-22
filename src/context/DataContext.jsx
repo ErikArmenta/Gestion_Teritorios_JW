@@ -52,13 +52,18 @@ export const DataProvider = ({ children }) => {
         }
 
         // Asignaciones de territorios con nombre de usuario
+        let asignacionesFetchError = false;
         let asignacionesData = [];
         if (terrIds.length > 0) {
           const asigRes = await supabase
             .from('territorio_asignaciones')
             .select('*, app_usuarios(id, nombre)')
             .in('territorio_id', terrIds);
-          asignacionesData = asigRes.error ? [] : (asigRes.data || []);
+          if (asigRes.error) {
+            asignacionesFetchError = true;
+          } else {
+            asignacionesData = asigRes.data || [];
+          }
         }
 
         // Usuarios de la congregación (para selects)
@@ -70,7 +75,7 @@ export const DataProvider = ({ children }) => {
 
         setTerritorios(terrData);
         setCasas(casasData);
-        setAsignaciones(asignacionesData);
+        if (!asignacionesFetchError) setAsignaciones(asignacionesData);
         setUsuarios(usuariosData);
         // Cache para uso offline
         await offlineStore.cacheTerritorios(terrData).catch(() => {});
