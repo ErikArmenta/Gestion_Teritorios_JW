@@ -722,14 +722,14 @@ const TerritoriesMap = () => {
                         );
                       })()}
 
-                      <p className="text-xs text-slate-500 mb-1">
-                        {casas.filter(c => String(c.territorio_id) === String(t.id)).length} casas registradas
-                      </p>
                       {t.responsable && (
-                        <p className="text-xs mb-3" style={{ color: '#94A3B8' }}>
+                        <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
                           <span style={{ color: '#CBD5E1' }}>Responsable:</span> {t.responsable}
                         </p>
                       )}
+                      <p className="text-xs text-slate-500 mb-1">
+                        {casas.filter(c => String(c.territorio_id) === String(t.id)).length} casas registradas
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => openEdit(t)}
