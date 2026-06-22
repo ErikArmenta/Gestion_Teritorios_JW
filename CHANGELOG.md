@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-22 — correccion de bugs
+
+- `CHANGELOG.md`
+- `README.md`
+- `DataContext.jsx`
+- `TerritoriesMap.jsx`
+
 ## 2026-06-03 — Push  git
 
 - `README.md`
