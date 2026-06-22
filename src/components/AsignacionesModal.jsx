@@ -4,12 +4,14 @@ import ConfirmModal from './ConfirmModal';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from './Toast';
+import { useNotifications } from '../context/NotificationContext';
 import { X } from 'lucide-react';
 
 const AsignacionesModal = ({ territorio, onClose }) => {
   const { asignaciones, usuarios, asignarTerritorio, desasignarTerritorio } = useData();
   const { user } = useAuth();
   const toast = useToast();
+  const { createNotification } = useNotifications();
 
   const today = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState({ usuario_id: '', fecha_inicio: today, notas: '' });
@@ -48,6 +50,14 @@ const AsignacionesModal = ({ territorio, onClose }) => {
         notas: form.notas || null,
         activa: true,
       });
+      try {
+        await createNotification({
+          usuario_destino_id: Number(form.usuario_id),
+          tipo: 'asignacion',
+          titulo: 'Territorio asignado',
+          mensaje: `Se te asignó el territorio ${territorio.nombre}`,
+        });
+      } catch {}
       setForm({ usuario_id: '', fecha_inicio: today, notas: '' });
       toast.success('Asignación registrada');
     } catch (err) {
