@@ -323,7 +323,7 @@ const calcularRutaNN = (casasPendientes, startLat = null, startLng = null) => {
 };
 
 const TerritoriesMap = () => {
-  const { territorios, casas, asignaciones, usuarios, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
+  const { territorios, casas, asignaciones, usuarios, addTerritorio, updateTerritorio, deleteTerritorio, loading, manzanas, addManzana, deleteManzana } = useData();
   const { user } = useAuth();
   const toast = useToast();
 
@@ -342,6 +342,7 @@ const TerritoriesMap = () => {
   const [rutaActiva, setRutaActiva] = useState(null); // { territorioId, casasOrdenadas, polylinePoints }
   const [compartirModal, setCompartirModal] = useState(null); // null | { territorioId, link }
   const [compartirLoading, setCompartirLoading] = useState(false);
+  const [manzanasModalTerritorio, setManzanasModalTerritorio] = useState(null);
 
   // Búsqueda en mapa
   const [busqueda, setBusqueda] = useState('');
@@ -626,10 +627,12 @@ const TerritoriesMap = () => {
               <CustomEditControl onCreated={handleDrawCreated} />
             </FeatureGroup>
 
-            {/* Polígonos de territorios */}
-            {territoriosFiltrados.map((t) => (
+            {/* Polígonos de territorios y sus manzanas */}
+            {territoriosFiltrados.map((t) => {
+              const manzanasTerr = manzanas.filter(m => String(m.territorio_id) === String(t.id));
+              return (
+              <React.Fragment key={t.id}>
               <Polygon
-                key={t.id}
                 positions={t.coordenadas}
                 pathOptions={{ color: t.color, fillColor: t.color, fillOpacity: 0.25, weight: 2.5 }}
                 eventHandlers={{
@@ -752,6 +755,15 @@ const TerritoriesMap = () => {
                             Gestionar Asignaciones
                           </button>
                         )}
+                        {['Super Admin', 'Admin Principal'].includes(user?.rol) && (
+                          <button
+                            onClick={() => setManzanasModalTerritorio(t)}
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium"
+                            style={{ background: 'rgba(16,185,129,0.15)', color: '#6EE7B7', border: '1px solid rgba(16,185,129,0.3)' }}
+                          >
+                            Gestionar manzanas
+                          </button>
+                        )}
                         {casas.some(c => String(c.territorio_id) === String(t.id) && c.estado === 'Pendiente') && (
                           <button
                             onClick={() => iniciarRuta(t.id)}
@@ -776,7 +788,22 @@ const TerritoriesMap = () => {
                   )}
                 </Popup>
               </Polygon>
-            ))}
+              {manzanasTerr.map(m => (
+                <Polygon
+                  key={`manzana-${m.id}`}
+                  positions={m.coordenadas}
+                  pathOptions={{
+                    color: m.color || t.color,
+                    fillColor: m.color || t.color,
+                    fillOpacity: 0.15,
+                    weight: 2,
+                    dashArray: '6 4',
+                  }}
+                />
+              ))}
+              </React.Fragment>
+              );
+            })}
 
             {/* Marcadores de casas */}
             <MarkerClusterGroup chunkedLoading maxClusterRadius={40}>
