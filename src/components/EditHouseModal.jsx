@@ -125,7 +125,13 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
         const { error: audioError } = await supabase.storage
           .from('notas_voz')
           .upload(fileName, audioBlob, { contentType: audioBlob.type, upsert: false });
-        if (!audioError) {
+        if (audioError) {
+          console.error('Error subiendo audio:', audioError);
+          if (audioError.message?.includes('not found') || audioError.statusCode === 404) {
+            toast.error('El bucket de notas de voz no existe. Contacta al administrador.');
+          }
+          // Continuar sin audio — no bloquear el guardado de la casa
+        } else {
           const { data: urlData } = supabase.storage.from('notas_voz').getPublicUrl(fileName);
           audio_url = urlData?.publicUrl || null;
         }
@@ -147,7 +153,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
         latitud:             position.lat,
         longitud:            position.lng,
         foto_url,
-        audio_url,
+        ...(audio_url !== undefined ? { audio_url } : {}),
       });
 
       toast.success('Casa actualizada correctamente');
