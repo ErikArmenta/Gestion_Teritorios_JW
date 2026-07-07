@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
+import ZoomAwareLabel from '../components/ZoomAwareLabel';
 import { STATUS_COLORS, getStatusColor } from '../utils/constants';
 import { Trash2, Pencil, X, Check, Search, Navigation, Share2, Copy } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -795,9 +796,10 @@ const TerritoriesMap = () => {
                   )}
                 </Popup>
               </Polygon>
+              <ZoomAwareLabel coordenadas={t.coordenadas} numero={t.numero} nombre={t.nombre} color={t.color} />
               {manzanasTerr.map(m => (
+                <React.Fragment key={`manzana-${m.id}`}>
                 <Polygon
-                  key={`manzana-${m.id}`}
                   positions={m.coordenadas}
                   pathOptions={{
                     color: m.color || t.color,
@@ -807,6 +809,8 @@ const TerritoriesMap = () => {
                     dashArray: '6 4',
                   }}
                 />
+                <ZoomAwareLabel coordenadas={m.coordenadas} numero={m.nombre} nombre={m.nombre} color={t.color} isManzana={true} />
+                </React.Fragment>
               ))}
               </React.Fragment>
               );
