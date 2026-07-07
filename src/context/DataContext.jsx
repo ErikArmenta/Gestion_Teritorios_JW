@@ -21,6 +21,7 @@ export const DataProvider = ({ children }) => {
   const [casas, setCasas] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [manzanas, setManzanas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -49,6 +50,13 @@ export const DataProvider = ({ children }) => {
         if (terrIds.length > 0) {
           const casasRes = await supabase.from('casas').select('*').in('territorio_id', terrIds);
           casasData = casasRes.error ? [] : (casasRes.data || []);
+        }
+
+        // Manzanas (sub-zonas opcionales) de los territorios
+        let manzanasData = [];
+        if (terrIds.length > 0) {
+          const manzRes = await supabase.from('territorio_manzanas').select('*').in('territorio_id', terrIds);
+          if (!manzRes.error) manzanasData = manzRes.data || [];
         }
 
         // Asignaciones de territorios con nombre de usuario
@@ -88,6 +96,7 @@ export const DataProvider = ({ children }) => {
         setCasas(casasData);
         if (!asignacionesFetchError) setAsignaciones(asignacionesData);
         setUsuarios(usuariosData);
+        setManzanas(manzanasData);
         // Cache para uso offline
         await offlineStore.cacheTerritorios(terrData).catch(() => {});
         await offlineStore.cacheCasas(casasData).catch(() => {});
@@ -258,10 +267,24 @@ export const DataProvider = ({ children }) => {
       })
       .subscribe();
 
+    const manzanasSub = supabase
+      .channel('public:territorio_manzanas')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'territorio_manzanas' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setManzanas(prev => [...prev, payload.new]);
+        } else if (payload.eventType === 'UPDATE') {
+          setManzanas(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+        } else if (payload.eventType === 'DELETE') {
+          setManzanas(prev => prev.filter(m => m.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(terrSub);
       supabase.removeChannel(casasSub);
       supabase.removeChannel(asigSub);
+      supabase.removeChannel(manzanasSub);
     };
   }, [isOnline, congregacionId]);
 
@@ -412,14 +435,31 @@ export const DataProvider = ({ children }) => {
     return asignaciones.filter(a => a.territorio_id === territorioId);
   };
 
+  // ── CRUD Manzanas (sub-zonas opcionales) ──
+  const addManzana = async (manzana) => {
+    const { error } = await supabase.from('territorio_manzanas').insert([manzana]);
+    if (error) throw error;
+  };
+
+  const updateManzana = async (id, updates) => {
+    const { error } = await supabase.from('territorio_manzanas').update(updates).eq('id', id);
+    if (error) throw error;
+  };
+
+  const deleteManzana = async (id) => {
+    const { error } = await supabase.from('territorio_manzanas').delete().eq('id', id);
+    if (error) throw error;
+  };
+
   return (
     <DataContext.Provider value={{
-      territorios, casas, asignaciones, usuarios, loading,
+      territorios, casas, asignaciones, usuarios, manzanas, loading,
       addTerritorio, updateTerritorio, deleteTerritorio,
       addCasa, updateCasa, deleteCasa,
       uploadPhoto,
       insertarHistorialVisita, fetchHistorialCasa,
       asignarTerritorio, desasignarTerritorio, getAsignacionesTerritorio,
+      addManzana, updateManzana, deleteManzana,
       isOnline, pendingCount, syncing, syncPendingQueue,
     }}>
       {children}
