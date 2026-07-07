@@ -379,6 +379,15 @@ export const DataProvider = ({ children }) => {
   const asignarTerritorio = async (data) => {
     const { error } = await supabase.from('territorio_asignaciones').insert([data]);
     if (error) throw error;
+    // Re-fetch inmediato para reflejar el nuevo estado sin esperar realtime
+    const terrIds = territoriosRef.current.map(t => t.id);
+    if (terrIds.length > 0) {
+      const { data: fresh } = await supabase
+        .from('territorio_asignaciones')
+        .select('*, app_usuarios!territorio_asignaciones_usuario_id_fkey(id, nombre)')
+        .in('territorio_id', terrIds);
+      if (fresh) setAsignaciones(fresh);
+    }
   };
 
   const desasignarTerritorio = async (id) => {
@@ -388,6 +397,15 @@ export const DataProvider = ({ children }) => {
       .update({ activa: false, fecha_fin: today })
       .eq('id', id);
     if (error) throw error;
+    // Re-fetch inmediato para reflejar el nuevo estado sin esperar realtime
+    const terrIds = territoriosRef.current.map(t => t.id);
+    if (terrIds.length > 0) {
+      const { data: fresh } = await supabase
+        .from('territorio_asignaciones')
+        .select('*, app_usuarios!territorio_asignaciones_usuario_id_fkey(id, nombre)')
+        .in('territorio_id', terrIds);
+      if (fresh) setAsignaciones(fresh);
+    }
   };
 
   const getAsignacionesTerritorio = (territorioId) => {
