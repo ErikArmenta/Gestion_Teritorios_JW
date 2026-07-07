@@ -21,6 +21,9 @@ export const NotificationProvider = ({ children }) => {
       .order('created_at', { ascending: false })
       .limit(20);
 
+    if (error) {
+      console.error('Error fetching notificaciones:', error);
+    }
     if (!error && data) {
       setNotificaciones(data);
       setUnreadCount(data.filter(n => !n.leida).length);
