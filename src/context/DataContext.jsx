@@ -57,10 +57,21 @@ export const DataProvider = ({ children }) => {
         if (terrIds.length > 0) {
           const asigRes = await supabase
             .from('territorio_asignaciones')
-            .select('*, app_usuarios(id, nombre)')
+            .select('*, app_usuarios!territorio_asignaciones_usuario_id_fkey(id, nombre)')
             .in('territorio_id', terrIds);
           if (asigRes.error) {
-            asignacionesFetchError = true;
+            console.error('Error fetching asignaciones (con join):', asigRes.error);
+            // Fallback: intentar sin join
+            const fallbackRes = await supabase
+              .from('territorio_asignaciones')
+              .select('*')
+              .in('territorio_id', terrIds);
+            if (!fallbackRes.error) {
+              asignacionesData = fallbackRes.data || [];
+            } else {
+              console.error('Error fetching asignaciones (sin join):', fallbackRes.error);
+              asignacionesFetchError = true;
+            }
           } else {
             asignacionesData = asigRes.data || [];
           }
@@ -225,7 +236,7 @@ export const DataProvider = ({ children }) => {
           (async () => {
             const { data: asigData } = await supabase
               .from('territorio_asignaciones')
-              .select('*, app_usuarios(id, nombre)')
+              .select('*, app_usuarios!territorio_asignaciones_usuario_id_fkey(id, nombre)')
               .eq('id', payload.new.id)
               .single();
             if (asigData) setAsignaciones(prev => [...prev, asigData]);
@@ -235,7 +246,7 @@ export const DataProvider = ({ children }) => {
           (async () => {
             const { data: asigData } = await supabase
               .from('territorio_asignaciones')
-              .select('*, app_usuarios(id, nombre)')
+              .select('*, app_usuarios!territorio_asignaciones_usuario_id_fkey(id, nombre)')
               .eq('id', payload.new.id)
               .single();
             const updated = asigData || payload.new;
