@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-07 — Cambios
+
+- `AsignacionesModal.jsx`
+- `EditHouseModal.jsx`
+- `ManzanasModal.jsx`
+- `ZoomAwareLabel.jsx`
+- `DataContext.jsx`
+- ... y 3 archivos más
+
 ## 2026-06-22 — BUG a resolver
 
 - `AsignacionesModal.jsx`
