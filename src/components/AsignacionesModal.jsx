@@ -70,6 +70,16 @@ const AsignacionesModal = ({ territorio, onClose }) => {
   const handleDesasignar = async () => {
     try {
       await desasignarTerritorio(desasignarTarget.id);
+      try {
+        await createNotification({
+          usuario_destino_id: desasignarTarget.usuario_id,
+          tipo: 'desasignacion',
+          titulo: 'Territorio desasignado',
+          mensaje: `Se te desasignó del territorio "${territorio.nombre}"`,
+        });
+      } catch (notifErr) {
+        console.error('Error creando notificación:', notifErr);
+      }
       setDesasignarTarget(null);
       toast.success('Asignación finalizada');
     } catch (err) {
