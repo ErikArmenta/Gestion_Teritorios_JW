@@ -329,7 +329,7 @@ const TerritoriesMap = () => {
 
   const [newPolygonCoords, setNewPolygonCoords] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
+  const [formData, setFormData] = useState({ numero: '', nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
   const [congregaciones, setCongregaciones] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
@@ -422,7 +422,7 @@ const TerritoriesMap = () => {
       delete payload.congregacion_id_override;
       await addTerritorio(payload);
       setShowNewModal(false);
-      setFormData({ nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
+      setFormData({ numero: '', nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
       setNewPolygonCoords(null);
       toast.success('Territorio creado correctamente');
     } catch (err) {
@@ -432,7 +432,7 @@ const TerritoriesMap = () => {
 
   const openEdit = (t) => {
     setEditingId(t.id);
-    setEditForm({ nombre: t.nombre, descripcion: t.descripcion || '', color: t.color, responsable: t.responsable || '' });
+    setEditForm({ numero: t.numero || '', nombre: t.nombre, descripcion: t.descripcion || '', color: t.color, responsable: t.responsable || '' });
   };
 
   const handleSaveEdit = async () => {
@@ -644,6 +644,13 @@ const TerritoriesMap = () => {
                   {editingId === t.id ? (
                     <div className="py-1 space-y-2" style={{ minWidth: 210 }}>
                       <p className="font-bold text-sm mb-2" style={{ color: '#F1F5F9' }}>Editar territorio</p>
+                      <input
+                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
+                        value={editForm.numero || ''}
+                        onChange={e => setEditForm(f => ({ ...f, numero: e.target.value }))}
+                        placeholder="Número (ej: 1, T-3)"
+                      />
                       <input
                         className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
                         style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
@@ -1053,6 +1060,10 @@ const TerritoriesMap = () => {
         <ModalOverlay onClose={() => { setShowNewModal(false); setNewPolygonCoords(null); }} size="default">
           <h3 className="text-lg font-bold mb-5">Nuevo Territorio</h3>
           <form onSubmit={handleSaveNew}>
+            <div className="form-group">
+              <label className="form-label">Número del territorio</label>
+              <input value={formData.numero} onChange={e => setFormData(f => ({ ...f, numero: e.target.value }))} placeholder="Ej: 1, 2, T-3 (opcional)" />
+            </div>
             <div className="form-group">
               <label className="form-label">Nombre *</label>
               <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Zona Norte" />
