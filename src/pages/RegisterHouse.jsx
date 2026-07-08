@@ -502,6 +502,11 @@ const RegisterHouse = () => {
                     weight: String(formData.manzana_id) === String(m.id) ? 3 : 1.5,
                     dashArray: '6 4',
                   }}
+                  eventHandlers={{
+                    click: () => {
+                      setFormData(f => ({ ...f, manzana_id: String(m.id) }));
+                    },
+                  }}
                 >
                   <Tooltip permanent direction="center" className="territory-label">
                     <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#F1F5F9' }}>
