@@ -465,7 +465,13 @@ const HousesList = () => {
               <h3 className="text-base font-bold text-primary">Nota de voz</h3>
             </div>
             <p className="text-xs text-secondary mb-3 truncate">{audioModal.direccion}</p>
-            <audio controls src={audioModal.url} className="w-full" style={{ width: '100%' }} />
+            <audio
+              controls
+              src={audioModal.url}
+              className="w-full"
+              style={{ width: '100%' }}
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
             <div className="flex justify-end mt-4">
               <button className="btn btn-outline" onClick={() => setAudioModal(null)}>Cerrar</button>
             </div>
