@@ -764,7 +764,7 @@ const TerritoriesMap = () => {
                             Gestionar Asignaciones
                           </button>
                         )}
-                        {['Super Admin', 'Admin Principal'].includes(user?.rol) && (
+                        {ADMIN_ROLES.includes(user?.rol) && (
                           <button
                             onClick={() => setManzanasModalTerritorio(t)}
                             className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium"
