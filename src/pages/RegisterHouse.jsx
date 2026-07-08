@@ -30,13 +30,13 @@ const MapCenterer = ({ territorioObj }) => {
 };
 
 const EMPTY_FORM = {
-  territorio_id: '', direccion: '', estado: 'Pendiente',
+  territorio_id: '', manzana_id: '', direccion: '', estado: 'Pendiente',
   nombre_contacto: '', telefono: '',
   tiene_caso_especial: false, tipo_caso: '', detalles_caso: '', notas: '',
 };
 
 const RegisterHouse = () => {
-  const { territorios, casas, addCasa, uploadPhoto } = useData();
+  const { territorios, casas, addCasa, uploadPhoto, manzanas } = useData();
   const toast = useToast();
   const photoInputRef = useRef(null);
 
@@ -94,6 +94,10 @@ const RegisterHouse = () => {
     [casas, formData.territorio_id]
   );
   const selectedTerritoryObj = territorios.find(t => String(t.id) === String(formData.territorio_id));
+  const manzanasDelTerritorio = useMemo(() =>
+    manzanas.filter(m => String(m.territorio_id) === String(formData.territorio_id)),
+    [manzanas, formData.territorio_id]
+  );
 
   const handleLocate = () => {
     if (!navigator.geolocation) { toast.warning('Tu navegador no soporta geolocalización'); return; }
@@ -165,6 +169,7 @@ const RegisterHouse = () => {
 
       const casaData = {
         territorio_id:       parseInt(formData.territorio_id, 10),
+        ...(formData.manzana_id ? { manzana_id: parseInt(formData.manzana_id, 10) } : {}),
         direccion:           formData.direccion,
         estado:              formData.estado,
         nombre_contacto:     formData.nombre_contacto,
@@ -216,11 +221,27 @@ const RegisterHouse = () => {
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">Territorio *</label>
-              <select required value={formData.territorio_id} onChange={e => setFormData(f => ({ ...f, territorio_id: e.target.value }))}>
+              <select required value={formData.territorio_id} onChange={e => setFormData(f => ({ ...f, territorio_id: e.target.value, manzana_id: '' }))}>
                 <option value="">Selecciona un territorio...</option>
                 {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
               </select>
             </div>
+
+            {/* Manzana (opcional, solo si el territorio tiene manzanas) */}
+            {manzanasDelTerritorio.length > 0 && (
+              <div className="form-group">
+                <label className="form-label">Manzana (opcional)</label>
+                <select
+                  value={formData.manzana_id}
+                  onChange={e => setFormData(f => ({ ...f, manzana_id: e.target.value }))}
+                >
+                  <option value="">Sin manzana específica</option>
+                  {manzanasDelTerritorio.map(m => (
+                    <option key={m.id} value={m.id}>{m.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label">Dirección Completa *</label>
@@ -452,6 +473,25 @@ const RegisterHouse = () => {
               {selectedTerritoryObj?.coordenadas && (
                 <Polygon positions={selectedTerritoryObj.coordenadas} pathOptions={{ color: selectedTerritoryObj.color, fillOpacity: 0.15 }} />
               )}
+              {manzanasDelTerritorio.map(m => (
+                <Polygon
+                  key={`mz-${m.id}`}
+                  positions={m.coordenadas}
+                  pathOptions={{
+                    color: m.color || selectedTerritoryObj?.color || '#2563EB',
+                    fillColor: m.color || selectedTerritoryObj?.color || '#2563EB',
+                    fillOpacity: String(formData.manzana_id) === String(m.id) ? 0.3 : 0.08,
+                    weight: String(formData.manzana_id) === String(m.id) ? 3 : 1.5,
+                    dashArray: '6 4',
+                  }}
+                >
+                  <Tooltip permanent direction="center" className="territory-label">
+                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#F1F5F9' }}>
+                      {m.nombre}
+                    </span>
+                  </Tooltip>
+                </Polygon>
+              ))}
               {casasEnTerritorio.map(c => (
                 <CircleMarker
                   key={c.id}
