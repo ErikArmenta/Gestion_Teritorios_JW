@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-08 — Mejoras v2.0
+
+- `EditHouseModal.jsx`
+- `ManzanasModal.jsx`
+- `ZoomAwareLabel.jsx`
+- `RegisterHouse.jsx`
+- `TerritoriesMap.jsx`
+
 ## 2026-07-08 — Mejoras
 
 - `STORAGE_SETUP.sql`
