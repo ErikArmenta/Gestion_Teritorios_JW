@@ -1117,6 +1117,13 @@ const TerritoriesMap = () => {
         />
       )}
 
+      {manzanasModalTerritorio && (
+        <ManzanasModal
+          territorio={manzanasModalTerritorio}
+          onClose={() => setManzanasModalTerritorio(null)}
+        />
+      )}
+
       {/* Modal edición de casa */}
       {editCasa && (
         <EditHouseModal
