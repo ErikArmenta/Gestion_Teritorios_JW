@@ -13,6 +13,7 @@ import { Trash2, Pencil, X, Check, Search, Navigation, Share2, Copy } from 'luci
 import { supabase } from '../supabaseClient';
 import EditHouseModal from '../components/EditHouseModal';
 import AsignacionesModal from '../components/AsignacionesModal';
+import ManzanasModal from '../components/ManzanasModal';
 
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
