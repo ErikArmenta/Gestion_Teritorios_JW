@@ -69,7 +69,7 @@ const ManzanasModal = ({ territorio, onClose }) => {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const canEdit = user?.rol === 'Admin' || user?.rol === 'Super Admin';
+  const canEdit = ['Admin', 'Super Admin', 'Admin Principal'].includes(user?.rol);
 
   const misManzanas = manzanas.filter(
     m => String(m.territorio_id) === String(territorio.id)
