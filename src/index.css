@@ -488,3 +488,7 @@ th { font-weight: 700; }
 .bg-card        { background: var(--bg-card)   !important; }
 .bg-surface     { background: var(--bg-surface) !important; }
 .border-theme   { border-color: var(--border-color) !important; }
+
+/* ── Leaflet draggable marker cursor ────────────────────────────────────────── */
+.leaflet-marker-draggable { cursor: grab !important; }
+.leaflet-marker-draggable:active { cursor: grabbing !important; }
