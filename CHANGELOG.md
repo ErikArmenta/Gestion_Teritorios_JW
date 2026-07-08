@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-08 — Mejoras
+
+- `STORAGE_SETUP.sql`
+- `EditHouseModal.jsx`
+- `ManzanasModal.jsx`
+- `ZoomAwareLabel.jsx`
+- `HousesList.jsx`
+- ... y 2 archivos más
+
 ## 2026-07-07 — Cambios
 
 - `AsignacionesModal.jsx`
