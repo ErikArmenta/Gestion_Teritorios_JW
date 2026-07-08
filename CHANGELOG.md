@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-08 — Mejoras v3
+
+- `index.css`
+- `HousesList.jsx`
+- `RegisterHouse.jsx`
+- `TerritoriesMap.jsx`
+
 ## 2026-07-08 — Mejoras v2.0
 
 - `EditHouseModal.jsx`
