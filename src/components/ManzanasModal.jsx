@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Polygon, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-draw';
 import ModalOverlay from './ModalOverlay';
 import ConfirmModal from './ConfirmModal';
 import { useData } from '../context/DataContext';
+import { getStatusColor } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from './Toast';
 import { X, Trash2, PenLine } from 'lucide-react';
@@ -59,7 +60,7 @@ const MapFitter = ({ coordenadas }) => {
 };
 
 const ManzanasModal = ({ territorio, onClose }) => {
-  const { manzanas, addManzana, deleteManzana } = useData();
+  const { manzanas, addManzana, deleteManzana, casas } = useData();
   const { user } = useAuth();
   const toast = useToast();
 
@@ -279,6 +280,33 @@ const ManzanasModal = ({ territorio, onClose }) => {
                     }}
                   />
                 ))}
+
+                {/* Casas del territorio */}
+                {casas
+                  .filter(c => String(c.territorio_id) === String(territorio.id))
+                  .map(c => (
+                    <CircleMarker
+                      key={c.id}
+                      center={[c.latitud, c.longitud]}
+                      radius={5}
+                      pathOptions={{
+                        color: '#fff',
+                        fillColor: getStatusColor(c.estado),
+                        fillOpacity: 0.9,
+                        weight: 1.5,
+                      }}
+                    >
+                      <Tooltip direction="top" offset={[0, -5]}>
+                        <div style={{ fontSize: '10px' }}>
+                          <strong>{c.direccion}</strong><br/>
+                          <span style={{ color: getStatusColor(c.estado) }}>{c.estado}</span>
+                          {c.manzana_id && (
+                            <><br/><span>Manzana: {manzanas.find(m => m.id === c.manzana_id)?.nombre || '—'}</span></>
+                          )}
+                        </div>
+                      </Tooltip>
+                    </CircleMarker>
+                  ))}
 
                 {/* Polígono pendiente de confirmar */}
                 {pendingCoords && (
