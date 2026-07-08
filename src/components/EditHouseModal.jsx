@@ -127,8 +127,13 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
           .upload(fileName, audioBlob, { contentType: audioBlob.type, upsert: false });
         if (audioError) {
           console.error('Error subiendo audio:', audioError);
-          if (audioError.message?.includes('not found') || audioError.statusCode === 404) {
+          const msg = audioError.message || JSON.stringify(audioError);
+          if (msg.includes('not found') || audioError.statusCode === 404) {
             toast.error('El bucket de notas de voz no existe. Contacta al administrador.');
+          } else if (msg.includes('row-level security') || msg.includes('policy')) {
+            toast.error('Sin permisos para subir audio. Contacta al administrador.');
+          } else {
+            toast.error('Error al subir nota de voz: ' + msg);
           }
           // Continuar sin audio — no bloquear el guardado de la casa
         } else {
