@@ -347,6 +347,7 @@ const TerritoriesMap = () => {
   const [editCasa, setEditCasa] = useState(null);
   const [gestionarTerritorio, setGestionarTerritorio] = useState(null);
   const [filtroMisTerr, setFiltroMisTerr] = useState(false);
+  const [fitCounter, setFitCounter] = useState(0);
   const filtroInitialized = useRef(false);
   const [rutaActiva, setRutaActiva] = useState(null); // { territorioId, casasOrdenadas, polylinePoints }
   const [compartirModal, setCompartirModal] = useState(null); // null | { territorioId, link }
@@ -573,7 +574,7 @@ const TerritoriesMap = () => {
         {/* Toggle Ver todos / Mis territorios */}
         <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 1000, display: 'flex', gap: '4px' }}>
           <button
-            onClick={() => setFiltroMisTerr(false)}
+            onClick={() => { setFiltroMisTerr(false); setFitCounter(c => c + 1); }}
             style={{
               padding: '6px 14px',
               borderRadius: '9999px',
@@ -590,7 +591,7 @@ const TerritoriesMap = () => {
             Ver todos
           </button>
           <button
-            onClick={() => setFiltroMisTerr(true)}
+            onClick={() => { setFiltroMisTerr(true); setFitCounter(c => c + 1); }}
             style={{
               padding: '6px 14px',
               borderRadius: '9999px',
@@ -625,7 +626,7 @@ const TerritoriesMap = () => {
               url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
               className="neon-labels"
             />
-            <GlobalMapFitter territorios={territoriosFiltrados} fitKey={filtroMisTerr} />
+            <GlobalMapFitter territorios={territoriosFiltrados} fitKey={fitCounter} />
             <MapSearch
               busqueda={busqueda}
               setBusqueda={setBusqueda}
