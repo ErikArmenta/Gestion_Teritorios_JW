@@ -525,8 +525,14 @@ const HousesList = () => {
         </ModalOverlay>
       )}
 
-      {/* Edit house modal — componente creado en tarea 5 */}
-      {/* editTarget && <EditHouseModal casa={editTarget} onClose={() => setEditTarget(null)} onSaved={() => setEditTarget(null)} /> */}
+      {/* Edit house modal */}
+      {editTarget && (
+        <EditHouseModal
+          casa={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => setEditTarget(null)}
+        />
+      )}
 
       {/* Import Excel modal */}
       {importModal && (
