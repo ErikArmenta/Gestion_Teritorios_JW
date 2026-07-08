@@ -851,6 +851,12 @@ const TerritoriesMap = () => {
                       {/* Datos en grid */}
                       <div style={{ display: 'grid', gap: '6px', fontSize: '12px', color: '#94A3B8' }}>
                         <div><strong style={{ color: '#CBD5E1' }}>Territorio:</strong> {c.territorio_nombre}</div>
+                        {c.manzana_id && (() => {
+                          const manz = manzanas.find(m => m.id === c.manzana_id);
+                          return manz ? (
+                            <div><strong style={{ color: '#CBD5E1' }}>Manzana:</strong> {manz.nombre}</div>
+                          ) : null;
+                        })()}
                         {c.nombre_contacto && <div><strong style={{ color: '#CBD5E1' }}>Contacto:</strong> {c.nombre_contacto}</div>}
                         {c.telefono && (
                           <div>
