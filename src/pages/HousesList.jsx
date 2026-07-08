@@ -9,6 +9,7 @@ import ModalOverlay from '../components/ModalOverlay';
 import { STATUS_OPTIONS, getStatusBadge, getStatusColor } from '../utils/constants';
 import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil, Upload, Mic } from 'lucide-react';
 import Pagination from '../components/Pagination';
+import EditHouseModal from '../components/EditHouseModal';
 import { supabase } from '../supabaseClient';
 
 const HousesList = () => {
