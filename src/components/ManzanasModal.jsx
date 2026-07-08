@@ -125,7 +125,7 @@ const ManzanasModal = ({ territorio, onClose }) => {
 
   return (
     <>
-      <ModalOverlay onClose={onClose} size="large">
+      <ModalOverlay onClose={onClose} size="full">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-bold" style={{ color: '#0F172A' }}>
@@ -234,7 +234,7 @@ const ManzanasModal = ({ territorio, onClose }) => {
             {/* Mini-mapa */}
             <div
               className="rounded-xl overflow-hidden"
-              style={{ height: '280px', border: '1px solid rgba(0,0,0,0.1)' }}
+              style={{ height: '450px', border: '1px solid rgba(0,0,0,0.1)' }}
             >
               <MapContainer
                 center={center}
@@ -243,8 +243,12 @@ const ManzanasModal = ({ territorio, onClose }) => {
                 zoomControl={true}
               >
                 <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution="&copy; OpenStreetMap contributors"
+                  url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
+                  attribution='&copy; OpenStreetMap &copy; CARTO'
+                />
+                <TileLayer
+                  url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+                  className="neon-labels"
                 />
                 <MapFitter coordenadas={territorio.coordenadas} />
 
