@@ -16,7 +16,6 @@ const getZoomStyle = (zoom) => {
 };
 
 const ZoomAwareLabel = ({ coordenadas, numero, nombre, color = '#3b82f6', isManzana = false, zoom }) => {
-
   const centroid = calcCentroid(coordenadas);
   if (!centroid) return null;
 
@@ -29,23 +28,35 @@ const ZoomAwareLabel = ({ coordenadas, numero, nombre, color = '#3b82f6', isManz
 
   const text = showName && displayName ? `${label} ${displayName}` : label;
 
+  const bgOpacity = isManzana ? 0.75 : 0.85;
+  const borderStyle = isManzana
+    ? 'border: none;'
+    : 'border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
+
+  // Estimar ancho del texto para centrar el iconAnchor
+  const estimatedWidth = Math.max(text.length * (baseFontSize * 0.5), 30);
+  const estimatedHeight = baseFontSize + 8;
+
   const icon = L.divIcon({
     className: '',
     html: `<div style="
-      font-weight: bold;
-      color: ${color};
-      text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
-      background: rgba(255,255,255,0.7);
-      border-radius: 4px;
-      padding: 2px 6px;
+      font-weight: 700;
+      color: #1E293B;
+      text-shadow: 0 0 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.6);
+      background: rgba(255,255,255,${bgOpacity});
+      border-radius: 6px;
+      padding: 3px 8px;
       font-size: ${actualFontSize};
       opacity: ${opacity};
       pointer-events: none;
       white-space: nowrap;
-      line-height: 1.2;
+      line-height: 1.3;
       user-select: none;
+      letter-spacing: 0.3px;
+      ${borderStyle}
     ">${text}</div>`,
-    iconAnchor: [0, 0],
+    iconSize: [0, 0],
+    iconAnchor: [Math.round(estimatedWidth / 2), Math.round(estimatedHeight / 2)],
   });
 
   return (
@@ -53,7 +64,8 @@ const ZoomAwareLabel = ({ coordenadas, numero, nombre, color = '#3b82f6', isManz
       position={centroid}
       icon={icon}
       interactive={false}
-      zIndexOffset={-100}
+      zIndexOffset={-1000}
+      bubblingMouseEvents={true}
     />
   );
 };
