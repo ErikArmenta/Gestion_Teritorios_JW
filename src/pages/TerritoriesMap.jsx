@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Polygon, Polyline, Marker, Popup, FeatureGroup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Polyline, Marker, Popup, FeatureGroup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet-draw';
 import { useData } from '../context/DataContext';
@@ -148,6 +148,13 @@ const CasaHistorialSection = ({ casaId }) => {
 };
 
 const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano'];
+
+const ZoomProvider = ({ children }) => {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+  useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
+  return children(zoom);
+};
 
 const MapSearch = ({ busqueda, setBusqueda, busquedaDebounced, resultadosBusqueda }) => {
   const map = useMap();
@@ -629,6 +636,7 @@ const TerritoriesMap = () => {
               <CustomEditControl onCreated={handleDrawCreated} />
             </FeatureGroup>
 
+            <ZoomProvider>{(currentZoom) => (<>
             {/* Polígonos de territorios y sus manzanas */}
             {territoriosFiltrados.map((t) => {
               const manzanasTerr = manzanas.filter(m => String(m.territorio_id) === String(t.id));
@@ -797,7 +805,7 @@ const TerritoriesMap = () => {
                   )}
                 </Popup>
               </Polygon>
-              <ZoomAwareLabel coordenadas={t.coordenadas} numero={t.numero} nombre={t.nombre} color={t.color} />
+              <ZoomAwareLabel coordenadas={t.coordenadas} numero={t.numero} nombre={t.nombre} color={t.color} zoom={currentZoom} />
               {manzanasTerr.map(m => (
                 <React.Fragment key={`manzana-${m.id}`}>
                 <Polygon
@@ -810,7 +818,7 @@ const TerritoriesMap = () => {
                     dashArray: '6 4',
                   }}
                 />
-                <ZoomAwareLabel coordenadas={m.coordenadas} numero={m.nombre} nombre={m.nombre} color={t.color} isManzana={true} />
+                <ZoomAwareLabel coordenadas={m.coordenadas} numero={m.nombre} nombre={m.nombre} color={t.color} isManzana={true} zoom={currentZoom} />
                 </React.Fragment>
               ))}
               </React.Fragment>
@@ -899,6 +907,7 @@ const TerritoriesMap = () => {
                 pathOptions={{ color: '#2563EB', dashArray: '6 4', weight: 3, opacity: 0.85 }}
               />
             )}
+            </>)}</ZoomProvider>
           </MapContainer>
         )}
         </div>

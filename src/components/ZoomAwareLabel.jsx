@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Marker, useMap, useMapEvents } from 'react-leaflet';
+import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 
 const calcCentroid = (coordenadas) => {
@@ -16,13 +15,7 @@ const getZoomStyle = (zoom) => {
   return { fontSize: '10px', opacity: 0.5, showName: false };
 };
 
-const ZoomAwareLabel = ({ coordenadas, numero, nombre, color = '#3b82f6', isManzana = false }) => {
-  const map = useMap();
-  const [zoom, setZoom] = useState(map.getZoom());
-
-  useMapEvents({
-    zoomend: () => setZoom(map.getZoom()),
-  });
+const ZoomAwareLabel = ({ coordenadas, numero, nombre, color = '#3b82f6', isManzana = false, zoom }) => {
 
   const centroid = calcCentroid(coordenadas);
   if (!centroid) return null;
