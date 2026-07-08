@@ -45,10 +45,22 @@ const CustomEditControl = ({ onCreated }) => {
 const GlobalMapFitter = ({ territorios, fitKey }) => {
   const map = useMap();
   useEffect(() => {
-    if (!territorios?.length) return;
+    if (!territorios?.length) {
+      console.log('GlobalMapFitter: no territorios to fit');
+      return;
+    }
     const all = territorios.flatMap(t => t.coordenadas || []);
     if (!all.length) return;
-    try { map.fitBounds(L.latLngBounds(all), { padding: [30, 30], maxZoom: 16, animate: true }); } catch {}
+    try {
+      const bounds = L.latLngBounds(all);
+      if (bounds.isValid()) {
+        setTimeout(() => {
+          map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16, animate: true });
+        }, 50);
+      }
+    } catch (err) {
+      console.error('GlobalMapFitter error:', err);
+    }
   }, [territorios, map, fitKey]);
   return null;
 };
