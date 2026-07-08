@@ -15,8 +15,26 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 L.Marker.prototype.options.icon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 
 const LocationMarker = ({ position, setPosition }) => {
-  useMapEvents({ click(e) { setPosition(e.latlng); } });
-  return position ? <Marker position={position} /> : null;
+  useMapEvents({
+    click(e) {
+      setPosition(e.latlng);
+    },
+  });
+
+  if (!position) return null;
+
+  return (
+    <Marker
+      position={position}
+      draggable={true}
+      eventHandlers={{
+        dragend: (e) => {
+          const latlng = e.target.getLatLng();
+          setPosition(latlng);
+        },
+      }}
+    />
+  );
 };
 
 const MapCenterer = ({ territorioObj }) => {
