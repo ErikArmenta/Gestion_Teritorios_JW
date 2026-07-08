@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { X, Locate, Camera, Upload, MapPin, Mic, Square, Trash2 } from 'lucide-react';
 import L from 'leaflet';
@@ -31,12 +31,13 @@ const formatDate = (iso) => {
 };
 
 const EditHouseModal = ({ casa, onClose, onSaved }) => {
-  const { territorios, updateCasa, uploadPhoto, fetchHistorialCasa } = useData();
+  const { territorios, manzanas, updateCasa, uploadPhoto, fetchHistorialCasa } = useData();
   const toast = useToast();
   const photoInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     territorio_id:       casa.territorio_id   ?? '',
+    manzana_id:          casa.manzana_id      ?? '',
     direccion:           casa.direccion        ?? '',
     estado:              casa.estado           ?? 'Pendiente',
     nombre_contacto:     casa.nombre_contacto  ?? '',
@@ -46,6 +47,11 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
     detalles_caso:       casa.detalles_caso    ?? '',
     notas:               casa.notas            ?? '',
   });
+
+  const manzanasDelTerritorio = useMemo(
+    () => manzanas.filter(m => String(m.territorio_id) === String(formData.territorio_id)),
+    [manzanas, formData.territorio_id]
+  );
 
   const [position, setPosition] = useState({
     lat: casa.latitud  ?? 31.7619,
@@ -147,6 +153,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
       await updateCasa(casa.id, {
         territorio_id:       formData.territorio_id ? parseInt(formData.territorio_id, 10) : casa.territorio_id,
         territorio_nombre:   territorio?.nombre || casa.territorio_nombre || '',
+        ...(formData.manzana_id ? { manzana_id: parseInt(formData.manzana_id, 10) } : { manzana_id: null }),
         direccion:           formData.direccion,
         estado:              formData.estado,
         nombre_contacto:     formData.nombre_contacto,
@@ -200,12 +207,27 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
               <label className="form-label">Territorio</label>
               <select
                 value={formData.territorio_id}
-                onChange={e => setFormData(f => ({ ...f, territorio_id: e.target.value }))}
+                onChange={e => setFormData(f => ({ ...f, territorio_id: e.target.value, manzana_id: '' }))}
               >
                 <option value="">Selecciona un territorio...</option>
                 {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
               </select>
             </div>
+
+            {manzanasDelTerritorio.length > 0 && (
+              <div className="form-group">
+                <label className="form-label">Manzana (opcional)</label>
+                <select
+                  value={formData.manzana_id}
+                  onChange={e => setFormData(f => ({ ...f, manzana_id: e.target.value }))}
+                >
+                  <option value="">Sin manzana específica</option>
+                  {manzanasDelTerritorio.map(m => (
+                    <option key={m.id} value={m.id}>{m.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label">Direccion Completa *</label>
