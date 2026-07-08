@@ -862,7 +862,12 @@ const TerritoriesMap = () => {
                         {c.audio_url && (
                           <div style={{ marginTop: '8px' }}>
                             <strong style={{ color: '#CBD5E1' }}>Nota de voz:</strong>
-                            <audio controls src={c.audio_url} style={{ width: '100%', marginTop: '4px' }} />
+                            <audio
+                              controls
+                              src={c.audio_url}
+                              style={{ width: '100%', marginTop: '4px' }}
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
                           </div>
                         )}
                         <div style={{ color: '#64748B', fontSize: '10px', marginTop: '4px' }}>
