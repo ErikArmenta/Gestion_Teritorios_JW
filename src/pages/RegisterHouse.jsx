@@ -451,7 +451,7 @@ const RegisterHouse = () => {
               {locating ? 'Obteniendo GPS...' : 'Usar mi ubicación'}
             </button>
           </div>
-          <p className="text-xs mb-3 text-secondary">Haz clic en el mapa para posicionar la casa.</p>
+          <p className="text-xs mb-3 text-secondary">Haz clic en el mapa o arrastra el marcador para posicionar la casa con precisión.</p>
 
           {insideTerritory === true && (
             <div className="p-2.5 rounded-xl mb-3 text-xs font-medium" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#34D399' }}>
