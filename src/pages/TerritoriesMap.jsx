@@ -42,14 +42,14 @@ const CustomEditControl = ({ onCreated }) => {
   return null;
 };
 
-const GlobalMapFitter = ({ territorios }) => {
+const GlobalMapFitter = ({ territorios, fitKey }) => {
   const map = useMap();
   useEffect(() => {
     if (!territorios?.length) return;
     const all = territorios.flatMap(t => t.coordenadas || []);
     if (!all.length) return;
-    try { map.fitBounds(L.latLngBounds(all), { padding: [30, 30], maxZoom: 16 }); } catch {}
-  }, [territorios, map]);
+    try { map.fitBounds(L.latLngBounds(all), { padding: [30, 30], maxZoom: 16, animate: true }); } catch {}
+  }, [territorios, map, fitKey]);
   return null;
 };
 
@@ -625,7 +625,7 @@ const TerritoriesMap = () => {
               url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
               className="neon-labels"
             />
-            <GlobalMapFitter territorios={territoriosFiltrados} />
+            <GlobalMapFitter territorios={territoriosFiltrados} fitKey={filtroMisTerr} />
             <MapSearch
               busqueda={busqueda}
               setBusqueda={setBusqueda}
