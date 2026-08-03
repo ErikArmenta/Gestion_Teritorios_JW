@@ -492,3 +492,9 @@ th { font-weight: 700; }
 /* ── Leaflet draggable marker cursor ────────────────────────────────────────── */
 .leaflet-marker-draggable { cursor: grab !important; }
 .leaflet-marker-draggable:active { cursor: grabbing !important; }
+
+/* ── Spin animation for LocateButton ──────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

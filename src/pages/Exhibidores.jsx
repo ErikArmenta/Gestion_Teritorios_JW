@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { MapPin, Plus, Clock, Calendar, Trash2, Check, X, ShoppingCart } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { MapPin, Plus, Clock, Calendar, Trash2, Check, X, ShoppingCart, Navigation } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -41,6 +41,64 @@ const LocationMarker = ({ position, setPosition }) => {
         dragend: (e) => setPosition(e.target.getLatLng()),
       }}
     />
+  );
+};
+
+const LocateButton = ({ onLocate }) => {
+  const map = useMap();
+  const [locating, setLocating] = useState(false);
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      alert('Tu navegador no soporta geolocalización');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        map.flyTo(latlng, 17, { animate: true, duration: 1.2 });
+        if (onLocate) onLocate(latlng);
+        setLocating(false);
+      },
+      (err) => {
+        console.error('Geolocation error:', err);
+        alert('No se pudo obtener tu ubicación. Verifica los permisos.');
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  return (
+    <button
+      onClick={handleLocate}
+      disabled={locating}
+      type="button"
+      style={{
+        position: 'absolute',
+        bottom: '12px',
+        right: '12px',
+        zIndex: 1000,
+        width: '40px',
+        height: '40px',
+        borderRadius: '12px',
+        background: 'var(--bg-card, #fff)',
+        border: '1px solid var(--border-color, #E2E8F0)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        cursor: locating ? 'wait' : 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: locating ? '#94A3B8' : '#2563EB',
+        transition: 'all 0.2s',
+      }}
+      title="Ir a mi ubicación"
+    >
+      <Navigation size={18} style={{
+        animation: locating ? 'spin 1s linear infinite' : 'none'
+      }} />
+    </button>
   );
 };
 
@@ -284,6 +342,7 @@ const Exhibidores = () => {
               {exhibidores.filter(e => e.activo !== false).map(e => (
                 <Marker key={e.id} position={[e.latitud, e.longitud]} icon={exhibidorIcon(e.color || '#F59E0B')} />
               ))}
+              <LocateButton />
             </MapContainer>
           </div>
 
@@ -550,6 +609,7 @@ const Exhibidores = () => {
                     className="neon-labels"
                   />
                   <LocationMarker position={newPosition} setPosition={setNewPosition} />
+                  <LocateButton onLocate={(latlng) => setNewPosition(latlng)} />
                 </MapContainer>
               </div>
               {newPosition && (
