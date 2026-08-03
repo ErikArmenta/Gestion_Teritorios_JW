@@ -207,7 +207,7 @@ const Exhibidores = () => {
     if (!turnoForm.usuario_id || !turnoForm.fecha || !turnoForm.hora_inicio || !turnoForm.hora_fin) return;
     setSavingTurno(true);
     try {
-      await addExhibidorTurno({
+      const turnoCreado = await addExhibidorTurno({
         exhibidor_id: assignTarget.id,
         usuario_id: Number(turnoForm.usuario_id),
         fecha: turnoForm.fecha,
@@ -220,7 +220,16 @@ const Exhibidores = () => {
           usuario_destino_id: Number(turnoForm.usuario_id),
           tipo: 'exhibidor',
           titulo: 'Turno de exhibidor asignado',
-          mensaje: `Se te asigno un turno en "${assignTarget.nombre}" el ${formatDate(turnoForm.fecha)} de ${formatTime(turnoForm.hora_inicio)} a ${formatTime(turnoForm.hora_fin)}`,
+          mensaje: `Se te asignó un turno en "${assignTarget.nombre}" el ${formatDate(turnoForm.fecha)} de ${formatTime(turnoForm.hora_inicio)} a ${formatTime(turnoForm.hora_fin)}`,
+          metadata: {
+            turno_id: turnoCreado.id,
+            exhibidor_id: assignTarget.id,
+            exhibidor_nombre: assignTarget.nombre,
+            fecha: turnoForm.fecha,
+            hora_inicio: turnoForm.hora_inicio,
+            hora_fin: turnoForm.hora_fin,
+            accion_requerida: 'confirmar_asistencia',
+          },
         });
       } catch {}
       toast.success('Turno asignado');
