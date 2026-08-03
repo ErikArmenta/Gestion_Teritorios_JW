@@ -104,7 +104,7 @@ export const DataProvider = ({ children }) => {
         // Turnos de exhibidores
         const { data: turnosData } = await supabase
           .from('exhibidor_turnos')
-          .select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)')
+          .select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)')
           .order('fecha', { ascending: true });
         if (turnosData) setExhibidorTurnos(turnosData);
 
@@ -309,7 +309,7 @@ export const DataProvider = ({ children }) => {
       .channel('public:exhibidor_turnos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'exhibidor_turnos' }, () => {
         supabase.from('exhibidor_turnos')
-          .select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)')
+          .select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)')
           .order('fecha', { ascending: true })
           .then(({ data }) => {
             if (data) setExhibidorTurnos(data);
@@ -519,14 +519,14 @@ export const DataProvider = ({ children }) => {
     const payload = { ...turnoData };
     if (user?.congregacion_id) payload.congregacion_id = user.congregacion_id;
     payload.asignado_por = user?.id;
-    const { data, error } = await supabase.from('exhibidor_turnos').insert([payload]).select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)').single();
+    const { data, error } = await supabase.from('exhibidor_turnos').insert([payload]).select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)').single();
     if (error) throw error;
     setExhibidorTurnos(prev => [...prev, data]);
     return data;
   };
 
   const updateExhibidorTurno = async (id, updates) => {
-    const { data, error } = await supabase.from('exhibidor_turnos').update(updates).eq('id', id).select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)').single();
+    const { data, error } = await supabase.from('exhibidor_turnos').update(updates).eq('id', id).select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)').single();
     if (error) throw error;
     setExhibidorTurnos(prev => prev.map(t => t.id === id ? data : t));
     return data;
