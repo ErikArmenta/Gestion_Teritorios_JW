@@ -22,6 +22,8 @@ export const DataProvider = ({ children }) => {
   const [asignaciones, setAsignaciones] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [manzanas, setManzanas] = useState([]);
+  const [exhibidores, setExhibidores] = useState([]);
+  const [exhibidorTurnos, setExhibidorTurnos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -91,6 +93,20 @@ export const DataProvider = ({ children }) => {
           : supabase.from('app_usuarios').select('id, nombre');
         const usuariosRes = await usuariosQuery;
         const usuariosData = usuariosRes.error ? [] : (usuariosRes.data || []);
+
+        // Exhibidores
+        const { data: exhibidoresData } = await supabase
+          .from('exhibidores')
+          .select('*')
+          .order('nombre');
+        if (exhibidoresData) setExhibidores(exhibidoresData);
+
+        // Turnos de exhibidores
+        const { data: turnosData } = await supabase
+          .from('exhibidor_turnos')
+          .select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)')
+          .order('fecha', { ascending: true });
+        if (turnosData) setExhibidorTurnos(turnosData);
 
         setTerritorios(terrData);
         setCasas(casasData);
@@ -280,11 +296,34 @@ export const DataProvider = ({ children }) => {
       })
       .subscribe();
 
+    const exhibidoresSub = supabase
+      .channel('public:exhibidores')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'exhibidores' }, () => {
+        supabase.from('exhibidores').select('*').order('nombre').then(({ data }) => {
+          if (data) setExhibidores(data);
+        });
+      })
+      .subscribe();
+
+    const exhibidorTurnosSub = supabase
+      .channel('public:exhibidor_turnos')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'exhibidor_turnos' }, () => {
+        supabase.from('exhibidor_turnos')
+          .select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)')
+          .order('fecha', { ascending: true })
+          .then(({ data }) => {
+            if (data) setExhibidorTurnos(data);
+          });
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(terrSub);
       supabase.removeChannel(casasSub);
       supabase.removeChannel(asigSub);
       supabase.removeChannel(manzanasSub);
+      supabase.removeChannel(exhibidoresSub);
+      supabase.removeChannel(exhibidorTurnosSub);
     };
   }, [isOnline, congregacionId]);
 
@@ -451,15 +490,66 @@ export const DataProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  // ── CRUD Exhibidores ──
+  const addExhibidor = async (exhibidorData) => {
+    const payload = { ...exhibidorData };
+    if (user?.congregacion_id) payload.congregacion_id = user.congregacion_id;
+    payload.creado_por = user?.id;
+    const { data, error } = await supabase.from('exhibidores').insert([payload]).select().single();
+    if (error) throw error;
+    setExhibidores(prev => [...prev, data]);
+    return data;
+  };
+
+  const updateExhibidor = async (id, updates) => {
+    const { data, error } = await supabase.from('exhibidores').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    setExhibidores(prev => prev.map(e => e.id === id ? data : e));
+    return data;
+  };
+
+  const deleteExhibidor = async (id) => {
+    const { error } = await supabase.from('exhibidores').delete().eq('id', id);
+    if (error) throw error;
+    setExhibidores(prev => prev.filter(e => e.id !== id));
+  };
+
+  // ── CRUD Exhibidor Turnos ──
+  const addExhibidorTurno = async (turnoData) => {
+    const payload = { ...turnoData };
+    if (user?.congregacion_id) payload.congregacion_id = user.congregacion_id;
+    payload.asignado_por = user?.id;
+    const { data, error } = await supabase.from('exhibidor_turnos').insert([payload]).select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)').single();
+    if (error) throw error;
+    setExhibidorTurnos(prev => [...prev, data]);
+    return data;
+  };
+
+  const updateExhibidorTurno = async (id, updates) => {
+    const { data, error } = await supabase.from('exhibidor_turnos').update(updates).eq('id', id).select('*, app_usuarios(nombre, foto_url), exhibidores(nombre)').single();
+    if (error) throw error;
+    setExhibidorTurnos(prev => prev.map(t => t.id === id ? data : t));
+    return data;
+  };
+
+  const deleteExhibidorTurno = async (id) => {
+    const { error } = await supabase.from('exhibidor_turnos').delete().eq('id', id);
+    if (error) throw error;
+    setExhibidorTurnos(prev => prev.filter(t => t.id !== id));
+  };
+
   return (
     <DataContext.Provider value={{
       territorios, casas, asignaciones, usuarios, manzanas, loading,
+      exhibidores, exhibidorTurnos,
       addTerritorio, updateTerritorio, deleteTerritorio,
       addCasa, updateCasa, deleteCasa,
       uploadPhoto,
       insertarHistorialVisita, fetchHistorialCasa,
       asignarTerritorio, desasignarTerritorio, getAsignacionesTerritorio,
       addManzana, updateManzana, deleteManzana,
+      addExhibidor, updateExhibidor, deleteExhibidor,
+      addExhibidorTurno, updateExhibidorTurno, deleteExhibidorTurno,
       isOnline, pendingCount, syncing, syncPendingQueue,
     }}>
       {children}
