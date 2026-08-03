@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-03 — Mejora Urgente 2
+
+- `NotificationBell.jsx`
+- `DataContext.jsx`
+- `index.css`
+- `Exhibidores.jsx`
+
 ## 2026-08-03 — Mejora urgente
 
 - `App.jsx`
