@@ -159,7 +159,7 @@ const CasaHistorialSection = ({ casaId }) => {
   );
 };
 
-const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano'];
+const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'];
 
 const ZoomProvider = ({ children }) => {
   const map = useMap();
