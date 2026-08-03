@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2, Sun, Moon, Database } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2, Sun, Moon, Database, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -10,6 +10,7 @@ const menuItems = [
   { path: '/register', name: 'Registrar', icon: <Home size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/stats', name: 'Stats', icon: <BarChart2 size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/list', name: 'Lista', icon: <List size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
+  { path: '/exhibidores', name: 'Exhibidores', icon: <ShoppingCart size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/users', name: 'Usuarios', icon: <Users size={20} />, roles: ['Super Admin', 'Admin Principal'] },
   { path: '/alerts', name: 'Alertas', icon: <Bell size={20} />, roles: ['Super Admin', 'Admin Principal'] },
   { path: '/congregaciones', name: 'Congregaciones', icon: <Building2 size={20} />, roles: ['Super Admin'] },

@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Profile from './pages/Profile';
 import SharedTerritory from './pages/SharedTerritory';
 import Backup from './pages/Backup';
+import Exhibidores from './pages/Exhibidores';
 import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
@@ -109,6 +110,7 @@ const AppLayout = () => {
             </ProtectedRoute>
           } />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/exhibidores" element={<Exhibidores />} />
           <Route path="/backup" element={
             <ProtectedRoute allowedRoles={['Super Admin']}>
               <Backup />
