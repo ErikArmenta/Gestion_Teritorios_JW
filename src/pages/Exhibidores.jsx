@@ -270,7 +270,7 @@ const Exhibidores = () => {
             <MapContainer
               center={mapCenter}
               zoom={14}
-              style={{ height: '280px', width: '100%' }}
+              style={{ height: '450px', width: '100%' }}
               scrollWheelZoom={true}
             >
               <TileLayer
@@ -538,7 +538,7 @@ const Exhibidores = () => {
                 <MapContainer
                   center={mapCenter}
                   zoom={14}
-                  style={{ height: '220px', width: '100%' }}
+                  style={{ height: '320px', width: '100%' }}
                   scrollWheelZoom={true}
                 >
                   <TileLayer
