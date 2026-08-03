@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-03 — Mejora urgente
+
+- `App.jsx`
+- `BottomNav.jsx`
+- `Sidebar.jsx`
+- `DataContext.jsx`
+- `Exhibidores.jsx`
+- ... y 1 archivos más
+
 ## 2026-07-08 — Mejoras v3
 
 - `index.css`
