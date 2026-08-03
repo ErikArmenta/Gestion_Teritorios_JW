@@ -358,7 +358,7 @@ const Exhibidores = () => {
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                                {t.app_usuarios?.nombre || 'Usuario'}
+                                {t.usuario?.nombre || 'Usuario'}
                               </span>
                               <span style={{ color: 'var(--text-muted)' }}>
                                 {formatDate(t.fecha)} {formatTime(t.hora_inicio)}-{formatTime(t.hora_fin)}
@@ -368,7 +368,7 @@ const Exhibidores = () => {
                               <Badge estado={t.estado} />
                               {isAdmin && (
                                 <button
-                                  onClick={() => setDeleteTarget({ type: 'turno', id: t.id, name: `turno de ${t.app_usuarios?.nombre || 'usuario'}` })}
+                                  onClick={() => setDeleteTarget({ type: 'turno', id: t.id, name: `turno de ${t.usuario?.nombre || 'usuario'}` })}
                                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '2px' }}
                                 >
                                   <Trash2 size={14} />
