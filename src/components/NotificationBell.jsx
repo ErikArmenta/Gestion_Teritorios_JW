@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Home, User, AlertTriangle } from 'lucide-react';
+import { Bell, Home, User, AlertTriangle, ShoppingCart, Check, X } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
+import { useData } from '../context/DataContext';
+import { supabase } from '../supabaseClient';
 
 function formatRelative(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -18,6 +20,8 @@ const TIPO_ICON = {
   estado_casa: <Home size={15} />,
   alerta: <AlertTriangle size={15} />,
   sistema: <Bell size={15} />,
+  exhibidor: <ShoppingCart size={15} />,
+  exhibidor_respuesta: <ShoppingCart size={15} />,
 };
 
 const TIPO_COLOR = {
@@ -25,11 +29,15 @@ const TIPO_COLOR = {
   estado_casa: '#10B981',
   alerta: '#EF4444',
   sistema: '#64748B',
+  exhibidor: '#F59E0B',
+  exhibidor_respuesta: '#10B981',
 };
 
 export default function NotificationBell() {
-  const { notificaciones, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notificaciones, unreadCount, markAsRead, markAllAsRead, createNotification } = useNotifications();
+  const { updateExhibidorTurno } = useData();
   const [panelOpen, setPanelOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
   const containerRef = useRef(null);
 
   // Cerrar con Escape
@@ -56,6 +64,53 @@ export default function NotificationBell() {
 
   const handleNotifClick = async (n) => {
     if (!n.leida) await markAsRead(n.id);
+  };
+
+  const handleExhibidorAction = async (notif, confirmar) => {
+    const meta = notif.metadata || {};
+    if (!meta.turno_id) return;
+    setActionLoading(notif.id);
+    try {
+      const nuevoEstado = confirmar ? 'aceptado' : 'rechazado';
+      await updateExhibidorTurno(meta.turno_id, { estado: nuevoEstado });
+
+      // Marcar notificación como leída y actualizar metadata
+      await supabase
+        .from('notificaciones')
+        .update({
+          leida: true,
+          metadata: { ...meta, accion_requerida: null, respondido: confirmar ? 'confirmado' : 'no_asistire' }
+        })
+        .eq('id', notif.id);
+
+      // Notificar al que asignó
+      const { data: turnoData } = await supabase
+        .from('exhibidor_turnos')
+        .select('asignado_por')
+        .eq('id', meta.turno_id)
+        .single();
+
+      if (turnoData?.asignado_por) {
+        try {
+          await createNotification({
+            usuario_destino_id: turnoData.asignado_por,
+            tipo: 'exhibidor_respuesta',
+            titulo: confirmar ? '✅ Asistencia confirmada' : '❌ No asistirá',
+            mensaje: confirmar
+              ? `Confirmó asistencia al exhibidor "${meta.exhibidor_nombre}" el ${meta.fecha}`
+              : `No asistirá al exhibidor "${meta.exhibidor_nombre}" el ${meta.fecha}`,
+            metadata: { turno_id: meta.turno_id, exhibidor_nombre: meta.exhibidor_nombre },
+          });
+        } catch {}
+      }
+
+      // Re-fetch notificaciones para actualizar UI
+      await markAsRead(notif.id);
+    } catch (err) {
+      console.error('Error handling exhibidor action:', err);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
@@ -228,6 +283,71 @@ export default function NotificationBell() {
                       >
                         {n.mensaje}
                       </p>
+                    )}
+
+                    {/* Botones de acción para exhibidores */}
+                    {n.tipo === 'exhibidor' && n.metadata?.accion_requerida === 'confirmar_asistencia' && !n.leida && (
+                      <div
+                        style={{ display: 'flex', gap: '6px', marginTop: '8px' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleExhibidorAction(n, true); }}
+                          disabled={actionLoading === n.id}
+                          style={{
+                            padding: '4px 12px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#10B981',
+                            color: '#fff',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            opacity: actionLoading === n.id ? 0.6 : 1,
+                          }}
+                        >
+                          <Check size={12} /> Confirmo asistencia
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleExhibidorAction(n, false); }}
+                          disabled={actionLoading === n.id}
+                          style={{
+                            padding: '4px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid #EF4444',
+                            background: 'transparent',
+                            color: '#EF4444',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            opacity: actionLoading === n.id ? 0.6 : 1,
+                          }}
+                        >
+                          <X size={12} /> No asistiré
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Badge de respuesta ya dada */}
+                    {n.tipo === 'exhibidor' && n.metadata?.respondido && (
+                      <div style={{
+                        marginTop: '6px',
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        display: 'inline-block',
+                        background: n.metadata.respondido === 'confirmado' ? '#D1FAE5' : '#FEE2E2',
+                        color: n.metadata.respondido === 'confirmado' ? '#065F46' : '#991B1B',
+                      }}>
+                        {n.metadata.respondido === 'confirmado' ? '✅ Asistencia confirmada' : '❌ No asistirá'}
+                      </div>
                     )}
                   </div>
 
