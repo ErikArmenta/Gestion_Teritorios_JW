@@ -581,6 +581,11 @@ const en = {
   'Foto de la casa': 'House photo',
   'Foto de perfil': 'Profile photo',
   'Si el error es de permisos (RLS): en Supabase → tabla alertas_panico → Authentication → Policies, agrega una policy "Enable read access for all users" con USING (true), o desactiva RLS en esta tabla.': 'If it is a permissions error (RLS): in Supabase → table alertas_panico → Authentication → Policies, add an "Enable read access for all users" policy with USING (true), or disable RLS on this table.',
+  'Las notificaciones están bloqueadas. Toca el candado junto a la dirección → Notificaciones → Permitir, y recarga la página.': 'Notifications are blocked. Tap the lock next to the address → Notifications → Allow, then reload the page.',
+  'Notificaciones activadas en este dispositivo': 'Notifications enabled on this device',
+  'Notificaciones activas': 'Notifications on',
+  'Notificaciones bloqueadas': 'Notifications blocked',
+  'Activar notificaciones': 'Enable notifications',
 };
 
 export default en;

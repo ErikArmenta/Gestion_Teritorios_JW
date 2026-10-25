@@ -194,7 +194,8 @@ export default function PanicButton() {
   return (
     <>
       {/* FAB */}
-      <div className="fixed bottom-24 right-5 md:bottom-6 md:right-6 z-[9999] select-none" style={{ width: SIZE, height: SIZE }}>
+      {/* z-55: sobre la barra inferior (z-50) y el mapa, pero debajo de menús y modales */}
+      <div className="fixed bottom-24 right-5 md:bottom-6 md:right-6 z-[55] select-none" style={{ width: SIZE, height: SIZE }}>
         {/* Progress ring */}
         {holding && (
           <svg width={SIZE} height={SIZE} className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
@@ -246,7 +247,7 @@ export default function PanicButton() {
       {/* Error toast — se muestra si el INSERT falló */}
       {error && (
         <div
-          className="fixed bottom-40 right-5 md:bottom-24 md:right-6 z-[9999] max-w-xs animate-fade-in"
+          className="fixed bottom-40 right-5 md:bottom-24 md:right-6 z-[55] max-w-xs animate-fade-in"
           onClick={() => setError(null)}
         >
           <div className="rounded-xl px-4 py-3 shadow-xl text-xs font-semibold cursor-pointer"

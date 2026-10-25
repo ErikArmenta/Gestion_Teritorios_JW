@@ -58,11 +58,17 @@ export const identificarUsuario = (user, grupoId = null) => conOneSignal(async (
 
 export const olvidarUsuario = () => conOneSignal((OneSignal) => OneSignal.logout());
 
-// Pide permiso de notificaciones. Devuelve true si quedó concedido.
+// Estado del permiso del navegador: 'granted' | 'denied' | 'default' | 'unsupported'
+export const estadoPermisoPush = () =>
+  typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+
+// Pide permiso de notificaciones y suscribe el dispositivo. Devuelve true si quedó concedido.
 export const pedirPermisoPush = async () => {
   if (oneSignalDisponible()) {
     const ok = await conOneSignal(async (OneSignal) => {
       await OneSignal.Notifications.requestPermission();
+      // Si el permiso ya estaba dado antes de OneSignal, hay que suscribir explícitamente
+      if (OneSignal.Notifications.permission) await OneSignal.User.PushSubscription.optIn();
       return OneSignal.Notifications.permission;
     });
     return Boolean(ok);

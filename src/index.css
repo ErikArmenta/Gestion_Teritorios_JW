@@ -681,9 +681,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 img, video { max-width: 100%; }
 button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-/* Mapa principal: en pantallas angostas los filtros bajan para no chocar con el buscador */
+/* Mapa principal: en pantallas angostas los filtros salen ARRIBA del mapa (fuera de él);
+   encima del mapa chocaban con el buscador y los controles de zoom/dibujo */
 @media (max-width: 639px) {
-  .map-filter-toggle { top: 60px !important; }
+  .map-filter-toggle { position: static !important; margin-bottom: 8px; flex-wrap: wrap; }
 }
 
 /* Popups de Leaflet nunca más anchos que la pantalla */

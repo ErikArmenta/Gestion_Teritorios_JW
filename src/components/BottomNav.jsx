@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ExhibidorIcon from './ExhibidorIcon';
 import { t, useLanguage } from '../i18n';
+import NotificacionesToggle from './NotificacionesToggle';
 
 const menuItems = [
   { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
@@ -230,6 +231,13 @@ const BottomNav = () => {
               <Languages size={20} />
               <span className="text-sm font-semibold">{lang === 'es' ? 'English' : 'Español'}</span>
             </button>
+
+            {/* Notificaciones (se puede activar en cualquier momento) */}
+            <NotificacionesToggle
+              iconSize={20}
+              className="w-full flex items-center gap-3 px-5 py-3 transition-colors duration-150 text-left"
+              style={{ background: 'transparent' }}
+            />
 
             {/* Mi Perfil */}
             <button

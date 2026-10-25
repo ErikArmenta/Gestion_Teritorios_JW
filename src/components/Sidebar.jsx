@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ExhibidorIcon from './ExhibidorIcon';
 import { t, useLanguage } from '../i18n';
+import NotificacionesToggle from './NotificacionesToggle';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -145,6 +146,10 @@ const Sidebar = () => {
           <Languages size={16} />
           {lang === 'es' ? 'English' : 'Español'}
         </button>
+        <NotificacionesToggle
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-full mb-2 text-sm font-medium transition-colors duration-200"
+          style={{ background: 'var(--bg-hover)', border: 'none' }}
+        />
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200"

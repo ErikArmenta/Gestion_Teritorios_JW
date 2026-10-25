@@ -679,7 +679,8 @@ const TerritoriesMap = () => {
       </div>
 
       {/* Map card */}
-      <div className="flex-1 min-h-0 relative" style={{ minHeight: '420px' }}>
+      {/* isolate: los controles flotantes (z-index 1000+) no pueden quedar sobre menús/modales de la app */}
+      <div className="flex-1 min-h-0 relative isolate flex flex-col" style={{ minHeight: '420px' }}>
         {/* Toggle Ver todos / Mis territorios */}
         <div className="map-filter-toggle" style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 1000, display: 'flex', gap: '4px' }}>
           <button
@@ -735,7 +736,7 @@ const TerritoriesMap = () => {
             {tx('Progreso')}
           </button>
         </div>
-        <div className="card h-full p-0 overflow-hidden">
+        <div className="card flex-1 min-h-0 p-0 overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[420px] gap-3">
             <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-500 rounded-full animate-spin" style={{ borderWidth: 3 }} />
