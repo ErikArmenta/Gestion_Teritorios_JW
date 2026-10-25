@@ -36,7 +36,7 @@ El código ya está listo en el repositorio:
    - **Site URL:** el dominio de Vercel, por ejemplo `https://gestion-teritorios-jw.vercel.app`
      (sin `/` al final).
    - **Auto Resubscribe:** activado.
-   - **Default Icon URL:** `https://gestion-teritorios-jw.vercel.app/icons/icon-192.png`
+   - **Default Icon URL:** `https://gestion-teritorios-jw.vercel.app/icons/notification-icon.png` (logo JW, 256 × 256)
 5. Busca la sección **Service Workers** (a veces dentro de *Advanced*) y activa
    **"Customize service worker paths and filenames"**:
    - Path to service worker files: `/`

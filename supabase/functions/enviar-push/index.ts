@@ -51,7 +51,7 @@ async function enviar({ usuarios, titulo, mensaje, ruta }: Push) {
       headings: titulo,
       contents: mensaje,
       url: `${APP_URL}${ruta}`, // link de navegación al tocar la notificación
-      chrome_web_icon: `${APP_URL}/icons/icon-192.png`,
+      chrome_web_icon: `${APP_URL}/icons/notification-icon.png`,
       priority: 10,
     }),
   });
