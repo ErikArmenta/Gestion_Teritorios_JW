@@ -107,7 +107,17 @@ Supabase → **Edge Functions → Secrets** (o *Manage secrets*) → agrega:
 
 Guarda el `WEBHOOK_SECRET`: lo vas a usar en los webhooks.
 
-### 4d. Webhooks de la base de datos
+### 4d. Disparadores (recomendado: un solo SQL)
+
+1. Abre `MIGRACION_6_PUSH.sql` (raíz del proyecto).
+2. Reemplaza `PEGA_AQUI_TU_WEBHOOK_SECRET` por tu `WEBHOOK_SECRET` (el mismo del paso 4c).
+3. Pega todo en Supabase → **SQL Editor** → **Run**. Crea los 3 disparadores de una vez.
+4. **No guardes el archivo con la clave puesta** (o no lo subas a git).
+
+> Alternativa equivalente: crear los 3 webhooks a mano desde el panel (abajo). No hagas ambas
+> cosas o cada evento mandaría la notificación dos veces.
+
+### 4d-bis. (Alternativa) Webhooks desde el panel
 
 Supabase → **Database → Webhooks** → (si lo pide, *Enable webhooks*) → **Create a new hook**.
 Crea estos 3, todos con:
