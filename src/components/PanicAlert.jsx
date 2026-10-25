@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Polygon } from 'react-leaflet';
+import { MapContainer, Marker, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useToast } from './Toast';
+import { showSystemNotification } from '../utils/pwa';
 
 // Fix default Leaflet icon
 import iconImg from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import DarkTileLayers from './DarkTileLayers';
+import LocateButton from './LocateButton';
+import { t as tx } from '../i18n';
 const DefaultIcon = L.icon({ iconUrl: iconImg, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
 
@@ -123,14 +127,7 @@ const AlertMiniMap = ({ lat, lng, territorio }) => {
         dragging={true}
         scrollWheelZoom={true}
       >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-        />
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-          className="neon-labels"
-        />
+        <DarkTileLayers />
         {territorio?.coordenadas && (
           <Polygon
             positions={territorio.coordenadas}
@@ -144,6 +141,7 @@ const AlertMiniMap = ({ lat, lng, territorio }) => {
           />
         )}
         <Marker position={[lat, lng]} icon={redBlinkIcon} />
+        <LocateButton />
       </MapContainer>
     </div>
   );
@@ -155,6 +153,9 @@ export default function PanicAlert() {
   const toast = useToast();
 
   const [alerta, setAlerta]         = useState(null);
+  // Id de la alerta mostrada (los callbacks de tiempo real están memorizados)
+  const alertaIdRef = useRef(null);
+  useEffect(() => { alertaIdRef.current = alerta?.id ?? null; }, [alerta]);
   const [emisor, setEmisor]         = useState(null);
   const [territorio, setTerritorio] = useState(null);
   const [showModal, setShowModal]   = useState(false);
@@ -195,16 +196,14 @@ export default function PanicAlert() {
     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
 
     // Browser notification
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      try {
-        new Notification('🚨 ALERTA DE EMERGENCIA', {
-          body: `Un compañero necesita ayuda. Tipo: ${TIPO_CFG[a.tipo]?.label || a.tipo}`,
-          icon: '/favicon.ico',
-          tag: `panic-${a.id}`,
-          requireInteraction: true,
-        });
-      } catch {}
-    }
+    showSystemNotification('🚨 ALERTA DE EMERGENCIA', {
+      body: tx('Un compañero necesita ayuda. Tipo: {tipo}', { tipo: tx(TIPO_CFG[a.tipo]?.label || a.tipo) }),
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: `panic-${a.id}`,
+      requireInteraction: true,
+      data: { url: '/alerts' },
+    });
 
     // Fetch who activated
     const { data: emisorData } = await supabase
@@ -231,12 +230,13 @@ export default function PanicAlert() {
     const a = payload.new;
 
     if (!a.activa) {
-      // Alert cancelled
+      // Solo si se canceló la alerta que se está mostrando (no cualquier otra)
+      if (String(a.id) !== String(alertaIdRef.current)) return;
       stopAlarm(audioCtxRef, oscsRef);
       setShowModal(false);
       setAlerta(null);
-      const nombre = emisorRef.current?.nombre || 'El usuario';
-      toast.info(`${nombre} canceló la alerta`);
+      const nombre = emisorRef.current?.nombre || tx('El usuario');
+      toast.info(tx('{nombre} canceló la alerta', { nombre }));
       setEmisor(null);
       setTerritorio(null);
       return;
@@ -344,7 +344,7 @@ export default function PanicAlert() {
     setRespondiendo(false);
     setShowModal(false);
     stopAlarm(audioCtxRef, oscsRef);
-    toast.success('Respondiste: Voy en camino');
+    toast.success(tx('Respondiste: Voy en camino'));
   };
 
   if (!showModal || !alerta) return null;
@@ -412,14 +412,14 @@ export default function PanicAlert() {
             className="rounded-2xl p-4 space-y-3"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(239,68,68,0.4)' }}
           >
-            <p className="text-xs uppercase tracking-wider" style={neonSubtle}>Activado por</p>
+            <p className="text-xs uppercase tracking-wider" style={neonSubtle}>{tx('Activado por')}</p>
             <p className="font-black text-2xl" style={neonWhite}>{emisor?.nombre ?? '...'}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white"
                 style={{ backgroundColor: tipoCfg.bg }}
               >
-                {tipoCfg.icon} {tipoCfg.label}
+                {tipoCfg.icon} {tx(tipoCfg.label)}
               </span>
               {territorio && (
                 <span
@@ -450,8 +450,8 @@ export default function PanicAlert() {
               className="rounded-2xl p-4 text-center"
               style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
             >
-              <p className="text-sm" style={neonSubtle}>📡 Sin coordenadas GPS disponibles</p>
-              <p className="text-xs mt-1" style={neonSubtle}>El usuario no compartió su ubicación</p>
+              <p className="text-sm" style={neonSubtle}>{tx('📡 Sin coordenadas GPS disponibles')}</p>
+              <p className="text-xs mt-1" style={neonSubtle}>{tx('El usuario no compartió su ubicación')}</p>
             </div>
           )}
 
@@ -464,7 +464,7 @@ export default function PanicAlert() {
               Respondedores ({respondieron.length})
             </p>
             {respondieron.length === 0 ? (
-              <p className="text-sm" style={neonSubtle}>Nadie ha respondido aún</p>
+              <p className="text-sm" style={neonSubtle}>{tx('Nadie ha respondido aún')}</p>
             ) : (
               <ul className="space-y-1.5">
                 {respondieron.map((r, i) => (
@@ -502,7 +502,7 @@ export default function PanicAlert() {
                 className="flex-1 py-3 rounded-2xl font-bold text-red-400 text-sm text-center"
                 style={{ border: '2px solid #EF4444', backgroundColor: 'rgba(239,68,68,0.12)' }}
               >
-                LLAMAR 911
+                {tx('LLAMAR 911')}
               </a>
               {mapsUrl && (
                 <button
@@ -520,7 +520,7 @@ export default function PanicAlert() {
               className="w-full py-2.5 rounded-2xl font-medium text-slate-500 text-xs"
               style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
             >
-              Minimizar alerta
+              {tx('Minimizar alerta')}
             </button>
           </div>
         </div>

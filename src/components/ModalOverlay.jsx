@@ -35,13 +35,12 @@ const ModalOverlay = ({ children, onClose, size = 'default' }) => {
       onClick={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
     >
       <div
-        className={`${sizeClasses[size] || sizeClasses.default} animate-scale-in my-auto`}
+        className={`${sizeClasses[size] || sizeClasses.default} animate-scale-in my-auto p-4 sm:p-7 light-surface`}
         style={{
           background: '#FFFFFF',
           borderRadius: '1.25rem',
-          padding: '1.75rem',
           boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0,0,0,0.08)',
-          maxHeight: '92vh',
+          maxHeight: '92dvh',
           overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}

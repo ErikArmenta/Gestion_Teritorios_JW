@@ -11,6 +11,7 @@ import { Trash2, ChevronDown, ImageOff, ZoomIn, X, Search, Pencil, Upload, Mic }
 import Pagination from '../components/Pagination';
 import EditHouseModal from '../components/EditHouseModal';
 import { supabase } from '../supabaseClient';
+import { t as tx } from '../i18n';
 
 const HousesList = () => {
   const { casas, territorios, deleteCasa, updateCasa, insertarHistorialVisita, loading } = useData();
@@ -71,9 +72,9 @@ const HousesList = () => {
   const handleDelete = async () => {
     try {
       await deleteCasa(deleteTarget.id);
-      toast.success('Casa eliminada correctamente');
+      toast.success(tx('Casa eliminada correctamente'));
     } catch {
-      toast.error('Error al eliminar la casa. Verifica los permisos.');
+      toast.error(tx('Error al eliminar la casa. Verifica los permisos.'));
     } finally {
       setDeleteTarget(null);
     }
@@ -82,9 +83,9 @@ const HousesList = () => {
   const handleStatusChange = async (id, nuevoEstado) => {
     try {
       await updateCasa(id, { estado: nuevoEstado });
-      toast.success('Estado actualizado');
+      toast.success(tx('Estado actualizado'));
     } catch {
-      toast.error('Error al actualizar el estado');
+      toast.error(tx('Error al actualizar el estado'));
     } finally {
       setEditStatusId(null);
     }
@@ -103,11 +104,11 @@ const HousesList = () => {
         notas: visitaNotas.trim() || null,
       });
       await updateCasa(visitaModal.id, { estado: visitaModal.nuevoEstado });
-      toast.success('Visita registrada correctamente');
+      toast.success(tx('Visita registrada correctamente'));
       setVisitaModal(null);
       setVisitaNotas('');
     } catch {
-      toast.error('Error al registrar la visita');
+      toast.error(tx('Error al registrar la visita'));
     } finally {
       setSavingVisita(false);
     }
@@ -185,7 +186,7 @@ const HousesList = () => {
         });
 
       if (!validRows.length) {
-        toast.error('No hay filas válidas para importar');
+        toast.error(tx('No hay filas válidas para importar'));
         return;
       }
 
@@ -196,7 +197,7 @@ const HousesList = () => {
       setImportPreview([]);
       setImportErrors(new Set());
     } catch (err) {
-      toast.error('Error al importar: ' + (err.message || 'Error desconocido'));
+      toast.error(tx('Error al importar: ') + (err.message || 'Error desconocido'));
     } finally {
       setImporting(false);
     }
@@ -214,8 +215,8 @@ const HousesList = () => {
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Lista de Casas</h1>
-          <p className="text-sm mt-0.5 text-secondary">Registro de visitas y estados</p>
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{tx('Lista de Casas')}</h1>
+          <p className="text-sm mt-0.5 text-secondary">{tx('Registro de visitas y estados')}</p>
         </div>
         <div className="flex items-center gap-2">
           {IMPORT_ALLOWED_ROLES.includes(user?.rol) && (
@@ -223,7 +224,7 @@ const HousesList = () => {
               onClick={() => { setImportPreview([]); setImportErrors(new Set()); setImportModal(true); }}
               className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1.5"
             >
-              <Upload size={13} /> Importar Excel
+              <Upload size={13} /> {tx('Importar Excel')}
             </button>
           )}
           <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
@@ -238,7 +239,7 @@ const HousesList = () => {
           <div key={s.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: s.bg, border: `1px solid ${s.color}25` }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
             <span className="text-xs font-bold tabular-nums" style={{ color: s.color }}>{s.count}</span>
-            <span className="text-xs font-medium text-secondary">{s.label}</span>
+            <span className="text-xs font-medium text-secondary">{tx(s.label)}</span>
           </div>
         ))}
       </div>
@@ -249,19 +250,19 @@ const HousesList = () => {
           <div className="relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-secondary" />
             <input
-              placeholder="Buscar dirección, contacto o zona..."
+              placeholder={tx('Buscar dirección, contacto o zona...')}
               value={searchTerm}
               onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="pl-9"
             />
           </div>
           <select value={filterTerritory} onChange={e => { setFilterTerritory(e.target.value); setCurrentPage(1); }}>
-            <option value="Todos">Todos los territorios</option>
+            <option value="Todos">{tx('Todos los territorios')}</option>
             {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
           </select>
           <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}>
-            <option value="Todos">Todos los estados</option>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+            <option value="Todos">{tx('Todos los estados')}</option>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{tx(s)}</option>)}
           </select>
         </div>
       </div>
@@ -272,13 +273,13 @@ const HousesList = () => {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-hover)' }}>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest w-16 text-secondary">Foto</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Dirección</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Territorio</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Estado</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Contacto</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Especial</th>
-                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right text-secondary">Acciones</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest w-16 text-secondary">{tx('Foto')}</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Dirección')}</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Territorio')}</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Estado')}</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Contacto')}</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Especial')}</th>
+                <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right text-secondary">{tx('Acciones')}</th>
               </tr>
             </thead>
             <tbody>
@@ -307,7 +308,7 @@ const HousesList = () => {
                       {c.audio_url && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setAudioModal({ url: c.audio_url, direccion: c.direccion }); }}
-                          title="Reproducir nota de voz"
+                          title={tx('Reproducir nota de voz')}
                           style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
                         >
                           <Mic size={13} style={{ color: '#3B82F6' }} />
@@ -330,15 +331,15 @@ const HousesList = () => {
                         className="text-xs py-1 px-2 rounded-lg w-auto"
                         style={{ border: '1px solid rgba(59,130,246,0.5)' }}
                       >
-                        {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                        {STATUS_OPTIONS.map(s => <option key={s} value={s}>{tx(s)}</option>)}
                       </select>
                     ) : (
                       <button
                         onClick={() => setEditStatusId(c.id)}
                         className={`badge cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${getStatusBadge(c.estado)}`}
-                        title="Clic para cambiar estado"
+                        title={tx('Clic para cambiar estado')}
                       >
-                        {c.estado} <ChevronDown size={10} />
+                        {tx(c.estado)} <ChevronDown size={10} />
                       </button>
                     )}
                   </td>
@@ -354,13 +355,13 @@ const HousesList = () => {
                         onClick={() => setEditTarget(c)}
                         className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1"
                       >
-                        <Pencil size={12} /> Editar
+                        <Pencil size={12} /> {tx('Editar')}
                       </button>
                       <button
                         onClick={() => setDeleteTarget(c)}
                         className="btn btn-danger py-1.5 px-3 text-xs flex items-center gap-1"
                       >
-                        <Trash2 size={12} /> Eliminar
+                        <Trash2 size={12} /> {tx('Eliminar')}
                       </button>
                     </div>
                   </td>
@@ -368,7 +369,7 @@ const HousesList = () => {
               )) : (
                 <tr>
                   <td colSpan="7" className="px-4 py-12 text-center text-gray-400 text-sm">
-                    No se encontraron casas con los filtros actuales.
+                    {tx('No se encontraron casas con los filtros actuales.')}
                   </td>
                 </tr>
               )}
@@ -398,7 +399,7 @@ const HousesList = () => {
                   {c.audio_url && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setAudioModal({ url: c.audio_url, direccion: c.direccion }); }}
-                      title="Reproducir nota de voz"
+                      title={tx('Reproducir nota de voz')}
                       style={{ padding: '2px', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
                     >
                       <Mic size={13} style={{ color: '#3B82F6' }} />
@@ -420,14 +421,14 @@ const HousesList = () => {
                   className="text-xs py-1 px-1.5 rounded-lg shrink-0 w-auto"
                   style={{ border: '1px solid rgba(59,130,246,0.5)' }}
                 >
-                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{tx(s)}</option>)}
                 </select>
               ) : (
                 <button
                   onClick={() => setEditStatusId(c.id)}
                   className={`badge flex items-center gap-0.5 cursor-pointer hover:opacity-80 shrink-0 ${getStatusBadge(c.estado)}`}
                 >
-                  {c.estado} <ChevronDown size={10} />
+                  {tx(c.estado)} <ChevronDown size={10} />
                 </button>
               )}
             </div>
@@ -442,16 +443,16 @@ const HousesList = () => {
                 onClick={() => setEditTarget(c)}
                 className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1"
               >
-                <Pencil size={12} /> Editar
+                <Pencil size={12} /> {tx('Editar')}
               </button>
               <button onClick={() => setDeleteTarget(c)} className="btn btn-danger py-1.5 px-3 text-xs flex items-center gap-1">
-                <Trash2 size={12} /> Eliminar
+                <Trash2 size={12} /> {tx('Eliminar')}
               </button>
             </div>
           </div>
         )) : (
           <div className="card p-10 text-center text-sm text-secondary">
-            No se encontraron casas con los filtros actuales.
+            {tx('No se encontraron casas con los filtros actuales.')}
           </div>
         )}
         <Pagination currentPage={currentPage} totalItems={filteredCasas.length} itemsPerPage={25} onPageChange={setCurrentPage} />
@@ -463,7 +464,7 @@ const HousesList = () => {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Mic size={16} style={{ color: '#3B82F6' }} />
-              <h3 className="text-base font-bold text-primary">Nota de voz</h3>
+              <h3 className="text-base font-bold text-primary">{tx('Nota de voz')}</h3>
             </div>
             <p className="text-xs text-secondary mb-3 truncate">{audioModal.direccion}</p>
             <audio
@@ -474,7 +475,7 @@ const HousesList = () => {
               onError={(e) => { e.target.style.display = 'none'; }}
             />
             <div className="flex justify-end mt-4">
-              <button className="btn btn-outline" onClick={() => setAudioModal(null)}>Cerrar</button>
+              <button className="btn btn-outline" onClick={() => setAudioModal(null)}>{tx('Cerrar')}</button>
             </div>
           </div>
         </ModalOverlay>
@@ -484,7 +485,7 @@ const HousesList = () => {
       {visitaModal && (
         <ModalOverlay size="small" onClose={() => { setVisitaModal(null); setVisitaNotas(''); }}>
           <div>
-            <h3 className="text-lg font-bold mb-1 text-primary">Registrar Visita</h3>
+            <h3 className="text-lg font-bold mb-1 text-primary">{tx('Registrar Visita')}</h3>
             <p className="text-sm mb-4 text-secondary">
               Estado:{' '}
               <span className="font-semibold" style={{ color: getStatusColor(visitaModal.estadoActual) }}>{visitaModal.estadoActual}</span>
@@ -493,7 +494,7 @@ const HousesList = () => {
             </p>
             <textarea
               rows={3}
-              placeholder="Notas de la visita (opcional)..."
+              placeholder={tx('Notas de la visita (opcional)...')}
               value={visitaNotas}
               onChange={e => setVisitaNotas(e.target.value)}
               className="w-full resize-none"
@@ -505,7 +506,7 @@ const HousesList = () => {
                 onClick={() => { setVisitaModal(null); setVisitaNotas(''); }}
                 disabled={savingVisita}
               >
-                Cancelar
+                {tx('Cancelar')}
               </button>
               <button
                 className="btn btn-primary flex items-center gap-2"
@@ -518,7 +519,7 @@ const HousesList = () => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
                 )}
-                Registrar Visita
+                {tx('Registrar Visita')}
               </button>
             </div>
           </div>
@@ -538,10 +539,10 @@ const HousesList = () => {
       {importModal && (
         <ModalOverlay onClose={() => setImportModal(false)}>
           <div>
-            <h3 className="text-lg font-bold mb-1 text-primary">Importar casas desde Excel</h3>
+            <h3 className="text-lg font-bold mb-1 text-primary">{tx('Importar casas desde Excel')}</h3>
             <p className="text-sm mb-4 text-secondary">
               El archivo debe tener las columnas en este orden:{' '}
-              <span className="font-semibold text-primary">Dirección, Territorio, Estado, Contacto, Teléfono, Notas</span>
+              <span className="font-semibold text-primary">{tx('Dirección, Territorio, Estado, Contacto, Teléfono, Notas')}</span>
             </p>
 
             {/* Download template */}
@@ -549,7 +550,7 @@ const HousesList = () => {
               onClick={handleDownloadTemplate}
               className="btn btn-outline py-1.5 px-3 text-xs flex items-center gap-1.5 mb-4"
             >
-              <Upload size={13} /> Descargar Plantilla
+              <Upload size={13} /> {tx('Descargar Plantilla')}
             </button>
 
             {/* File input */}
@@ -564,7 +565,7 @@ const HousesList = () => {
                   ? `${importPreview.length} filas cargadas — clic para cambiar archivo`
                   : 'Seleccionar archivo .xlsx o .csv'}
               </p>
-              <p className="text-xs" style={{ color: '#94A3B8' }}>Formatos soportados: .xlsx, .csv</p>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>{tx('Formatos soportados: .xlsx, .csv')}</p>
               <input
                 ref={importFileRef}
                 type="file"
@@ -604,17 +605,17 @@ const HousesList = () => {
                             }}
                           >
                             <td className="px-3 py-2" style={{ color: !row.direccion ? '#EF4444' : '#0F172A' }}>
-                              {row.direccion || <em style={{ color: '#EF4444' }}>vacía</em>}
+                              {row.direccion || <em style={{ color: '#EF4444' }}>{tx('vacía')}</em>}
                             </td>
                             <td className="px-3 py-2" style={{ color: !terr ? '#EF4444' : '#0F172A' }}>
                               {row.territorioNombre || '—'}
                               {!terr && row.territorioNombre && (
-                                <span style={{ color: '#EF4444' }}> (no encontrado)</span>
+                                <span style={{ color: '#EF4444' }}> {tx('(no encontrado)')}</span>
                               )}
                             </td>
                             <td className="px-3 py-2 text-secondary">
                               {STATUS_OPTIONS.includes(row.estado) ? row.estado : (
-                                <span>{row.estado || '—'} <em style={{ color: '#94A3B8' }}>(→ Pendiente)</em></span>
+                                <span>{row.estado || '—'} <em style={{ color: '#94A3B8' }}>{tx('(→ Pendiente)')}</em></span>
                               )}
                             </td>
                             <td className="px-3 py-2 text-secondary">{row.nombre_contacto || '—'}</td>
@@ -633,7 +634,7 @@ const HousesList = () => {
                 )}
                 {importErrors.size > 0 && (
                   <p className="text-xs mt-2 font-medium" style={{ color: '#EF4444' }}>
-                    Las filas en rojo tienen errores: dirección vacía o territorio no encontrado. Solo se importarán las filas válidas.
+                    {tx('Las filas en rojo tienen errores: dirección vacía o territorio no encontrado. Solo se importarán las filas válidas.')}
                   </p>
                 )}
               </div>
@@ -645,7 +646,7 @@ const HousesList = () => {
                 onClick={() => setImportModal(false)}
                 disabled={importing}
               >
-                Cancelar
+                {tx('Cancelar')}
               </button>
               <button
                 className="btn btn-primary flex items-center gap-2"
@@ -702,7 +703,7 @@ const HousesList = () => {
             </button>
             <img
               src={lightboxUrl}
-              alt="Foto de la casa"
+              alt={tx('Foto de la casa')}
               className="max-w-full max-h-[85vh] rounded-2xl object-contain"
               style={{ boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.5)' }}
             />

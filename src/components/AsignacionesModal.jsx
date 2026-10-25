@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from './Toast';
 import { useNotifications } from '../context/NotificationContext';
 import { X } from 'lucide-react';
+import { t as tx } from '../i18n';
 
 const AsignacionesModal = ({ territorio, onClose }) => {
   const { asignaciones, usuarios, asignarTerritorio, desasignarTerritorio } = useData();
@@ -59,9 +60,9 @@ const AsignacionesModal = ({ territorio, onClose }) => {
         });
       } catch {}
       setForm({ usuario_id: '', fecha_inicio: today, notas: '' });
-      toast.success('Asignación registrada');
+      toast.success(tx('Asignación registrada'));
     } catch (err) {
-      toast.error('Error al asignar: ' + (err.message || err));
+      toast.error(tx('Error al asignar: ') + (err.message || err));
     } finally {
       setSaving(false);
     }
@@ -81,9 +82,9 @@ const AsignacionesModal = ({ territorio, onClose }) => {
         console.error('Error creando notificación:', notifErr);
       }
       setDesasignarTarget(null);
-      toast.success('Asignación finalizada');
+      toast.success(tx('Asignación finalizada'));
     } catch (err) {
-      toast.error('Error: ' + (err.message || err));
+      toast.error(tx('Error: ') + (err.message || err));
       setDesasignarTarget(null);
     }
   };
@@ -124,7 +125,7 @@ const AsignacionesModal = ({ territorio, onClose }) => {
           </h4>
           {activas.length === 0 ? (
             <p className="text-sm" style={{ color: '#64748B' }}>
-              Sin asignaciones activas
+              {tx('Sin asignaciones activas')}
             </p>
           ) : (
             <div className="flex flex-col gap-2">
@@ -152,7 +153,7 @@ const AsignacionesModal = ({ territorio, onClose }) => {
                     className="btn btn-outline text-xs py-1.5 px-3"
                     style={{ borderColor: '#FCA5A5', color: '#DC2626' }}
                   >
-                    Desasignar
+                    {tx('Desasignar')}
                   </button>
                 </div>
               ))}
@@ -166,29 +167,29 @@ const AsignacionesModal = ({ territorio, onClose }) => {
           style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}
         >
           <h4 className="text-sm font-semibold mb-3" style={{ color: '#0F172A' }}>
-            Nueva asignación
+            {tx('Nueva asignación')}
           </h4>
           <form onSubmit={handleAsignar}>
             <div className="form-group">
-              <label className="form-label">Publicador</label>
+              <label className="form-label">{tx('Publicador')}</label>
               <select
                 required
                 value={form.usuario_id}
                 onChange={e => setForm(f => ({ ...f, usuario_id: e.target.value }))}
               >
-                <option value="">Seleccionar publicador...</option>
+                <option value="">{tx('Seleccionar publicador...')}</option>
                 {usuariosDisponibles.map(u => (
                   <option key={u.id} value={u.id}>{u.nombre}</option>
                 ))}
               </select>
               {usuariosDisponibles.length === 0 && usuarios.length > 0 && (
                 <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
-                  Todos los usuarios ya tienen asignación activa en este territorio.
+                  {tx('Todos los usuarios ya tienen asignación activa en este territorio.')}
                 </p>
               )}
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha de inicio</label>
+              <label className="form-label">{tx('Fecha de inicio')}</label>
               <input
                 type="date"
                 value={form.fecha_inicio}
@@ -196,12 +197,12 @@ const AsignacionesModal = ({ territorio, onClose }) => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Notas (opcional)</label>
+              <label className="form-label">{tx('Notas (opcional)')}</label>
               <textarea
                 rows={2}
                 value={form.notas}
                 onChange={e => setForm(f => ({ ...f, notas: e.target.value }))}
-                placeholder="Instrucciones especiales..."
+                placeholder={tx('Instrucciones especiales...')}
               />
             </div>
             <button
@@ -218,7 +219,7 @@ const AsignacionesModal = ({ territorio, onClose }) => {
         {inactivas.length > 0 && (
           <div>
             <h4 className="text-sm font-semibold mb-3" style={{ color: '#0F172A' }}>
-              Historial de asignaciones
+              {tx('Historial de asignaciones')}
             </h4>
             <div className="flex flex-col gap-2">
               {inactivas.map(a => (

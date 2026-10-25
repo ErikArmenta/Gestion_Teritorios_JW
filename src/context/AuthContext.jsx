@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '../supabaseClient';
+import { t } from '../i18n';
+import { olvidarUsuario } from '../utils/onesignal';
 
 const AuthContext = createContext();
 
@@ -26,11 +28,11 @@ export const AuthProvider = ({ children }) => {
       .single();
 
     if (error || !data) {
-      throw new Error('Usuario o contraseña incorrectos');
+      throw new Error(t('Usuario o contraseña incorrectos'));
     }
 
     if (data.activo === false) {
-      throw new Error('Esta cuenta ha sido desactivada por un administrador');
+      throw new Error(t('Esta cuenta ha sido desactivada por un administrador'));
     }
 
     const sessionUser = {
@@ -58,6 +60,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    olvidarUsuario(); // el dispositivo deja de recibir push de este usuario
     setUser(null);
     localStorage.removeItem('territorial_user');
   };

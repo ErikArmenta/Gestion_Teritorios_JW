@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import { MapPin, Plus, Clock, Calendar, Trash2, Check, X, ShoppingCart, Navigation } from 'lucide-react';
+import { MapContainer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { MapPin, Plus, Clock, Calendar, Trash2, Check, X } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -8,6 +8,11 @@ import { useNotifications } from '../context/NotificationContext';
 import ModalOverlay from '../components/ModalOverlay';
 import ConfirmModal from '../components/ConfirmModal';
 import L from 'leaflet';
+import ExhibidorIcon from '../components/ExhibidorIcon';
+import { EXHIBIDOR_ICON_SVG_PATHS } from '../utils/constants';
+import DarkTileLayers from '../components/DarkTileLayers';
+import LocateButton from '../components/LocateButton';
+import { t as tx } from '../i18n';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'];
 
@@ -22,8 +27,7 @@ const exhibidorIcon = (color = '#F59E0B') => L.divIcon({
     display: flex; align-items: center; justify-content: center;
   ">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
-      <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+      ${EXHIBIDOR_ICON_SVG_PATHS}
     </svg>
   </div>`,
   iconSize: [32, 32],
@@ -41,64 +45,6 @@ const LocationMarker = ({ position, setPosition }) => {
         dragend: (e) => setPosition(e.target.getLatLng()),
       }}
     />
-  );
-};
-
-const LocateButton = ({ onLocate }) => {
-  const map = useMap();
-  const [locating, setLocating] = useState(false);
-
-  const handleLocate = () => {
-    if (!navigator.geolocation) {
-      alert('Tu navegador no soporta geolocalización');
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        map.flyTo(latlng, 17, { animate: true, duration: 1.2 });
-        if (onLocate) onLocate(latlng);
-        setLocating(false);
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-        alert('No se pudo obtener tu ubicación. Verifica los permisos.');
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
-  return (
-    <button
-      onClick={handleLocate}
-      disabled={locating}
-      type="button"
-      style={{
-        position: 'absolute',
-        bottom: '12px',
-        right: '12px',
-        zIndex: 1000,
-        width: '40px',
-        height: '40px',
-        borderRadius: '12px',
-        background: 'var(--bg-card, #fff)',
-        border: '1px solid var(--border-color, #E2E8F0)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        cursor: locating ? 'wait' : 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: locating ? '#94A3B8' : '#2563EB',
-        transition: 'all 0.2s',
-      }}
-      title="Ir a mi ubicación"
-    >
-      <Navigation size={18} style={{
-        animation: locating ? 'spin 1s linear infinite' : 'none'
-      }} />
-    </button>
   );
 };
 
@@ -121,7 +67,7 @@ const Badge = ({ estado }) => {
       background: s.bg,
       color: s.color,
     }}>
-      {s.label}
+      {tx(s.label)}
     </span>
   );
 };
@@ -181,7 +127,7 @@ const Exhibidores = () => {
 
   const handleCreateExhibidor = async (e) => {
     e.preventDefault();
-    if (!newPosition) { toast.error('Haz click en el mapa para ubicar el exhibidor'); return; }
+    if (!newPosition) { toast.error(tx('Haz click en el mapa para ubicar el exhibidor')); return; }
     setSavingNew(true);
     try {
       await addExhibidor({
@@ -191,12 +137,12 @@ const Exhibidores = () => {
         latitud: newPosition.lat,
         longitud: newPosition.lng,
       });
-      toast.success('Exhibidor creado');
+      toast.success(tx('Exhibidor creado'));
       setShowNewForm(false);
       setNewForm({ nombre: '', descripcion: '', direccion: '' });
       setNewPosition(null);
     } catch (err) {
-      toast.error('Error: ' + (err.message || err));
+      toast.error(tx('Error: ') + (err.message || err));
     } finally {
       setSavingNew(false);
     }
@@ -232,11 +178,11 @@ const Exhibidores = () => {
           },
         });
       } catch {}
-      toast.success('Turno asignado');
+      toast.success(tx('Turno asignado'));
       setAssignTarget(null);
       setTurnoForm({ usuario_id: '', fecha: '', hora_inicio: '', hora_fin: '', notas: '' });
     } catch (err) {
-      toast.error('Error: ' + (err.message || err));
+      toast.error(tx('Error: ') + (err.message || err));
     } finally {
       setSavingTurno(false);
     }
@@ -263,7 +209,7 @@ const Exhibidores = () => {
       }
       toast.success(accion === 'aceptado' ? 'Turno aceptado' : accion === 'rechazado' ? 'Turno rechazado' : 'Turno completado');
     } catch (err) {
-      toast.error('Error: ' + (err.message || err));
+      toast.error(tx('Error: ') + (err.message || err));
     }
   };
 
@@ -272,9 +218,9 @@ const Exhibidores = () => {
     try {
       if (deleteTarget.type === 'exhibidor') await deleteExhibidor(deleteTarget.id);
       else await deleteExhibidorTurno(deleteTarget.id);
-      toast.success('Eliminado');
+      toast.success(tx('Eliminado'));
     } catch (err) {
-      toast.error('Error: ' + (err.message || err));
+      toast.error(tx('Error: ') + (err.message || err));
     } finally {
       setDeleteTarget(null);
     }
@@ -293,8 +239,8 @@ const Exhibidores = () => {
     <div style={{ flex: 1 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-        <ShoppingCart size={24} style={{ color: '#F59E0B' }} />
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Exhibidores</h1>
+        <ExhibidorIcon size={24} style={{ color: '#F59E0B' }} />
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{tx('Exhibidores')}</h1>
       </div>
 
       {/* Tabs */}
@@ -311,7 +257,7 @@ const Exhibidores = () => {
             }}
           >
             <MapPin size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '6px' }} />
-            Ubicaciones
+            {tx('Ubicaciones')}
           </button>
         )}
         <button
@@ -325,7 +271,7 @@ const Exhibidores = () => {
           }}
         >
           <Clock size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '6px' }} />
-          Mis Turnos
+          {tx('Mis Turnos')}
         </button>
       </div>
 
@@ -337,17 +283,10 @@ const Exhibidores = () => {
             <MapContainer
               center={mapCenter}
               zoom={14}
-              style={{ height: '450px', width: '100%' }}
+              style={{ height: 'min(450px, 55dvh)', width: '100%' }}
               scrollWheelZoom={true}
             >
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-              />
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-                className="neon-labels"
-              />
+              <DarkTileLayers />
               {exhibidores.filter(e => e.activo !== false).map(e => (
                 <Marker key={e.id} position={[e.latitud, e.longitud]} icon={exhibidorIcon(e.color || '#F59E0B')} />
               ))}
@@ -361,14 +300,14 @@ const Exhibidores = () => {
             className="btn btn-primary"
             style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <Plus size={16} /> Nuevo Exhibidor
+            <Plus size={16} /> {tx('Nuevo Exhibidor')}
           </button>
 
           {/* Lista de exhibidores */}
           {exhibidores.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-              <ShoppingCart size={48} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-              <p style={{ fontSize: '14px' }}>No hay exhibidores registrados</p>
+              <ExhibidorIcon size={48} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+              <p style={{ fontSize: '14px' }}>{tx('No hay exhibidores registrados')}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -404,7 +343,7 @@ const Exhibidores = () => {
                       <button
                         onClick={() => setDeleteTarget({ type: 'exhibidor', id: exh.id, name: exh.nombre })}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '4px' }}
-                        title="Eliminar exhibidor"
+                        title={tx('Eliminar exhibidor')}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -462,7 +401,7 @@ const Exhibidores = () => {
                       className="btn btn-outline"
                       style={{ marginTop: '10px', fontSize: '13px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <Calendar size={14} /> Asignar Turno
+                      <Calendar size={14} /> {tx('Asignar Turno')}
                     </button>
                   </div>
                 );
@@ -478,7 +417,7 @@ const Exhibidores = () => {
           {misTurnos.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
               <Clock size={48} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-              <p style={{ fontSize: '14px' }}>No tienes turnos asignados</p>
+              <p style={{ fontSize: '14px' }}>{tx('No tienes turnos asignados')}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -525,14 +464,14 @@ const Exhibidores = () => {
                             className="btn btn-primary"
                             style={{ fontSize: '13px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '4px' }}
                           >
-                            <Check size={14} /> Aceptar
+                            <Check size={14} /> {tx('Aceptar')}
                           </button>
                           <button
                             onClick={() => handleTurnoAction(turno, 'rechazado')}
                             className="btn btn-outline"
                             style={{ fontSize: '13px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '4px', color: '#DC2626', borderColor: '#DC2626' }}
                           >
-                            <X size={14} /> Rechazar
+                            <X size={14} /> {tx('Rechazar')}
                           </button>
                         </>
                       )}
@@ -542,7 +481,7 @@ const Exhibidores = () => {
                           className="btn btn-primary"
                           style={{ fontSize: '13px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
-                          <Check size={14} /> Completado
+                          <Check size={14} /> {tx('Completado')}
                         </button>
                       )}
                     </div>
@@ -558,49 +497,49 @@ const Exhibidores = () => {
       {showNewForm && (
         <ModalOverlay onClose={() => setShowNewForm(false)}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>Nuevo Exhibidor</h2>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>{tx('Nuevo Exhibidor')}</h2>
             <button onClick={() => setShowNewForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
               <X size={20} />
             </button>
           </div>
           <form onSubmit={handleCreateExhibidor}>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Nombre *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Nombre *')}</label>
               <input
                 type="text"
                 required
                 value={newForm.nombre}
                 onChange={e => setNewForm({ ...newForm, nombre: e.target.value })}
                 className="input"
-                placeholder="Ej: Parque Central"
+                placeholder={tx('Ej: Parque Central')}
                 style={{ width: '100%' }}
               />
             </div>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Direccion</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Direccion')}</label>
               <input
                 type="text"
                 value={newForm.direccion}
                 onChange={e => setNewForm({ ...newForm, direccion: e.target.value })}
                 className="input"
-                placeholder="Ej: Av. Juarez #123"
+                placeholder={tx('Ej: Av. Juarez #123')}
                 style={{ width: '100%' }}
               />
             </div>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Descripcion</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Descripcion')}</label>
               <textarea
                 value={newForm.descripcion}
                 onChange={e => setNewForm({ ...newForm, descripcion: e.target.value })}
                 className="input"
-                placeholder="Detalles del exhibidor..."
+                placeholder={tx('Detalles del exhibidor...')}
                 rows={2}
                 style={{ width: '100%', resize: 'vertical' }}
               />
             </div>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>
-                Ubicacion * <span style={{ fontWeight: 400, color: '#94A3B8' }}>(click en el mapa o arrastra el marcador)</span>
+                {tx('Ubicacion *')} <span style={{ fontWeight: 400, color: '#94A3B8' }}>{tx('(click en el mapa o arrastra el marcador)')}</span>
               </label>
               <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
                 <MapContainer
@@ -609,14 +548,7 @@ const Exhibidores = () => {
                   style={{ height: '320px', width: '100%' }}
                   scrollWheelZoom={true}
                 >
-                  <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-                  />
-                  <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-                    className="neon-labels"
-                  />
+                  <DarkTileLayers />
                   <LocationMarker position={newPosition} setPosition={setNewPosition} />
                   <LocateButton onLocate={(latlng) => setNewPosition(latlng)} />
                 </MapContainer>
@@ -629,7 +561,7 @@ const Exhibidores = () => {
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="button" onClick={() => setShowNewForm(false)} className="btn btn-outline" style={{ flex: 1 }}>
-                Cancelar
+                {tx('Cancelar')}
               </button>
               <button type="submit" disabled={savingNew} className="btn btn-primary" style={{ flex: 1 }}>
                 {savingNew ? 'Guardando...' : 'Crear Exhibidor'}
@@ -652,7 +584,7 @@ const Exhibidores = () => {
           </div>
           <form onSubmit={handleAssignTurno}>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Publicador *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Publicador *')}</label>
               <select
                 required
                 value={turnoForm.usuario_id}
@@ -660,14 +592,14 @@ const Exhibidores = () => {
                 className="input"
                 style={{ width: '100%' }}
               >
-                <option value="">Seleccionar publicador...</option>
+                <option value="">{tx('Seleccionar publicador...')}</option>
                 {usuarios.map(u => (
                   <option key={u.id} value={u.id}>{u.nombre}</option>
                 ))}
               </select>
             </div>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Fecha *</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Fecha *')}</label>
               <input
                 type="date"
                 required
@@ -679,7 +611,7 @@ const Exhibidores = () => {
             </div>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Hora inicio *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Hora inicio *')}</label>
                 <input
                   type="time"
                   required
@@ -690,7 +622,7 @@ const Exhibidores = () => {
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Hora fin *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Hora fin *')}</label>
                 <input
                   type="time"
                   required
@@ -702,19 +634,19 @@ const Exhibidores = () => {
               </div>
             </div>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Notas</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>{tx('Notas')}</label>
               <textarea
                 value={turnoForm.notas}
                 onChange={e => setTurnoForm({ ...turnoForm, notas: e.target.value })}
                 className="input"
-                placeholder="Notas opcionales..."
+                placeholder={tx('Notas opcionales...')}
                 rows={2}
                 style={{ width: '100%', resize: 'vertical' }}
               />
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="button" onClick={() => setAssignTarget(null)} className="btn btn-outline" style={{ flex: 1 }}>
-                Cancelar
+                {tx('Cancelar')}
               </button>
               <button type="submit" disabled={savingTurno} className="btn btn-primary" style={{ flex: 1 }}>
                 {savingTurno ? 'Asignando...' : 'Asignar Turno'}

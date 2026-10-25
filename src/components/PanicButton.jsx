@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { t as tx } from '../i18n';
 
 const HOLD_DURATION_MS = 2000;
 const INTERVAL_MS = 20;
@@ -225,7 +226,7 @@ export default function PanicButton() {
             ...buttonStyle,
           }}
           title={alertActive ? 'Alerta activa — tocar para gestionar' : 'Mantén presionado 2s para activar alerta'}
-          aria-label="Botón de pánico"
+          aria-label={tx('Botón de pánico')}
         >
           {alertActive ? (
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="white">
@@ -251,7 +252,7 @@ export default function PanicButton() {
           <div className="rounded-xl px-4 py-3 shadow-xl text-xs font-semibold cursor-pointer"
                style={{ background: '#1E293B', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.3)' }}>
             {error}
-            <p className="text-[10px] mt-1" style={{ color: '#64748B' }}>Toca para cerrar</p>
+            <p className="text-[10px] mt-1" style={{ color: '#64748B' }}>{tx('Toca para cerrar')}</p>
           </div>
         </div>
       )}
@@ -270,7 +271,7 @@ export default function PanicButton() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse inline-block" />
-                <h2 className="text-white font-bold text-lg tracking-wide">ALERTA ACTIVA</h2>
+                <h2 className="text-white font-bold text-lg tracking-wide">{tx('ALERTA ACTIVA')}</h2>
               </div>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
@@ -278,16 +279,16 @@ export default function PanicButton() {
             {/* Info de la alerta */}
             <div className="rounded-xl p-4 text-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <p className="text-2xl mb-1">🚨</p>
-              <p className="text-white font-bold text-base">¡Alerta de emergencia enviada!</p>
+              <p className="text-white font-bold text-base">{tx('¡Alerta de emergencia enviada!')}</p>
               <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>
-                Todos los usuarios conectados han sido notificados
+                {tx('Todos los usuarios conectados han sido notificados')}
               </p>
             </div>
 
             {/* Tipo selector — al tocar un tipo, se actualiza en BD al instante */}
             <div>
               <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: '#64748B' }}>
-                Tipo de emergencia
+                {tx('Tipo de emergencia')}
               </label>
               <div className="flex gap-2">
                 {TIPOS.map(t => (
@@ -303,7 +304,7 @@ export default function PanicButton() {
                     }}
                   >
                     <span className="block text-base mb-0.5">{t.icon}</span>
-                    {t.label}
+                    {tx(t.label)}
                   </button>
                 ))}
               </div>
@@ -327,7 +328,7 @@ export default function PanicButton() {
                 className="flex-1 py-3 rounded-xl font-bold text-sm text-center text-white"
                 style={{ backgroundColor: '#DC2626' }}
               >
-                Llamar 911
+                {tx('Llamar 911')}
               </a>
             </div>
           </div>

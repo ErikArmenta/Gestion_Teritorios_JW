@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle } from 'lucide-react';
+import { t as tx } from '../i18n';
 
 const ConfirmModal = ({
   message,
@@ -28,7 +29,7 @@ const ConfirmModal = ({
       onClick={(e) => { if (e.target === e.currentTarget && onCancel) onCancel(); }}
     >
       <div
-        className="w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[50vw] lg:max-w-[35vw] xl:max-w-[28vw] animate-scale-in"
+        className="w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[50vw] lg:max-w-[35vw] xl:max-w-[28vw] animate-scale-in light-surface"
         style={{
           background: '#FFFFFF',
           borderRadius: '1.25rem',
@@ -41,7 +42,7 @@ const ConfirmModal = ({
           <div className={`p-2 rounded-full shrink-0 ${danger ? 'bg-red-100' : 'bg-amber-100'}`}>
             <AlertTriangle size={20} className={danger ? 'text-red-600' : 'text-amber-600'} />
           </div>
-          <h3 className="text-base font-semibold m-0">Confirmar acción</h3>
+          <h3 className="text-base font-semibold m-0">{tx('Confirmar acción')}</h3>
         </div>
         <p className="text-sm text-gray-700 mb-1 ml-1">{message}</p>
         {detail && <p className="text-xs text-gray-400 mb-5 ml-1">{detail}</p>}

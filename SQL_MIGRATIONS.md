@@ -166,3 +166,73 @@ ALTER TABLE casas ADD COLUMN IF NOT EXISTS audio_url TEXT;
   - Visibilidad: pública (para reproducción directa desde `<audio src>`) o privada con URLs firmadas.
 - `IF NOT EXISTS` evita error si el campo ya fue agregado previamente.
 - **El cliente debe ejecutar este SQL y crear el bucket antes de usar la función de notas de voz.**
+
+---
+
+## Migración 5 — Grupos de Predicación y Trabajo de Territorios por Grupo
+
+Cada congregación se divide en grupos de predicación. Los territorios se asignan a un **grupo**
+(no a una persona); el grupo lo trabaja y su encargado lo marca como **terminado**.
+Con esto se calcula el progreso de cada territorio (Sin trabajar / En progreso / Completado).
+
+> **Para ejecutarla:** copiar el archivo **`MIGRACION_5_GRUPOS.sql`** completo (no este `.md`)
+> en Supabase → SQL Editor. Esa versión se puede correr más de una vez sin errores.
+
+```sql
+-- 5a. Grupos de predicación
+CREATE TABLE IF NOT EXISTS grupos_predicacion (
+  id              BIGSERIAL PRIMARY KEY,
+  congregacion_id UUID REFERENCES congregaciones(id) ON DELETE CASCADE,
+  nombre          TEXT NOT NULL,
+  color           TEXT DEFAULT '#3B82F6',
+  encargado_id    BIGINT REFERENCES app_usuarios(id) ON DELETE SET NULL,
+  activo          BOOLEAN DEFAULT TRUE,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_grupos_congregacion ON grupos_predicacion(congregacion_id);
+
+-- 5b. Cada publicador pertenece a un grupo
+ALTER TABLE app_usuarios
+  ADD COLUMN IF NOT EXISTS grupo_id BIGINT REFERENCES grupos_predicacion(id) ON DELETE SET NULL;
+
+-- 5c. Trabajo de un territorio por un grupo (un registro por cada vez que se trabaja)
+CREATE TABLE IF NOT EXISTS territorio_trabajos (
+  id              BIGSERIAL PRIMARY KEY,
+  territorio_id   BIGINT REFERENCES territorios(id) ON DELETE CASCADE,
+  grupo_id        BIGINT REFERENCES grupos_predicacion(id) ON DELETE SET NULL,
+  congregacion_id UUID REFERENCES congregaciones(id) ON DELETE CASCADE,
+  estado          TEXT NOT NULL DEFAULT 'en_progreso'
+                  CHECK (estado IN ('en_progreso', 'completado', 'cancelado')),
+  fecha_inicio    DATE DEFAULT CURRENT_DATE,
+  fecha_fin       DATE,
+  asignado_por    BIGINT REFERENCES app_usuarios(id) ON DELETE SET NULL,
+  completado_por  BIGINT REFERENCES app_usuarios(id) ON DELETE SET NULL,
+  notas           TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_trabajos_territorio ON territorio_trabajos(territorio_id);
+CREATE INDEX IF NOT EXISTS idx_trabajos_congregacion ON territorio_trabajos(congregacion_id);
+-- Un territorio solo puede estar "en progreso" con un grupo a la vez
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_trabajo_activo
+  ON territorio_trabajos(territorio_id) WHERE estado = 'en_progreso';
+
+-- 5d. Tiempo real (para que el mapa y el progreso se actualicen solos)
+ALTER PUBLICATION supabase_realtime ADD TABLE grupos_predicacion;
+ALTER PUBLICATION supabase_realtime ADD TABLE territorio_trabajos;
+ALTER PUBLICATION supabase_realtime ADD TABLE historial_visitas;
+```
+
+**Notas:**
+- Si `ALTER PUBLICATION` marca que la tabla ya está en la publicación, ignorar ese error.
+- RLS: igual que el resto de las tablas de la app (login propio, no Supabase Auth), se dejan **sin RLS**;
+  el acceso se controla en la app por rol y congregación.
+- `estado`:
+  - `en_progreso` → el grupo lo está trabajando (el territorio sale "En progreso").
+  - `completado` → el encargado lo marcó terminado; `fecha_fin` = fecha de término.
+  - `cancelado` → se le quitó al grupo sin terminarlo (no cuenta como completado).
+- El % de avance de un territorio en progreso cuenta las casas visitadas **desde `fecha_inicio`**
+  (usa `historial_visitas` y la fecha de registro de la casa).
+- Las asignaciones individuales (`territorio_asignaciones`, Migración 2) siguen funcionando, pero
+  ya no se usan para el progreso.
+- **Quién puede qué (en la app):** crear grupos y asignar territorios a grupos → Super Admin,
+  Admin Principal, Anciano, Ministerial. Marcar terminado → esos roles o el encargado del grupo.

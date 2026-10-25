@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
-import { MapContainer, TileLayer, Marker, useMapEvents, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
+import { MapContainer, Marker, useMapEvents, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import { Locate, Upload, X, MapPin, Camera, Mic, Square, Trash2 } from 'lucide-react';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
@@ -11,6 +11,9 @@ import { supabase } from '../supabaseClient';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import DarkTileLayers from '../components/DarkTileLayers';
+import LocateButton from '../components/LocateButton';
+import { t } from '../i18n';
 
 L.Marker.prototype.options.icon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 
@@ -62,7 +65,6 @@ const RegisterHouse = () => {
   const [photoFile, setPhotoFile]     = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [locating, setLocating]       = useState(false);
   const [formData, setFormData]       = useState(EMPTY_FORM);
   const [gpsPermission, setGpsPermission] = useState('prompt'); // 'granted' | 'denied' | 'prompt'
 
@@ -117,28 +119,12 @@ const RegisterHouse = () => {
     [manzanas, formData.territorio_id]
   );
 
-  const handleLocate = () => {
-    if (!navigator.geolocation) { toast.warning('Tu navegador no soporta geolocalización'); return; }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
-        toast.success('Ubicación GPS obtenida');
-      },
-      () => {
-        setLocating(false);
-        toast.error('No se pudo obtener la ubicación. Verifica los permisos del navegador.');
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (insideTerritory === false) {
-      const ok = window.confirm('La ubicación seleccionada NO está dentro del territorio. ¿Guardar de todos modos?');
+      const ok = window.confirm(t('La ubicación seleccionada NO está dentro del territorio. ¿Guardar de todos modos?'));
       if (!ok) return;
     }
 
@@ -172,11 +158,11 @@ const RegisterHouse = () => {
           console.error('Error subiendo audio:', audioError);
           const msg = audioError.message || JSON.stringify(audioError);
           if (msg.includes('not found') || audioError.statusCode === 404) {
-            toast.error('El bucket de notas de voz no existe. Contacta al administrador.');
+            toast.error(t('El bucket de notas de voz no existe. Contacta al administrador.'));
           } else if (msg.includes('row-level security') || msg.includes('policy')) {
-            toast.error('Sin permisos para subir audio. Contacta al administrador.');
+            toast.error(t('Sin permisos para subir audio. Contacta al administrador.'));
           } else {
-            toast.error('Error al subir nota de voz: ' + msg);
+            toast.error(t('Error al subir nota de voz: ') + msg);
           }
           // Continuar sin audio — no bloquear el guardado de la casa
         } else {
@@ -206,16 +192,16 @@ const RegisterHouse = () => {
       await addCasa(casaData, photoBase64);
 
       if (navigator.onLine) {
-        toast.success('Casa registrada exitosamente');
+        toast.success(t('Casa registrada exitosamente'));
       } else {
-        toast.success('Casa guardada offline — se sincronizará al conectarse');
+        toast.success(t('Casa guardada offline — se sincronizará al conectarse'));
       }
       setFormData(EMPTY_FORM);
       setPhotoFile(null);
       clearRecording();
       if (photoInputRef.current) photoInputRef.current.value = '';
     } catch (err) {
-      toast.error('Error al guardar: ' + (err.message || JSON.stringify(err)));
+      toast.error(t('Error al guardar: ') + (err.message || JSON.stringify(err)));
     } finally {
       setIsUploading(false);
     }
@@ -224,8 +210,8 @@ const RegisterHouse = () => {
   return (
     <div className="animate-page-in">
       <div className="mb-5 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Registrar Nueva Casa</h1>
-        <p className="text-sm mt-0.5 text-secondary">Ubica y documenta el punto en el territorio</p>
+        <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{t('Registrar Nueva Casa')}</h1>
+        <p className="text-sm mt-0.5 text-secondary">{t('Ubica y documenta el punto en el territorio')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
@@ -233,14 +219,14 @@ const RegisterHouse = () => {
         <div className="card">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>1</div>
-            <h3 className="text-base font-bold text-primary">Datos Generales</h3>
+            <h3 className="text-base font-bold text-primary">{t('Datos Generales')}</h3>
             <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
           </div>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Territorio *</label>
+              <label className="form-label">{t('Territorio *')}</label>
               <select required value={formData.territorio_id} onChange={e => setFormData(f => ({ ...f, territorio_id: e.target.value, manzana_id: '' }))}>
-                <option value="">Selecciona un territorio...</option>
+                <option value="">{t('Selecciona un territorio...')}</option>
                 {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
               </select>
             </div>
@@ -248,12 +234,12 @@ const RegisterHouse = () => {
             {/* Manzana (opcional, solo si el territorio tiene manzanas) */}
             {manzanasDelTerritorio.length > 0 && (
               <div className="form-group">
-                <label className="form-label">Manzana (opcional)</label>
+                <label className="form-label">{t('Manzana (opcional)')}</label>
                 <select
                   value={formData.manzana_id}
                   onChange={e => setFormData(f => ({ ...f, manzana_id: e.target.value }))}
                 >
-                  <option value="">Sin manzana específica</option>
+                  <option value="">{t('Sin manzana específica')}</option>
                   {manzanasDelTerritorio.map(m => (
                     <option key={m.id} value={m.id}>{m.nombre}</option>
                   ))}
@@ -262,31 +248,31 @@ const RegisterHouse = () => {
             )}
 
             <div className="form-group">
-              <label className="form-label">Dirección Completa *</label>
+              <label className="form-label">{t('Dirección Completa *')}</label>
               <input required value={formData.direccion} onChange={e => setFormData(f => ({ ...f, direccion: e.target.value }))} placeholder="Ej: Calle Principal 123" />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Estado de Visita</label>
+              <label className="form-label">{t('Estado de Visita')}</label>
               <select value={formData.estado} onChange={e => setFormData(f => ({ ...f, estado: e.target.value }))}>
-                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{t(s)}</option>)}
               </select>
             </div>
 
             <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid var(--border-color)' }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>2</div>
-              <h3 className="text-sm font-bold text-primary">Residentes y Casos</h3>
+              <h3 className="text-sm font-bold text-primary">{t('Residentes y Casos')}</h3>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="form-group flex-1">
-                <label className="form-label">Nombre del Contacto</label>
-                <input value={formData.nombre_contacto} onChange={e => setFormData(f => ({ ...f, nombre_contacto: e.target.value }))} placeholder="Opcional" />
+                <label className="form-label">{t('Nombre del Contacto')}</label>
+                <input value={formData.nombre_contacto} onChange={e => setFormData(f => ({ ...f, nombre_contacto: e.target.value }))} placeholder={t('Opcional')} />
               </div>
               <div className="form-group flex-1">
-                <label className="form-label">Teléfono</label>
-                <input value={formData.telefono} onChange={e => setFormData(f => ({ ...f, telefono: e.target.value }))} placeholder="Opcional" type="tel" />
+                <label className="form-label">{t('Teléfono')}</label>
+                <input value={formData.telefono} onChange={e => setFormData(f => ({ ...f, telefono: e.target.value }))} placeholder={t('Opcional')} type="tel" />
               </div>
             </div>
 
@@ -298,38 +284,38 @@ const RegisterHouse = () => {
                   checked={formData.tiene_caso_especial}
                   onChange={e => setFormData(f => ({ ...f, tiene_caso_especial: e.target.checked }))}
                 />
-                Marcar como caso especial
+                {t('Marcar como caso especial')}
               </label>
             </div>
 
             {formData.tiene_caso_especial && (
               <div className="p-4 rounded-xl mb-4 space-y-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <div className="form-group mb-0">
-                  <label className="form-label">Tipo de Caso</label>
+                  <label className="form-label">{t('Tipo de Caso')}</label>
                   <select value={formData.tipo_caso} onChange={e => setFormData(f => ({ ...f, tipo_caso: e.target.value }))}>
-                    <option value="">Seleccionar...</option>
-                    <option value="Expulsado">Expulsado</option>
-                    <option value="Censurado">Censurado</option>
-                    <option value="Disciplinado">Disciplinado</option>
-                    <option value="Otro">Otro</option>
+                    <option value="">{t('Seleccionar...')}</option>
+                    <option value="Expulsado">{t('Expulsado')}</option>
+                    <option value="Censurado">{t('Censurado')}</option>
+                    <option value="Disciplinado">{t('Disciplinado')}</option>
+                    <option value="Otro">{t('Otro')}</option>
                   </select>
                 </div>
                 <div className="form-group mb-0">
-                  <label className="form-label">Detalles</label>
+                  <label className="form-label">{t('Detalles')}</label>
                   <textarea rows={2} value={formData.detalles_caso} onChange={e => setFormData(f => ({ ...f, detalles_caso: e.target.value }))} />
                 </div>
               </div>
             )}
 
             <div className="form-group">
-              <label className="form-label">Notas Generales</label>
+              <label className="form-label">{t('Notas Generales')}</label>
               <textarea rows={2} value={formData.notas} onChange={e => setFormData(f => ({ ...f, notas: e.target.value }))} />
             </div>
 
             {/* Nota de Voz */}
             <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid var(--border-color)' }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>4</div>
-              <h3 className="text-sm font-bold text-primary">Nota de Voz</h3>
+              <h3 className="text-sm font-bold text-primary">{t('Nota de Voz')}</h3>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
@@ -349,7 +335,7 @@ const RegisterHouse = () => {
                       Grabando... {recordingTimeFormatted}
                     </span>
                   ) : (
-                    <span className="text-xs text-secondary">Mantén para grabar una nota de voz</span>
+                    <span className="text-xs text-secondary">{t('Mantén para grabar una nota de voz')}</span>
                   )}
                 </div>
               ) : (
@@ -370,7 +356,7 @@ const RegisterHouse = () => {
             {/* Foto */}
             <div className="flex items-center gap-3 pt-4 mt-2 mb-4" style={{ borderTop: '1px solid var(--border-color)' }}>
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0" style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>3</div>
-              <h3 className="text-sm font-bold text-primary">Evidencia Fotográfica</h3>
+              <h3 className="text-sm font-bold text-primary">{t('Evidencia Fotográfica')}</h3>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
@@ -391,7 +377,7 @@ const RegisterHouse = () => {
               <label className="flex-1 flex flex-col items-center gap-2 p-4 rounded-xl cursor-pointer transition-colors text-sm hover:bg-blue-50/50"
                      style={{ border: '2px dashed rgba(37,99,235,0.3)', color: '#2563EB' }}>
                 <Camera size={22} />
-                <span className="font-medium text-xs">Tomar Foto</span>
+                <span className="font-medium text-xs">{t('Tomar Foto')}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -405,7 +391,7 @@ const RegisterHouse = () => {
               <label className="flex-1 flex flex-col items-center gap-2 p-4 rounded-xl cursor-pointer transition-colors text-sm hover:bg-slate-50/50"
                      style={{ border: '2px dashed var(--border-color)', color: 'var(--text-secondary)' }}>
                 <Upload size={22} style={{ color: 'var(--text-muted)' }} />
-                <span className="font-medium text-xs">Galería</span>
+                <span className="font-medium text-xs">{t('Galería')}</span>
                 <input
                   ref={photoInputRef}
                   type="file"
@@ -427,9 +413,9 @@ const RegisterHouse = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Guardando...
+                  {t('Guardando...')}
                 </span>
-              ) : 'Guardar Casa'}
+              ) : t('Guardar Casa')}
             </button>
           </form>
         </div>
@@ -438,37 +424,27 @@ const RegisterHouse = () => {
         <div className="card flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <h3 className="m-0 text-base font-bold flex items-center gap-2 text-primary">
-              <MapPin size={16} style={{ color: '#2563EB' }} /> Geolocalización
+              <MapPin size={16} style={{ color: '#2563EB' }} /> {t('Geolocalización')}
             </h3>
-            <button
-              type="button"
-              onClick={handleLocate}
-              disabled={locating}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 font-medium"
-              style={{ border: '1px solid rgba(37,99,235,0.3)', color: '#2563EB', background: 'rgba(37,99,235,0.06)' }}
-            >
-              <Locate size={13} />
-              {locating ? 'Obteniendo GPS...' : 'Usar mi ubicación'}
-            </button>
           </div>
-          <p className="text-xs mb-3 text-secondary">Haz clic en el mapa o arrastra el marcador para posicionar la casa con precisión.</p>
+          <p className="text-xs mb-3 text-secondary">{t('Usa el botón de ubicación del mapa, haz clic en el mapa o arrastra el marcador para posicionar la casa.')}</p>
 
           {insideTerritory === true && (
             <div className="p-2.5 rounded-xl mb-3 text-xs font-medium" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#34D399' }}>
-              Ubicación correcta dentro del territorio seleccionado.
+              {t('Ubicación correcta dentro del territorio seleccionado.')}
             </div>
           )}
           {insideTerritory === false && formData.territorio_id && (
             <div className="p-2.5 rounded-xl mb-3 text-xs font-medium" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#D97706' }}>
-              Ubicación fuera del territorio seleccionado. Puedes guardar de todos modos.
+              {t('Ubicación fuera del territorio seleccionado. Puedes guardar de todos modos.')}
             </div>
           )}
 
           {gpsPermission === 'denied' && (
             <div className="p-3 rounded-xl mb-3 text-xs" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
-              <p className="font-semibold mb-1" style={{ color: '#D97706' }}>Ubicación GPS desactivada</p>
+              <p className="font-semibold mb-1" style={{ color: '#D97706' }}>{t('Ubicación GPS desactivada')}</p>
               <p style={{ color: '#92400E' }}>
-                Para mejor precisión, activa la ubicación en la configuración de tu navegador:
+                {t('Para mejor precisión, activa la ubicación en la configuración de tu navegador:')}
                 <br/>Configuración → Privacidad → Ubicación → Permitir para este sitio.
               </p>
             </div>
@@ -476,16 +452,8 @@ const RegisterHouse = () => {
 
           <div className="flex-1 rounded-xl overflow-hidden" style={{ minHeight: '380px' }}>
             <MapContainer center={[position.lat, position.lng]} zoom={14} style={{ height: '100%', width: '100%', minHeight: '380px' }}>
-              {/* Capa base oscura sin labels */}
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-              />
+              <DarkTileLayers />
               {/* Capa de labels con efecto neón brillante */}
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-                className="neon-labels"
-              />
               <LocationMarker position={position} setPosition={setPosition} />
               <MapCenterer territorioObj={selectedTerritoryObj} />
               {selectedTerritoryObj?.coordenadas && (
@@ -530,6 +498,7 @@ const RegisterHouse = () => {
                   </Tooltip>
                 </CircleMarker>
               ))}
+              <LocateButton onLocate={setPosition} />
             </MapContainer>
             <div className="flex items-center justify-center gap-4 mt-2 px-3 py-2 rounded-lg text-xs font-mono" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
               <span>Lat: <strong>{position.lat.toFixed(6)}</strong></span>

@@ -1,6 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../supabaseClient';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
@@ -11,6 +12,11 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { FileText, Table, Home, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { chartToPNG } from '../utils/chartImage';
+import { useGrupos } from '../context/GruposContext';
+import { getTerritoryProgress, indexarHistorial, resumenPorGrupo, conteoPorEstado, PROGRESO } from '../utils/territoryProgress';
+import GruposDashboardCard from '../components/GruposDashboardCard';
+import { t as tx } from '../i18n';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title);
 
@@ -25,6 +31,18 @@ const STATUS_COLORS = {
 const DashboardStats = () => {
   const { casas, territorios, loading } = useData();
   const { user } = useAuth();
+  const { theme } = useTheme();
+
+  // Colores de gráficas según el tema (en oscuro los grises claros no se leían)
+  const oscuro = theme === 'dark';
+  const CH_TEXT = oscuro ? '#CBD5E1' : '#475569';
+  const CH_TICK = oscuro ? '#94A3B8' : '#64748B';
+  const CH_GRID = oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+  // "No tocar" es casi negro: en modo oscuro se pinta gris pizarra para que se vea
+  const colorEstado = (s, campo) =>
+    oscuro && s === 'No tocar'
+      ? (campo === 'bg' ? 'rgba(100,116,139,0.8)' : '#94A3B8')
+      : (STATUS_COLORS[s]?.[campo] || (campo === 'bg' ? 'rgba(156,163,175,0.7)' : '#9CA3AF'));
 
   const [actividadReciente, setActividadReciente] = useState([]);
   const [periodoActivo, setPeriodoActivo] = useState('todo');
@@ -92,20 +110,22 @@ const DashboardStats = () => {
     return `hace ${Math.floor(diff / 86400)} días`;
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-80 rounded-2xl" />)}
-        </div>
-      </div>
-    );
-  }
 
   const chartDonutRef = useRef(null);
+
+  // ── Progreso de territorios y grupos de predicación ──
+  const { disponible: gruposDisponibles, grupos, trabajos, miembros, historial } = useGrupos();
+  const progresoTerritorios = useMemo(() => {
+    const ctx = { disponible: !!gruposDisponibles, trabajos, grupos, historialIdx: indexarHistorial(historial) };
+    const map = {};
+    territorios.forEach(terr => { map[terr.id] = getTerritoryProgress(terr, casas, ctx); });
+    return map;
+  }, [territorios, casas, gruposDisponibles, trabajos, grupos, historial]);
+  const conteoTerritorios = useMemo(() => conteoPorEstado(progresoTerritorios), [progresoTerritorios]);
+  const resumenGrupos = useMemo(
+    () => resumenPorGrupo({ grupos, trabajos, miembros, territorios, progreso: progresoTerritorios }),
+    [grupos, trabajos, miembros, territorios, progresoTerritorios]
+  );
   const chartBarRef = useRef(null);
   const chartEspRef = useRef(null);
 
@@ -157,7 +177,7 @@ const DashboardStats = () => {
   const especialesData = {
     labels: terrData.filter(t => t.especiales > 0).map(t => t.nombre),
     datasets: [{
-      label: 'Casos Especiales',
+      label: tx('Casos Especiales'),
       data: terrData.filter(t => t.especiales > 0).map(t => t.especiales),
       backgroundColor: 'rgba(124,58,237,0.8)',
       borderRadius: 7,
@@ -193,18 +213,18 @@ const DashboardStats = () => {
       },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B' } },
-      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#64748B', stepSize: 1 } },
+      x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, color: CH_TICK } },
+      y: { beginAtZero: true, grid: { color: CH_GRID }, ticks: { font: { size: 11 }, color: CH_TICK, stepSize: 1 } },
     },
   };
 
   // --- Donut Chart ---
   const donutData = {
-    labels: statusLabels,
+    labels: statusLabels.map(s => tx(s)),
     datasets: [{
       data: statusValues,
-      backgroundColor: statusLabels.map(s => STATUS_COLORS[s]?.bg || 'rgba(156,163,175,0.7)'),
-      borderColor: statusLabels.map(s => STATUS_COLORS[s]?.hex || '#9CA3AF'),
+      backgroundColor: statusLabels.map(s => colorEstado(s, 'bg')),
+      borderColor: statusLabels.map(s => colorEstado(s, 'hex')),
       borderWidth: 2,
       hoverOffset: 18
     }]
@@ -227,7 +247,7 @@ const DashboardStats = () => {
     plugins: {
       legend: {
         position: 'bottom',
-        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#475569' }
+        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: CH_TEXT }
       },
       tooltip: {
         ...CHART_TOOLTIP,
@@ -240,9 +260,9 @@ const DashboardStats = () => {
   const barData = {
     labels: terrData.map(t => t.nombre),
     datasets: [
-      { label: 'Atendidos',  data: terrData.map(t => t.atendidos),   backgroundColor: 'rgba(16,185,129,0.8)',  borderRadius: 7, borderSkipped: false },
-      { label: 'No Atendió', data: terrData.map(t => t.noAtendidos), backgroundColor: 'rgba(239,68,68,0.8)',   borderRadius: 7, borderSkipped: false },
-      { label: 'Pendientes', data: terrData.map(t => t.pendientes),  backgroundColor: 'rgba(245,158,11,0.8)',  borderRadius: 7, borderSkipped: false }
+      { label: tx('Atendidos'),  data: terrData.map(t => t.atendidos),   backgroundColor: 'rgba(16,185,129,0.8)',  borderRadius: 7, borderSkipped: false },
+      { label: tx('No Atendió'), data: terrData.map(t => t.noAtendidos), backgroundColor: 'rgba(239,68,68,0.8)',   borderRadius: 7, borderSkipped: false },
+      { label: tx('Pendientes'), data: terrData.map(t => t.pendientes),  backgroundColor: 'rgba(245,158,11,0.8)',  borderRadius: 7, borderSkipped: false }
     ]
   };
   const barOptions = {
@@ -250,7 +270,7 @@ const DashboardStats = () => {
     plugins: {
       legend: {
         position: 'top',
-        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: '#475569' }
+        labels: { padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12, family: 'Inter' }, color: CH_TEXT }
       },
       tooltip: { ...CHART_TOOLTIP },
       title: { display: false }
@@ -258,13 +278,13 @@ const DashboardStats = () => {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B' },
+        ticks: { font: { size: 11, family: 'Inter' }, color: CH_TICK },
         border: { color: 'rgba(0,0,0,0.06)' },
       },
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
-        ticks: { font: { size: 11, family: 'Inter' }, color: '#64748B', stepSize: 1 },
+        grid: { color: CH_GRID, drawBorder: false },
+        ticks: { font: { size: 11, family: 'Inter' }, color: CH_TICK, stepSize: 1 },
         border: { color: 'transparent' },
       }
     }
@@ -407,7 +427,7 @@ const DashboardStats = () => {
         .join('   |   ');
       doc.text(estadoLabels, 14, y, { maxWidth: pageW - 28 });
       y += 10;
-      const donutImg = chartDonutRef.current.toBase64Image();
+      const donutImg = chartToPNG(chartDonutRef, { width: 1200, height: 900 });
       const donutW = Math.min(pageW - 60, 120);
       const donutX = (pageW - donutW) / 2;
       doc.addImage(donutImg, 'PNG', donutX, y, donutW, donutW * 0.75);
@@ -428,7 +448,7 @@ const DashboardStats = () => {
       const terrResumen = terrData.slice(0, 5).map(t => `${t.nombre}: ${t.total}`).join('   |   ');
       doc.text(terrResumen, 14, y, { maxWidth: pageW - 28 });
       y += 10;
-      const barImg = chartBarRef.current.toBase64Image();
+      const barImg = chartToPNG(chartBarRef, { width: 1600, height: 720 });
       const barW = pageW - 30;
       doc.addImage(barImg, 'PNG', 15, y, barW, barW * 0.45);
     }
@@ -450,9 +470,55 @@ const DashboardStats = () => {
         .join('   |   ');
       doc.text(`Total: ${especiales} casos  |  ${espResumen}`, 14, y, { maxWidth: pageW - 28 });
       y += 10;
-      const espImg = chartEspRef.current.toBase64Image();
+      const espImg = chartToPNG(chartEspRef, { width: 1600, height: 720 });
       const espW = pageW - 30;
       doc.addImage(espImg, 'PNG', 15, y, espW, espW * 0.45);
+    }
+
+    // 9. Progreso de territorios y grupos de predicación
+    doc.addPage();
+    y = 20;
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(31, 41, 55);
+    doc.text('9. Progreso de Territorios y Grupos', 14, y);
+    y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [['Estado del territorio', 'Territorios', 'Porcentaje']],
+      body: ['completado', 'en_progreso', 'sin_trabajar'].map(estado => {
+        const totalT = territorios.length || 1;
+        return [PROGRESO[estado].label, conteoTerritorios[estado], `${((conteoTerritorios[estado] / totalT) * 100).toFixed(1)}%`];
+      }),
+      headStyles: { fillColor: [16, 185, 129], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
+      bodyStyles: { font: 'helvetica', fontSize: 9 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 },
+      styles: { cellPadding: 4 }
+    });
+    y = doc.lastAutoTable.finalY + 10;
+    if (resumenGrupos.length) {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Avance por grupo de predicación', 14, y);
+      y += 6;
+      autoTable(doc, {
+        startY: y,
+        head: [['Grupo', 'Publicadores', 'En progreso', 'Avance', `Terminados ${new Date().getFullYear()}`]],
+        body: resumenGrupos.map(r => [
+          r.grupo.nombre,
+          r.publicadores,
+          r.enProgreso.length ? r.enProgreso.map(x => x.numero || x.nombre).join(', ') : '—',
+          r.enProgreso.length ? `${r.avance}%` : '—',
+          r.terminadosAnio,
+        ]),
+        headStyles: { fillColor: [245, 158, 11], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
+        bodyStyles: { font: 'helvetica', fontSize: 9 },
+        alternateRowStyles: { fillColor: [255, 251, 235] },
+        margin: { left: 14, right: 14 },
+        styles: { cellPadding: 4 },
+        columnStyles: { 2: { cellWidth: 60 } }
+      });
     }
 
     const totalPages = doc.internal.getNumberOfPages();
@@ -516,36 +582,36 @@ const DashboardStats = () => {
 
   const kpiCards = [
     {
-      label: 'Total Casas',
+      label: tx('Total Casas'),
       value: totalCasas,
-      sub: `${territorios.length} territorios activos`,
+      sub: tx('{n} territorios activos', { n: territorios.length }),
       icon: <Home size={22} style={{ color: '#2563EB' }} />,
       gradient: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
       glowClass: 'stat-card-slate',
       accent: '#2563EB',
     },
     {
-      label: 'Atendidos',
+      label: tx('Atendidos'),
       value: atendidos,
-      sub: `${porcAtendidos}% de cobertura`,
+      sub: tx('{n}% de cobertura', { n: porcAtendidos }),
       icon: <CheckCircle size={22} style={{ color: '#059669' }} />,
       gradient: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
       glowClass: 'stat-card-green',
       accent: '#059669',
     },
     {
-      label: 'Sin Contacto',
+      label: tx('Sin Contacto'),
       value: noAtendidos,
-      sub: 'No atendieron la visita',
+      sub: tx('No atendieron la visita'),
       icon: <XCircle size={22} style={{ color: '#DC2626' }} />,
       gradient: 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)',
       glowClass: 'stat-card-red',
       accent: '#DC2626',
     },
     {
-      label: 'Casos Especiales',
+      label: tx('Casos Especiales'),
       value: especiales,
-      sub: 'Atención diferenciada',
+      sub: tx('Atención diferenciada'),
       icon: <AlertTriangle size={22} style={{ color: '#D97706' }} />,
       gradient: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
       glowClass: 'stat-card-amber',
@@ -553,20 +619,35 @@ const DashboardStats = () => {
     },
   ];
 
+
+  // Va después de TODOS los hooks (un return antes cambia el número de hooks y truena React)
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-80 rounded-2xl" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-page-in">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-7 sm:mb-9 gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Estadísticas</h1>
-          <p className="text-sm mt-0.5 text-secondary">Cobertura y actividad territorial en tiempo real</p>
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{tx('Estadísticas')}</h1>
+          <p className="text-sm mt-0.5 text-secondary">{tx('Cobertura y actividad territorial en tiempo real')}</p>
         </div>
         <div className="flex gap-2.5">
           <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
-            <FileText size={15} /> Exportar PDF
+            <FileText size={15} /> {tx('Exportar PDF')}
           </button>
           <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2">
-            <Table size={15} /> Exportar Excel
+            <Table size={15} /> {tx('Exportar Excel')}
           </button>
         </div>
       </div>
@@ -596,13 +677,13 @@ const DashboardStats = () => {
                 transition: 'all 0.15s',
               }}
             >
-              {p.label}
+              {tx(p.label)}
             </button>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-secondary">Desde</label>
+            <label className="text-xs font-semibold text-secondary">{tx('Desde')}</label>
             <input
               type="date"
               value={fechaDesde}
@@ -621,7 +702,7 @@ const DashboardStats = () => {
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-secondary">Hasta</label>
+            <label className="text-xs font-semibold text-secondary">{tx('Hasta')}</label>
             <input
               type="date"
               value={fechaHasta}
@@ -656,8 +737,9 @@ const DashboardStats = () => {
         {kpiCards.map((k, i) => (
           <div
             key={i}
-            className={`rounded-2xl p-4 sm:p-5 cursor-default transition-all duration-250 hover:-translate-y-1 ${k.glowClass}`}
+            className={`kpi-card rounded-2xl p-4 sm:p-5 cursor-default transition-all duration-250 hover:-translate-y-1 ${k.glowClass}`}
             style={{
+              '--accent': k.accent,
               background: k.gradient,
               border: `1px solid ${k.accent}30`,
               borderTop: `3px solid ${k.accent}`,
@@ -670,7 +752,7 @@ const DashboardStats = () => {
               >
                 {k.icon}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{k.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{tx(k.label)}</p>
               <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums text-primary">{k.value}</p>
               <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
             </div>
@@ -683,7 +765,7 @@ const DashboardStats = () => {
         <div className="card mb-5 p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-secondary">Cobertura Global</p>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-secondary">{tx('Cobertura Global')}</p>
               <div className="flex items-end gap-2">
                 <p className="num-display text-6xl font-black tabular-nums leading-none" style={{ color: '#059669' }}>{porcAtendidos}</p>
                 <span className="text-2xl font-bold mb-1" style={{ color: '#059669' }}>%</span>
@@ -692,15 +774,15 @@ const DashboardStats = () => {
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#10B981' }} />
-                <span className="text-secondary"><strong style={{ color: '#059669' }}>{atendidos}</strong> atendidos</span>
+                <span className="text-secondary"><strong style={{ color: '#059669' }}>{atendidos}</strong> {tx('atendidos')}</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-                <span className="text-secondary"><strong style={{ color: '#DC2626' }}>{noAtendidos}</strong> sin contacto</span>
+                <span className="text-secondary"><strong style={{ color: '#DC2626' }}>{noAtendidos}</strong> {tx('sin contacto')}</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-                <span className="text-secondary"><strong style={{ color: '#D97706' }}>{pendientes}</strong> pendientes</span>
+                <span className="text-secondary"><strong style={{ color: '#D97706' }}>{pendientes}</strong> {tx('pendientes')}</span>
               </span>
             </div>
           </div>
@@ -737,23 +819,23 @@ const DashboardStats = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#3B82F6' }} />
-            <h3 className="text-sm font-bold text-primary">Distribución por Estado</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Distribución por Estado')}</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalCasas > 0
               ? <Doughnut ref={chartDonutRef} data={donutData} options={donutOptions} />
-              : <p className="text-center pt-24 text-sm text-secondary">Sin datos registrados</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">{tx('Sin datos registrados')}</p>}
           </div>
         </div>
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#10B981' }} />
-            <h3 className="text-sm font-bold text-primary">Actividad por Territorio</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Actividad por Territorio')}</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {terrData.length > 0
               ? <Bar ref={chartBarRef} data={barData} options={barOptions} />
-              : <p className="text-center pt-24 text-sm text-secondary">Sin territorios registrados</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">{tx('Sin territorios registrados')}</p>}
           </div>
         </div>
       </div>
@@ -763,7 +845,7 @@ const DashboardStats = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
-            <h3 className="text-sm font-bold text-primary">Casos Especiales por Territorio</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Casos Especiales por Territorio')}</h3>
             <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
                   style={{ background: 'rgba(124,58,237,0.1)', color: '#7C3AED' }}>
               {especiales} total
@@ -772,10 +854,18 @@ const DashboardStats = () => {
           <div className="relative h-64 sm:h-72 md:h-80">
             {especiales > 0
               ? <Bar ref={chartEspRef} data={especialesData} options={especialesOptions} />
-              : <p className="text-center pt-24 text-sm text-secondary">No hay casos especiales registrados</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">{tx('No hay casos especiales registrados')}</p>}
           </div>
         </div>
       </div>
+
+      {/* Progreso por grupo de predicación */}
+      <GruposDashboardCard
+        disponible={gruposDisponibles}
+        resumen={resumenGrupos}
+        conteo={conteoTerritorios}
+        miembros={miembros}
+      />
 
       {/* Actividad Reciente */}
       <div
@@ -784,7 +874,7 @@ const DashboardStats = () => {
       >
         <div className="flex items-center gap-2.5 mb-5">
           <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#2563EB' }} />
-          <h3 className="text-sm font-bold text-primary">Actividad Reciente</h3>
+          <h3 className="text-sm font-bold text-primary">{tx('Actividad Reciente')}</h3>
           {actividadReciente.length > 0 && (
             <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
                   style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
@@ -793,7 +883,7 @@ const DashboardStats = () => {
           )}
         </div>
         {actividadReciente.length === 0 ? (
-          <p className="text-sm text-muted">Sin actividad reciente</p>
+          <p className="text-sm text-muted">{tx('Sin actividad reciente')}</p>
         ) : (
           <ul className="space-y-3">
             {actividadReciente.map((item) => {
@@ -810,9 +900,9 @@ const DashboardStats = () => {
                     {' visitó '}
                     <span className="text-secondary">{direccion}</span>
                     {' — '}
-                    <span className="text-secondary">{item.estado_anterior}</span>
+                    <span className="text-secondary">{tx(item.estado_anterior)}</span>
                     {' → '}
-                    <strong className="text-primary">{item.estado_nuevo}</strong>
+                    <strong className="text-primary">{tx(item.estado_nuevo)}</strong>
                   </p>
                   <span className="text-xs shrink-0 tabular-nums text-muted">
                     {formatRelative(item.created_at)}
@@ -828,7 +918,7 @@ const DashboardStats = () => {
       <div className="card">
         <div className="flex items-center gap-2.5 mb-6">
           <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-          <h3 className="text-sm font-bold text-primary">Detalle por Territorio</h3>
+          <h3 className="text-sm font-bold text-primary">{tx('Detalle por Territorio')}</h3>
           <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
             {terrData.length} zonas
           </span>
@@ -866,7 +956,7 @@ const DashboardStats = () => {
                     {pct}
                   </p>
                   <span className="text-lg font-bold mt-1" style={{ color: pctColor }}>%</span>
-                  <span className="text-xs ml-2 mt-1 text-secondary">cobertura</span>
+                  <span className="text-xs ml-2 mt-1 text-secondary">{tx('cobertura')}</span>
                 </div>
 
                 {/* Barra de progreso */}
@@ -879,25 +969,25 @@ const DashboardStats = () => {
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(16,185,129,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10B981' }} />
                     <span className="text-xs text-secondary">
-                      <strong className="tabular-nums" style={{ color: '#059669' }}>{t.atendidos}</strong> atend.
+                      <strong className="tabular-nums" style={{ color: '#059669' }}>{t.atendidos}</strong> {tx('atend.')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#EF4444' }} />
                     <span className="text-xs text-secondary">
-                      <strong className="tabular-nums" style={{ color: '#DC2626' }}>{t.noAtendidos}</strong> s/cont.
+                      <strong className="tabular-nums" style={{ color: '#DC2626' }}>{t.noAtendidos}</strong> {tx('s/cont.')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
                     <span className="text-xs text-secondary">
-                      <strong className="tabular-nums" style={{ color: '#D97706' }}>{t.pendientes}</strong> pend.
+                      <strong className="tabular-nums" style={{ color: '#D97706' }}>{t.pendientes}</strong> {tx('pend.')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(124,58,237,0.06)' }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#7C3AED' }} />
                     <span className="text-xs text-secondary">
-                      <strong className="tabular-nums" style={{ color: '#7C3AED' }}>{t.especiales}</strong> esp.
+                      <strong className="tabular-nums" style={{ color: '#7C3AED' }}>{t.especiales}</strong> {tx('esp.')}
                     </span>
                   </div>
                 </div>
@@ -905,7 +995,7 @@ const DashboardStats = () => {
             );
           })}
           {terrData.length === 0 && (
-            <p className="text-sm col-span-full text-secondary">No hay territorios registrados.</p>
+            <p className="text-sm col-span-full text-secondary">{tx('No hay territorios registrados.')}</p>
           )}
         </div>
       </div>

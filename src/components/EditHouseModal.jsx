@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { X, Locate, Camera, Upload, MapPin, Mic, Square, Trash2 } from 'lucide-react';
+import { MapContainer, Marker, useMapEvents } from 'react-leaflet';
+import { X, Camera, Upload, MapPin, Mic, Square, Trash2 } from 'lucide-react';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -10,6 +10,9 @@ import { useToast } from './Toast';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 import useVoiceRecorder from '../hooks/useVoiceRecorder';
 import { supabase } from '../supabaseClient';
+import DarkTileLayers from './DarkTileLayers';
+import LocateButton from './LocateButton';
+import { t as tx } from '../i18n';
 
 L.Marker.prototype.options.icon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 
@@ -63,7 +66,6 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
   const [photoFile, setPhotoFile]       = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
 
-  const [locating, setLocating]   = useState(false);
   const [saving, setSaving]       = useState(false);
 
   // Nota de voz existente vs nueva grabación
@@ -88,26 +90,10 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
     return () => URL.revokeObjectURL(url);
   }, [photoFile]);
 
-  const handleLocate = () => {
-    if (!navigator.geolocation) { toast.warning('Tu navegador no soporta geolocalización'); return; }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
-        toast.success('Ubicación GPS obtenida');
-      },
-      () => {
-        setLocating(false);
-        toast.error('No se pudo obtener la ubicación. Verifica los permisos del navegador.');
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
-  };
 
   const handleSave = async () => {
     if (!formData.direccion.trim()) {
-      toast.error('La dirección es obligatoria');
+      toast.error(tx('La dirección es obligatoria'));
       return;
     }
 
@@ -135,11 +121,11 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
           console.error('Error subiendo audio:', audioError);
           const msg = audioError.message || JSON.stringify(audioError);
           if (msg.includes('not found') || audioError.statusCode === 404) {
-            toast.error('El bucket de notas de voz no existe. Contacta al administrador.');
+            toast.error(tx('El bucket de notas de voz no existe. Contacta al administrador.'));
           } else if (msg.includes('row-level security') || msg.includes('policy')) {
-            toast.error('Sin permisos para subir audio. Contacta al administrador.');
+            toast.error(tx('Sin permisos para subir audio. Contacta al administrador.'));
           } else {
-            toast.error('Error al subir nota de voz: ' + msg);
+            toast.error(tx('Error al subir nota de voz: ') + msg);
           }
           // Continuar sin audio — no bloquear el guardado de la casa
         } else {
@@ -168,10 +154,10 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
         ...(audio_url !== undefined ? { audio_url } : {}),
       });
 
-      toast.success('Casa actualizada correctamente');
+      toast.success(tx('Casa actualizada correctamente'));
       onSaved?.();
     } catch (err) {
-      toast.error('Error al guardar: ' + (err.message || JSON.stringify(err)));
+      toast.error(tx('Error al guardar: ') + (err.message || JSON.stringify(err)));
     } finally {
       setSaving(false);
     }
@@ -181,7 +167,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
     <ModalOverlay onClose={onClose} size="large">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-bold heading-gradient m-0">Editar Casa</h2>
+        <h2 className="text-lg font-bold heading-gradient m-0">{tx('Editar Casa')}</h2>
         <button
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -199,29 +185,29 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0"
                    style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>1</div>
-              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>Datos Generales</span>
+              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>{tx('Datos Generales')}</span>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Territorio</label>
+              <label className="form-label">{tx('Territorio')}</label>
               <select
                 value={formData.territorio_id}
                 onChange={e => setFormData(f => ({ ...f, territorio_id: e.target.value, manzana_id: '' }))}
               >
-                <option value="">Selecciona un territorio...</option>
+                <option value="">{tx('Selecciona un territorio...')}</option>
                 {territorios.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
               </select>
             </div>
 
             {manzanasDelTerritorio.length > 0 && (
               <div className="form-group">
-                <label className="form-label">Manzana (opcional)</label>
+                <label className="form-label">{tx('Manzana (opcional)')}</label>
                 <select
                   value={formData.manzana_id}
                   onChange={e => setFormData(f => ({ ...f, manzana_id: e.target.value }))}
                 >
-                  <option value="">Sin manzana específica</option>
+                  <option value="">{tx('Sin manzana específica')}</option>
                   {manzanasDelTerritorio.map(m => (
                     <option key={m.id} value={m.id}>{m.nombre}</option>
                   ))}
@@ -230,22 +216,22 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
             )}
 
             <div className="form-group">
-              <label className="form-label">Direccion Completa *</label>
+              <label className="form-label">{tx('Direccion Completa *')}</label>
               <input
                 required
                 value={formData.direccion}
                 onChange={e => setFormData(f => ({ ...f, direccion: e.target.value }))}
-                placeholder="Ej: Calle Principal 123"
+                placeholder={tx('Ej: Calle Principal 123')}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Estado de Visita</label>
+              <label className="form-label">{tx('Estado de Visita')}</label>
               <select
                 value={formData.estado}
                 onChange={e => setFormData(f => ({ ...f, estado: e.target.value }))}
               >
-                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{tx(s)}</option>)}
               </select>
             </div>
           </div>
@@ -255,26 +241,26 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0"
                    style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>2</div>
-              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>Residentes y Casos</span>
+              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>{tx('Residentes y Casos')}</span>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="form-group flex-1">
-                <label className="form-label">Nombre del Contacto</label>
+                <label className="form-label">{tx('Nombre del Contacto')}</label>
                 <input
                   value={formData.nombre_contacto}
                   onChange={e => setFormData(f => ({ ...f, nombre_contacto: e.target.value }))}
-                  placeholder="Opcional"
+                  placeholder={tx('Opcional')}
                 />
               </div>
               <div className="form-group flex-1">
-                <label className="form-label">Telefono</label>
+                <label className="form-label">{tx('Telefono')}</label>
                 <input
                   type="tel"
                   value={formData.telefono}
                   onChange={e => setFormData(f => ({ ...f, telefono: e.target.value }))}
-                  placeholder="Opcional"
+                  placeholder={tx('Opcional')}
                 />
               </div>
             </div>
@@ -287,27 +273,27 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                   checked={formData.tiene_caso_especial}
                   onChange={e => setFormData(f => ({ ...f, tiene_caso_especial: e.target.checked }))}
                 />
-                Marcar como caso especial
+                {tx('Marcar como caso especial')}
               </label>
             </div>
 
             {formData.tiene_caso_especial && (
               <div className="p-4 rounded-xl space-y-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <div className="form-group mb-0">
-                  <label className="form-label">Tipo de Caso</label>
+                  <label className="form-label">{tx('Tipo de Caso')}</label>
                   <select
                     value={formData.tipo_caso}
                     onChange={e => setFormData(f => ({ ...f, tipo_caso: e.target.value }))}
                   >
-                    <option value="">Seleccionar...</option>
-                    <option value="Expulsado">Expulsado</option>
-                    <option value="Censurado">Censurado</option>
-                    <option value="Disciplinado">Disciplinado</option>
-                    <option value="Otro">Otro</option>
+                    <option value="">{tx('Seleccionar...')}</option>
+                    <option value="Expulsado">{tx('Expulsado')}</option>
+                    <option value="Censurado">{tx('Censurado')}</option>
+                    <option value="Disciplinado">{tx('Disciplinado')}</option>
+                    <option value="Otro">{tx('Otro')}</option>
                   </select>
                 </div>
                 <div className="form-group mb-0">
-                  <label className="form-label">Detalles</label>
+                  <label className="form-label">{tx('Detalles')}</label>
                   <textarea
                     rows={2}
                     value={formData.detalles_caso}
@@ -318,7 +304,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
             )}
 
             <div className="form-group mt-3">
-              <label className="form-label">Notas Generales</label>
+              <label className="form-label">{tx('Notas Generales')}</label>
               <textarea
                 rows={2}
                 value={formData.notas}
@@ -333,7 +319,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                      style={{ background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.35)', color: '#DC2626' }}>
                   <Mic size={12} />
                 </div>
-                <span className="text-sm font-bold" style={{ color: '#0F172A' }}>Nota de Voz</span>
+                <span className="text-sm font-bold" style={{ color: '#0F172A' }}>{tx('Nota de Voz')}</span>
                 <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
               </div>
 
@@ -347,7 +333,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
                     style={{ color: '#DC2626', border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.05)' }}
                   >
-                    <Trash2 size={12} /> Eliminar nota de voz
+                    <Trash2 size={12} /> {tx('Eliminar nota de voz')}
                   </button>
                 </div>
               )}
@@ -370,7 +356,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                           Grabando... {recordingTimeFormatted}
                         </span>
                       ) : (
-                        <span className="text-xs text-secondary">Toca para grabar una nota de voz</span>
+                        <span className="text-xs text-secondary">{tx('Toca para grabar una nota de voz')}</span>
                       )}
                     </>
                   ) : (
@@ -382,7 +368,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                         className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
                         style={{ color: '#DC2626', border: '1px solid rgba(220,38,38,0.3)', background: 'rgba(220,38,38,0.05)' }}
                       >
-                        <Trash2 size={12} /> Eliminar grabación
+                        <Trash2 size={12} /> {tx('Eliminar grabación')}
                       </button>
                     </div>
                   )}
@@ -396,7 +382,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0"
                    style={{ background: 'rgba(37,99,235,0.1)', border: '2px solid rgba(37,99,235,0.35)', color: '#2563EB' }}>3</div>
-              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>Evidencia Fotografica</span>
+              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>{tx('Evidencia Fotografica')}</span>
               <div className="flex-1 h-px" style={{ background: 'rgba(37,99,235,0.12)' }} />
             </div>
 
@@ -412,7 +398,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                   <X size={12} />
                 </button>
                 <span className="absolute bottom-2 left-2 text-xs text-white px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.5)' }}>
-                  Foto actual
+                  {tx('Foto actual')}
                 </span>
               </div>
             )}
@@ -429,7 +415,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                   <X size={12} />
                 </button>
                 <span className="absolute bottom-2 left-2 text-xs text-white px-2 py-0.5 rounded-full" style={{ background: 'rgba(37,99,235,0.7)' }}>
-                  Nueva foto
+                  {tx('Nueva foto')}
                 </span>
               </div>
             )}
@@ -438,14 +424,14 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
               <label className="flex-1 flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer transition-colors text-sm hover:bg-blue-50/50"
                      style={{ border: '2px dashed rgba(37,99,235,0.3)', color: '#2563EB' }}>
                 <Camera size={20} />
-                <span className="font-medium text-xs">Tomar Foto</span>
+                <span className="font-medium text-xs">{tx('Tomar Foto')}</span>
                 <input type="file" accept="image/*" capture="environment" className="hidden"
                        onChange={(e) => setPhotoFile(e.target.files[0] || null)} />
               </label>
               <label className="flex-1 flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer transition-colors text-sm hover:bg-slate-50/50"
                      style={{ border: '2px dashed rgba(0,0,0,0.15)', color: '#475569' }}>
                 <Upload size={20} style={{ color: '#94A3B8' }} />
-                <span className="font-medium text-xs">Galeria</span>
+                <span className="font-medium text-xs">{tx('Galeria')}</span>
                 <input ref={photoInputRef} type="file" accept="image/*" className="hidden"
                        onChange={(e) => setPhotoFile(e.target.files[0] || null)} />
               </label>
@@ -459,21 +445,11 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <MapPin size={15} style={{ color: '#2563EB' }} />
-                <span className="text-sm font-bold" style={{ color: '#0F172A' }}>Geolocalizacion</span>
+                <span className="text-sm font-bold" style={{ color: '#0F172A' }}>{tx('Geolocalizacion')}</span>
               </div>
-              <button
-                type="button"
-                onClick={handleLocate}
-                disabled={locating}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 font-medium"
-                style={{ border: '1px solid rgba(37,99,235,0.3)', color: '#2563EB', background: 'rgba(37,99,235,0.06)' }}
-              >
-                <Locate size={12} />
-                {locating ? 'Obteniendo GPS...' : 'Usar GPS'}
-              </button>
             </div>
             <p className="text-xs mb-2" style={{ color: '#475569' }}>
-              Arrastra el marcador o haz clic en el mapa para reubicar la casa.
+              {tx('Usa el botón de ubicación del mapa, arrastra el marcador o haz clic para reubicar la casa.')}
             </p>
 
             <div className="rounded-xl overflow-hidden" style={{ height: '260px' }}>
@@ -482,12 +458,9 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                 zoom={16}
                 style={{ height: '100%', width: '100%' }}
               >
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-                  attribution='&copy; OpenStreetMap &copy; CARTO'
-                />
-                <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png" className="neon-labels" />
+                <DarkTileLayers />
                 <DraggableMarker position={position} setPosition={setPosition} />
+                <LocateButton onLocate={setPosition} />
               </MapContainer>
             </div>
 
@@ -502,14 +475,14 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
           {/* ── Historial de Visitas ── */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>Historial de Visitas</span>
+              <span className="text-sm font-bold" style={{ color: '#0F172A' }}>{tx('Historial de Visitas')}</span>
               <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
             </div>
 
             {loadingHist ? (
-              <p className="text-xs" style={{ color: '#94A3B8' }}>Cargando historial...</p>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>{tx('Cargando historial...')}</p>
             ) : historial.length === 0 ? (
-              <p className="text-xs" style={{ color: '#94A3B8' }}>Sin historial de visitas</p>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>{tx('Sin historial de visitas')}</p>
             ) : (
               <div className="relative pl-4" style={{ borderLeft: '2px solid rgba(0,0,0,0.08)' }}>
                 {historial.map((h, idx) => (
@@ -523,9 +496,9 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                     <p className="text-xs font-medium" style={{ color: '#475569' }}>
                       <span style={{ color: '#0F172A' }}>{h.usuario_nombre || 'Usuario'}</span>{' '}
                       cambio estado:{' '}
-                      <span style={{ color: getStatusColor(h.estado_anterior) }}>{h.estado_anterior}</span>
+                      <span style={{ color: getStatusColor(h.estado_anterior) }}>{tx(h.estado_anterior)}</span>
                       {' → '}
-                      <span style={{ color: getStatusColor(h.estado_nuevo) }}>{h.estado_nuevo}</span>
+                      <span style={{ color: getStatusColor(h.estado_nuevo) }}>{tx(h.estado_nuevo)}</span>
                     </p>
                     {h.notas && (
                       <p className="text-xs mt-0.5 italic" style={{ color: '#64748B' }}>{h.notas}</p>
@@ -541,7 +514,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
       {/* Botones */}
       <div className="flex justify-end gap-3 mt-6 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
         <button type="button" onClick={onClose} className="btn btn-outline">
-          Cancelar
+          {tx('Cancelar')}
         </button>
         <button
           type="button"
@@ -555,7 +528,7 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
               </svg>
-              Guardando...
+              {tx('Guardando...')}
             </>
           ) : 'Guardar Cambios'}
         </button>

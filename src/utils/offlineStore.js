@@ -10,16 +10,25 @@
  */
 
 const DB_NAME = 'territorial_offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // v2: almacén genérico "datos"
 
 const STORES = {
   territorios: 'territorios',
   casas: 'casas',
   pendingQueue: 'pendingQueue', // Cola de operaciones pendientes
+  datos: 'datos',               // Otros conjuntos (manzanas, usuarios, grupos…) por clave
 };
 
+// Una sola conexión reutilizada. Nunca debe colgar la app:
+//  - si otra pestaña tiene una versión vieja abierta ("blocked") o el navegador no responde,
+//    se rechaza a los 4 s y la app sigue (solo sin copia local);
+//  - si otra pestaña actualiza la versión, esta conexión se cierra para no bloquearla.
+let dbPromise = null;
+
 function openDB() {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('IndexedDB no respondió')), 4000);
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
@@ -32,10 +41,23 @@ function openDB() {
       if (!db.objectStoreNames.contains(STORES.pendingQueue)) {
         db.createObjectStore(STORES.pendingQueue, { keyPath: 'queueId', autoIncrement: true });
       }
+      if (!db.objectStoreNames.contains(STORES.datos)) {
+        db.createObjectStore(STORES.datos, { keyPath: 'clave' });
+      }
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      clearTimeout(timer);
+      const db = request.result;
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      db.onclose = () => { dbPromise = null; };
+      resolve(db);
+    };
+    request.onerror = () => { clearTimeout(timer); reject(request.error); };
+    request.onblocked = () => console.warn('[offlineStore] Actualización bloqueada por otra pestaña abierta');
   });
+  // Si falló, permitir reintentar en la siguiente operación
+  dbPromise.catch(() => { dbPromise = null; });
+  return dbPromise;
 }
 
 async function getAllFromStore(storeName) {
@@ -85,7 +107,20 @@ async function deleteFromStore(storeName, key) {
 
 // ── Public API ──
 
+async function getOneFromStore(storeName, key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(storeName, 'readonly').objectStore(storeName).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
 export const offlineStore = {
+  // ── Conjuntos genéricos para uso sin conexión (la clave incluye la congregación) ──
+  guardarDatos: (clave, valor) => putOneToStore(STORES.datos, { clave, valor, guardado: Date.now() }),
+  leerDatos: async (clave) => (await getOneFromStore(STORES.datos, clave))?.valor ?? null,
+
   // Cache de datos para lectura offline
   cacheTerritorios: (items) => putAllToStore(STORES.territorios, items),
   cacheCasas: (items) => putAllToStore(STORES.casas, items),

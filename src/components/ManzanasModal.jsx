@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
+import { MapContainer, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-draw';
 import ModalOverlay from './ModalOverlay';
@@ -9,6 +9,9 @@ import { getStatusColor } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from './Toast';
 import { X, Trash2, PenLine } from 'lucide-react';
+import DarkTileLayers from './DarkTileLayers';
+import LocateButton from './LocateButton';
+import { t as tx } from '../i18n';
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -70,7 +73,8 @@ const ManzanasModal = ({ territorio, onClose }) => {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const canEdit = ['Admin', 'Super Admin', 'Admin Principal'].includes(user?.rol);
+  // Pueden dibujar/editar manzanas los mismos roles que gestionan territorios
+  const canEdit = ['Admin', 'Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'].includes(user?.rol);
 
   const misManzanas = manzanas.filter(
     m => String(m.territorio_id) === String(territorio.id)
@@ -105,9 +109,9 @@ const ManzanasModal = ({ territorio, onClose }) => {
       });
       setPendingCoords(null);
       setNombre('');
-      toast.success('Manzana agregada');
+      toast.success(tx('Manzana agregada'));
     } catch (err) {
-      toast.error('Error al guardar: ' + (err.message || err));
+      toast.error(tx('Error al guardar: ') + (err.message || err));
     } finally {
       setSaving(false);
     }
@@ -117,9 +121,9 @@ const ManzanasModal = ({ territorio, onClose }) => {
     try {
       await deleteManzana(deleteTarget.id);
       setDeleteTarget(null);
-      toast.success('Manzana eliminada');
+      toast.success(tx('Manzana eliminada'));
     } catch (err) {
-      toast.error('Error al eliminar: ' + (err.message || err));
+      toast.error(tx('Error al eliminar: ') + (err.message || err));
       setDeleteTarget(null);
     }
   };
@@ -213,7 +217,7 @@ const ManzanasModal = ({ territorio, onClose }) => {
                   className="btn btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
                 >
                   <PenLine size={14} />
-                  Dibujar manzana
+                  {tx('Dibujar manzana')}
                 </button>
               )}
               {drawing && (
@@ -221,21 +225,21 @@ const ManzanasModal = ({ territorio, onClose }) => {
                   onClick={() => setDrawing(false)}
                   className="btn btn-outline text-xs py-1.5 px-3"
                 >
-                  Cancelar
+                  {tx('Cancelar')}
                 </button>
               )}
             </div>
 
             {drawing && (
               <p className="text-xs mb-2" style={{ color: '#64748B' }}>
-                Usa el control de dibujo en el mapa para trazar el polígono de la manzana.
+                {tx('Usa el control de dibujo en el mapa para trazar el polígono de la manzana.')}
               </p>
             )}
 
             {/* Mini-mapa */}
             <div
               className="rounded-xl overflow-hidden"
-              style={{ height: '450px', border: '1px solid rgba(0,0,0,0.1)' }}
+              style={{ height: 'min(450px, 55dvh)', border: '1px solid rgba(0,0,0,0.1)' }}
             >
               <MapContainer
                 center={center}
@@ -243,14 +247,7 @@ const ManzanasModal = ({ territorio, onClose }) => {
                 style={{ height: '100%', width: '100%' }}
                 zoomControl={true}
               >
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-                  attribution='&copy; OpenStreetMap &copy; CARTO'
-                />
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-                  className="neon-labels"
-                />
+                <DarkTileLayers />
                 <MapFitter coordenadas={territorio.coordenadas} />
 
                 {/* Polígono del territorio padre */}
@@ -324,6 +321,7 @@ const ManzanasModal = ({ territorio, onClose }) => {
 
                 {/* Control de dibujo — solo cuando está activo */}
                 {drawing && <DrawControl onCreated={handleDrawCreated} />}
+                <LocateButton />
               </MapContainer>
             </div>
 
@@ -337,14 +335,14 @@ const ManzanasModal = ({ territorio, onClose }) => {
                 }}
               >
                 <p className="text-xs mb-2" style={{ color: '#64748B' }}>
-                  Polígono dibujado. Asigna un nombre a la manzana:
+                  {tx('Polígono dibujado. Asigna un nombre a la manzana:')}
                 </p>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={nombre}
                     onChange={e => setNombre(e.target.value)}
-                    placeholder="Ej: 4A, 4B, Manzana Norte..."
+                    placeholder={tx('Ej: 4A, 4B, Manzana Norte...')}
                     className="flex-1"
                     autoFocus
                     onKeyDown={e => { if (e.key === 'Enter') handleGuardar(); }}

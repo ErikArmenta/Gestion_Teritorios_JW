@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { Building2, Pencil, Trash2 } from 'lucide-react';
+import { t as tx } from '../i18n';
 
 const CongregacionesList = () => {
   const { user } = useAuth();
@@ -53,18 +54,18 @@ const CongregacionesList = () => {
           .update({ nombre: formData.nombre, clave: formData.clave || null })
           .eq('id', formData.id);
         if (error) throw error;
-        toast.success('Congregación actualizada correctamente');
+        toast.success(tx('Congregación actualizada correctamente'));
       } else {
         const { error } = await supabase
           .from('congregaciones')
           .insert([{ nombre: formData.nombre, clave: formData.clave || null }]);
         if (error) throw error;
-        toast.success('Congregación creada correctamente');
+        toast.success(tx('Congregación creada correctamente'));
       }
       setShowModal(false);
       fetchCongregaciones();
     } catch (err) {
-      toast.error('Error: ' + err.message);
+      toast.error(tx('Error: ') + err.message);
     } finally {
       setSaving(false);
     }
@@ -87,7 +88,7 @@ const CongregacionesList = () => {
       toast.success(`Congregación "${target.nombre}" eliminada`);
       fetchCongregaciones();
     } catch (err) {
-      toast.error('Error al eliminar: ' + err.message);
+      toast.error(tx('Error al eliminar: ') + err.message);
     }
   };
 
@@ -95,8 +96,8 @@ const CongregacionesList = () => {
     return (
       <div className="flex items-center justify-center h-48">
         <div className="text-center">
-          <p className="text-red-500 font-bold mb-1">Acceso denegado</p>
-          <p className="text-sm text-gray-400">Este módulo es exclusivo para Super Admin.</p>
+          <p className="text-red-500 font-bold mb-1">{tx('Acceso denegado')}</p>
+          <p className="text-sm text-gray-400">{tx('Este módulo es exclusivo para Super Admin.')}</p>
         </div>
       </div>
     );
@@ -107,11 +108,11 @@ const CongregacionesList = () => {
       {/* Header */}
       <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Congregaciones</h1>
-          <p className="text-sm mt-0.5 text-secondary">Gestión global de congregaciones</p>
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{tx('Congregaciones')}</h1>
+          <p className="text-sm mt-0.5 text-secondary">{tx('Gestión global de congregaciones')}</p>
         </div>
         <button className="btn btn-primary flex items-center gap-2" onClick={openNew}>
-          <Building2 size={15} /> Nueva Congregación
+          <Building2 size={15} /> {tx('Nueva Congregación')}
         </button>
       </div>
 
@@ -120,7 +121,7 @@ const CongregacionesList = () => {
         <div className="flex flex-wrap gap-2 mb-5">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
             <span className="text-xs font-bold tabular-nums" style={{ color: '#2563EB' }}>{congregaciones.length}</span>
-            <span className="text-xs font-medium text-secondary">total</span>
+            <span className="text-xs font-medium text-secondary">{tx('total')}</span>
           </div>
         </div>
       )}
@@ -136,11 +137,11 @@ const CongregacionesList = () => {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Nombre</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Clave</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Usuarios</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Territorios</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>Acciones</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Nombre')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Clave')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Usuarios')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Territorios')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>{tx('Acciones')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,13 +165,13 @@ const CongregacionesList = () => {
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-2 justify-end">
                         <button onClick={() => openEdit(c)} className="btn btn-secondary py-1 px-2.5 text-xs flex items-center gap-1">
-                          <Pencil size={12} /> Editar
+                          <Pencil size={12} /> {tx('Editar')}
                         </button>
                         <button
                           onClick={() => setDeleteTarget(c)}
                           className="btn btn-danger py-1 px-2.5 text-xs flex items-center gap-1"
                         >
-                          <Trash2 size={12} /> Eliminar
+                          <Trash2 size={12} /> {tx('Eliminar')}
                         </button>
                       </div>
                     </td>
@@ -202,13 +203,13 @@ const CongregacionesList = () => {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => openEdit(c)} className="btn btn-secondary py-1.5 px-3 text-xs flex-1 flex items-center justify-center gap-1">
-                    <Pencil size={12} /> Editar
+                    <Pencil size={12} /> {tx('Editar')}
                   </button>
                   <button
                     onClick={() => setDeleteTarget(c)}
                     className="btn btn-danger py-1.5 px-3 text-xs flex-1 flex items-center justify-center gap-1"
                   >
-                    <Trash2 size={12} /> Eliminar
+                    <Trash2 size={12} /> {tx('Eliminar')}
                   </button>
                 </div>
               </div>
@@ -220,10 +221,10 @@ const CongregacionesList = () => {
             <div className="card p-8 text-center">
               <Building2 size={32} style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
               <p className="text-sm font-semibold text-secondary">
-                No hay congregaciones registradas
+                {tx('No hay congregaciones registradas')}
               </p>
               <p className="text-xs mt-1 text-muted">
-                Crea la primera congregación para comenzar
+                {tx('Crea la primera congregación para comenzar')}
               </p>
             </div>
           )}
@@ -236,29 +237,29 @@ const CongregacionesList = () => {
           <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Congregación' : 'Nueva Congregación'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Nombre *</label>
+              <label className="form-label">{tx('Nombre *')}</label>
               <input
                 required
                 value={formData.nombre}
                 onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))}
-                placeholder="Ej. Congregación Norte"
+                placeholder={tx('Ej. Congregación Norte')}
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Clave</label>
+              <label className="form-label">{tx('Clave')}</label>
               <input
                 value={formData.clave}
                 onChange={e => setFormData(f => ({ ...f, clave: e.target.value }))}
-                placeholder="Clave o código (opcional)"
+                placeholder={tx('Clave o código (opcional)')}
               />
             </div>
             <div className="flex gap-3 mt-6">
-              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
+              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">{tx('Cancelar')}</button>
               <button type="submit" className="btn btn-primary flex-1" disabled={saving}>
                 {saving ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Guardando...
+                    {tx('Guardando...')}
                   </span>
                 ) : 'Guardar'}
               </button>

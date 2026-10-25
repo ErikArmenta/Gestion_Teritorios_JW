@@ -1,24 +1,18 @@
-# Iconos PWA — Instrucciones
+# Iconos PWA
 
-Los archivos `icon-192.svg` e `icon-512.svg` son placeholders temporales.
+El logo de la app es un mapa plegado con un pin de ubicación.
 
-## Accion requerida
+| Archivo                 | Tamaño  | Uso                                          |
+|-------------------------|---------|----------------------------------------------|
+| `../favicon.svg`        | vector  | Pestaña del navegador (dibujo ampliado)      |
+| `icon.svg`              | vector  | Fuente del icono con esquinas redondeadas    |
+| `icon-maskable.svg`     | vector  | Fuente del icono maskable (fondo completo)   |
+| `icon-192.png`          | 192x192 | Icono general / Android                      |
+| `icon-512.png`          | 512x512 | Splash screen / instalación                  |
+| `icon-maskable-512.png` | 512x512 | Android adaptive icon (`purpose: maskable`)  |
+| `apple-touch-icon.png`  | 180x180 | Pantalla de inicio en iOS                    |
 
-Reemplazar `icon-192.png` y `icon-512.png` con el logo real de la congregacion.
-Formato PNG requerido para PWA installability.
+## Regenerar PNGs
 
-## Especificaciones
-
-| Archivo       | Tamano    | Uso                              |
-|---------------|-----------|----------------------------------|
-| icon-192.png  | 192x192px | Icono general + Android home     |
-| icon-512.png  | 512x512px | Splash screen + tiendas de apps  |
-
-## Conversion SVG a PNG
-
-Si deseas convertir los SVG placeholder a PNG temporalmente, puedes usar:
-- https://cloudconvert.com/svg-to-png
-- Inkscape (gratuito, de escritorio)
-- ImageMagick: `magick icon-512.svg -resize 512x512 icon-512.png`
-
-Los PNG deben colocarse en esta misma carpeta `public/icons/`.
+Si cambias los SVG, vuelve a exportar los PNG con el mismo nombre y tamaño
+(Inkscape, ImageMagick o Chrome headless con `--screenshot`).

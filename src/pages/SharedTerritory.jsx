@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import { supabase } from '../supabaseClient';
-import { STATUS_COLORS } from '../utils/constants';
+import { STATUS_COLORS, LIGHT_MAP_TILES } from '../utils/constants';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import LocateButton from '../components/LocateButton';
+import { t as tx } from '../i18n';
 
 const DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -86,14 +88,14 @@ export default function SharedTerritory() {
   if (status === 'loading') {
     return (
       <div style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         background: 'var(--bg-surface, #F8FAFC)',
       }}>
         <p style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.95rem' }}>
-          Cargando territorio...
+          {tx('Cargando territorio...')}
         </p>
       </div>
     );
@@ -102,7 +104,7 @@ export default function SharedTerritory() {
   if (status === 'invalid') {
     return (
       <div style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -111,10 +113,10 @@ export default function SharedTerritory() {
         gap: '12px',
       }}>
         <p style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary, #0F172A)' }}>
-          Enlace no válido
+          {tx('Enlace no válido')}
         </p>
         <p style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.875rem' }}>
-          Este enlace no existe o fue eliminado.
+          {tx('Este enlace no existe o fue eliminado.')}
         </p>
       </div>
     );
@@ -123,7 +125,7 @@ export default function SharedTerritory() {
   if (status === 'expired') {
     return (
       <div style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -132,10 +134,10 @@ export default function SharedTerritory() {
         gap: '12px',
       }}>
         <p style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary, #0F172A)' }}>
-          Este enlace ha expirado
+          {tx('Este enlace ha expirado')}
         </p>
         <p style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.875rem' }}>
-          Solicita un nuevo enlace al administrador del territorio.
+          {tx('Solicita un nuevo enlace al administrador del territorio.')}
         </p>
       </div>
     );
@@ -145,7 +147,7 @@ export default function SharedTerritory() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--bg-surface, #F8FAFC)',
@@ -176,7 +178,7 @@ export default function SharedTerritory() {
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}>
-            Territorio Compartido
+            {tx('Territorio Compartido')}
           </p>
           <h1 style={{
             fontSize: '1.125rem',
@@ -207,12 +209,9 @@ export default function SharedTerritory() {
         <MapContainer
           center={coordenadas.length > 0 ? coordenadas[0] : [20.659698, -103.349609]}
           zoom={14}
-          style={{ width: '100%', height: '100%', minHeight: 'calc(100vh - 72px)' }}
+          style={{ width: '100%', height: '100%', minHeight: 'calc(100dvh - 72px)' }}
         >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          />
+          <TileLayer {...LIGHT_MAP_TILES} />
 
           {coordenadas.length > 0 && (
             <>
@@ -255,7 +254,7 @@ export default function SharedTerritory() {
                         color: STATUS_COLORS[casa.estado]?.hex || '#475569',
                         marginBottom: '6px',
                       }}>
-                        {casa.estado}
+                        {tx(casa.estado)}
                       </span>
                     )}
                     {casa.nombre_contacto && (
@@ -273,6 +272,7 @@ export default function SharedTerritory() {
               </Marker>
             );
           })}
+          <LocateButton />
         </MapContainer>
       </div>
     </div>

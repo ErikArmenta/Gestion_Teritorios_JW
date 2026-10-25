@@ -18,3 +18,25 @@ export const ROLES = [
 
 export const getStatusColor = (estado) => STATUS_COLORS[estado]?.hex || '#9CA3AF';
 export const getStatusBadge = (estado) => STATUS_COLORS[estado]?.badge || 'bg-gray-100 text-gray-700';
+
+// Mapa base. CARTO (basemaps.cartocdn.com) ahora exige API key y muestra "API KEY REQUIRED",
+// así que se usa OpenStreetMap; la clase "dark-tiles" lo oscurece por CSS (index.css).
+const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+export const DARK_MAP_TILES = {
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: OSM_ATTRIBUTION,
+  className: 'dark-tiles',
+  maxZoom: 19,
+};
+export const LIGHT_MAP_TILES = {
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: OSM_ATTRIBUTION,
+  maxZoom: 19,
+};
+
+// Icono de exhibidor (mismo dibujo que components/ExhibidorIcon.jsx) para marcadores L.divIcon
+export const EXHIBIDOR_ICON_SVG_PATHS =
+  '<rect x="6" y="2" width="12" height="18" rx="1.5"/>' +
+  '<path d="M9 5.5h6"/><path d="M6 9h12"/><path d="M6 13.5h12"/>' +
+  '<path d="M9 11.25h2M13 11.25h2"/><path d="M9 15.75h2M13 15.75h2"/>' +
+  '<path d="M8.5 20v2M15.5 20v2"/>';

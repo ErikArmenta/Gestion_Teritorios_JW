@@ -1,0 +1,69 @@
+// Notificaciones push con OneSignal (Web SDK v16).
+//
+// Se activa solo si existe VITE_ONESIGNAL_APP_ID y en producción (en dev no hay service worker).
+// OneSignal usa NUESTRO service worker (public/sw.js hace importScripts de su SDK), así la app
+// sigue teniendo un solo SW con caché offline + push.
+//
+// Cada dispositivo queda identificado con:
+//   external_id = id del usuario (para avisos a una persona)
+//   tags: congregacion_id, rol, grupo_id (para avisos a una congregación / grupo / rol)
+// Al enviar desde OneSignal o la Edge Function, el campo "url" es el link de navegación
+// (p. ej. https://<dominio>/alerts) que se abre al tocar la notificación.
+
+const APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID;
+
+export const oneSignalDisponible = () => Boolean(APP_ID) && import.meta.env.PROD;
+
+let iniciado = false;
+
+// Ejecuta fn(OneSignal) cuando el SDK esté listo
+const conOneSignal = (fn) => {
+  if (!oneSignalDisponible()) return Promise.resolve(null);
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  return new Promise((resolve) => {
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try { resolve(await fn(OneSignal)); } catch (err) { console.warn('[OneSignal]', err); resolve(null); }
+    });
+  });
+};
+
+export const initOneSignal = () => {
+  if (!oneSignalDisponible() || iniciado) return;
+  iniciado = true;
+  const script = document.createElement('script');
+  script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+  script.defer = true;
+  document.head.appendChild(script);
+  conOneSignal((OneSignal) => OneSignal.init({
+    appId: APP_ID,
+    serviceWorkerPath: 'sw.js',
+    serviceWorkerParam: { scope: '/' },
+    notifyButton: { enable: false },
+    // Usamos nuestro propio aviso para pedir permiso (App.jsx)
+    promptOptions: { autoPrompt: false },
+  }));
+};
+
+// Vincula el dispositivo con el usuario y sus etiquetas (congregación, rol, grupo)
+export const identificarUsuario = (user, grupoId = null) => conOneSignal(async (OneSignal) => {
+  if (!user?.id) return;
+  await OneSignal.login(String(user.id));
+  const tags = { rol: user.rol || '', congregacion_id: user.congregacion_id || '' };
+  tags.grupo_id = grupoId ? String(grupoId) : '';
+  await OneSignal.User.addTags(tags);
+});
+
+export const olvidarUsuario = () => conOneSignal((OneSignal) => OneSignal.logout());
+
+// Pide permiso de notificaciones. Devuelve true si quedó concedido.
+export const pedirPermisoPush = async () => {
+  if (oneSignalDisponible()) {
+    const ok = await conOneSignal(async (OneSignal) => {
+      await OneSignal.Notifications.requestPermission();
+      return OneSignal.Notifications.permission;
+    });
+    return Boolean(ok);
+  }
+  if (typeof Notification === 'undefined') return false;
+  return (await Notification.requestPermission()) === 'granted';
+};

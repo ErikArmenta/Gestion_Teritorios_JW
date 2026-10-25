@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import { supabase } from '../supabaseClient';
+import { t as tx } from '../i18n';
 
 const Backup = () => {
   const { user } = useAuth();
@@ -119,7 +120,7 @@ const Backup = () => {
       try {
         const parsed = JSON.parse(ev.target.result);
         if (!parsed.metadata || !parsed.territorios) {
-          throw new Error('Archivo de backup inválido o incompleto.');
+          throw new Error(tx('Archivo de backup inválido o incompleto.'));
         }
         setBackupData(parsed);
       } catch (err) {
@@ -153,22 +154,22 @@ const Backup = () => {
       // Insert in correct order: congregaciones → territorios → casas → app_usuarios
       if (congregaciones && congregaciones.length > 0) {
         const { error } = await supabase.from('congregaciones').upsert(congregaciones, { onConflict: 'id' });
-        if (error) throw new Error('Error restaurando congregaciones: ' + error.message);
+        if (error) throw new Error(tx('Error restaurando congregaciones: ') + error.message);
       }
 
       if (territorios && territorios.length > 0) {
         const { error } = await supabase.from('territorios').insert(territorios);
-        if (error) throw new Error('Error restaurando territorios: ' + error.message);
+        if (error) throw new Error(tx('Error restaurando territorios: ') + error.message);
       }
 
       if (casas && casas.length > 0) {
         const { error } = await supabase.from('casas').insert(casas);
-        if (error) throw new Error('Error restaurando casas: ' + error.message);
+        if (error) throw new Error(tx('Error restaurando casas: ') + error.message);
       }
 
       if (usuarios && usuarios.length > 0) {
         const { error } = await supabase.from('app_usuarios').insert(usuarios);
-        if (error) throw new Error('Error restaurando usuarios: ' + error.message);
+        if (error) throw new Error(tx('Error restaurando usuarios: ') + error.message);
       }
 
       showToast('Backup restaurado correctamente', 'success');
@@ -191,8 +192,8 @@ const Backup = () => {
     <div className="animate-page-in" style={{ maxWidth: 680, margin: '0 auto' }}>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold heading-gradient mb-1">Backup del Sistema</h1>
-        <p className="text-sm text-secondary">Exporta o restaura todos los datos de la congregación.</p>
+        <h1 className="text-2xl font-bold heading-gradient mb-1">{tx('Backup del Sistema')}</h1>
+        <p className="text-sm text-secondary">{tx('Exporta o restaura todos los datos de la congregación.')}</p>
       </div>
 
       {/* Export Section */}
@@ -208,9 +209,9 @@ const Backup = () => {
             <Database size={20} style={{ color: '#2563EB' }} />
           </div>
           <div>
-            <h2 className="text-base font-bold text-primary">Exportar Backup</h2>
+            <h2 className="text-base font-bold text-primary">{tx('Exportar Backup')}</h2>
             <p className="text-xs text-secondary">
-              Descarga un archivo JSON con todos los datos actuales.
+              {tx('Descarga un archivo JSON con todos los datos actuales.')}
             </p>
           </div>
         </div>
@@ -220,8 +221,7 @@ const Backup = () => {
           style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}
         >
           <p className="text-secondary leading-relaxed">
-            El backup incluye: territorios, casas, usuarios, congregaciones, historial de visitas,
-            asignaciones y notificaciones.
+            {tx('El backup incluye: territorios, casas, usuarios, congregaciones, historial de visitas, asignaciones y notificaciones.')}
           </p>
         </div>
 
@@ -249,9 +249,9 @@ const Backup = () => {
             <Upload size={20} style={{ color: '#DC2626' }} />
           </div>
           <div>
-            <h2 className="text-base font-bold text-primary">Restaurar Backup</h2>
+            <h2 className="text-base font-bold text-primary">{tx('Restaurar Backup')}</h2>
             <p className="text-xs text-secondary">
-              Importa un archivo de backup generado previamente.
+              {tx('Importa un archivo de backup generado previamente.')}
             </p>
           </div>
         </div>
@@ -263,7 +263,7 @@ const Backup = () => {
         >
           <AlertTriangle size={18} style={{ color: '#DC2626', flexShrink: 0, marginTop: 1 }} />
           <p className="text-sm font-medium" style={{ color: '#DC2626' }}>
-            Esto reemplazará TODOS los datos actuales. Esta acción es irreversible.
+            {tx('Esto reemplazará TODOS los datos actuales. Esta acción es irreversible.')}
           </p>
         </div>
 
@@ -280,7 +280,7 @@ const Backup = () => {
           <span className="text-sm font-medium text-secondary">
             {backupFile ? backupFile.name : 'Seleccionar archivo .json'}
           </span>
-          <span className="text-xs text-muted">Haz clic para elegir</span>
+          <span className="text-xs text-muted">{tx('Haz clic para elegir')}</span>
           <input
             type="file"
             accept=".json"
@@ -308,24 +308,24 @@ const Backup = () => {
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle size={16} style={{ color: '#10B981' }} />
               <span className="text-sm font-semibold" style={{ color: '#10B981' }}>
-                Archivo válido
+                {tx('Archivo válido')}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-secondary">Territorios:</span>
+                <span className="text-secondary">{tx('Territorios:')}</span>
                 <span className="font-semibold text-primary">{backupData.territorios?.length ?? 0}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-secondary">Casas:</span>
+                <span className="text-secondary">{tx('Casas:')}</span>
                 <span className="font-semibold text-primary">{backupData.casas?.length ?? 0}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-secondary">Usuarios:</span>
+                <span className="text-secondary">{tx('Usuarios:')}</span>
                 <span className="font-semibold text-primary">{backupData.usuarios?.length ?? 0}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-secondary">Congregaciones:</span>
+                <span className="text-secondary">{tx('Congregaciones:')}</span>
                 <span className="font-semibold text-primary">{backupData.congregaciones?.length ?? 0}</span>
               </div>
             </div>

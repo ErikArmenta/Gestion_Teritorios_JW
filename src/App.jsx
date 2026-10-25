@@ -15,16 +15,28 @@ import Profile from './pages/Profile';
 import SharedTerritory from './pages/SharedTerritory';
 import Backup from './pages/Backup';
 import Exhibidores from './pages/Exhibidores';
+import Grupos from './pages/Grupos';
 import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
 import BottomNav from './components/BottomNav';
 import { DataProvider } from './context/DataContext';
+import { GruposProvider } from './context/GruposContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
 import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider } from './context/ThemeContext';
 import NotificationBell from './components/NotificationBell';
+import PWAPrompts from './components/PWAPrompts';
+import { LanguageProvider, useLanguage, t } from './i18n';
+import { useGrupos } from './context/GruposContext';
+import { identificarUsuario, pedirPermisoPush } from './utils/onesignal';
+
+// Al cambiar de idioma se vuelven a montar las pantallas para que todos los t() se actualicen
+const LangKeyed = ({ children }) => {
+  const { lang } = useLanguage();
+  return <React.Fragment key={lang}>{children}</React.Fragment>;
+};
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -36,38 +48,26 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 const AppLayout = () => {
   const { user } = useAuth();
-  const [showNotifBanner, setShowNotifBanner] = useState(false);
+  const { miGrupo } = useGrupos();
+
+  // Push (OneSignal): vincular este dispositivo con el usuario, su congregación, rol y grupo
+  useEffect(() => {
+    if (user) identificarUsuario(user, miGrupo?.id);
+  }, [user, miGrupo?.id]);
+
+  // Show notification modal once per session (only if the browser supports it and hasn't decided yet)
+  const [showNotifBanner, setShowNotifBanner] = useState(() =>
+    !sessionStorage.getItem('notif_banner_dismissed') &&
+    typeof Notification !== 'undefined' &&
+    Notification.permission === 'default'
+  );
 
   if (!user) return <Navigate to="/login" replace />;
 
-  // Register Service Worker once
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
-  }, []);
-
-  // Show notification modal once per session
-  useEffect(() => {
-    const dismissed = sessionStorage.getItem('notif_banner_dismissed');
-    if (!dismissed) {
-      setShowNotifBanner(true);
-    }
-  }, []);
-
   const handleAllowNotifications = async () => {
     setShowNotifBanner(false);
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted' && 'serviceWorker' in navigator) {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-        }).catch(() => null);
-      } catch {
-        // pushManager not supported or VAPID not configured
-      }
-    }
+    // Con OneSignal configurado suscribe el dispositivo a push; si no, solo pide el permiso del navegador
+    await pedirPermisoPush();
   };
 
   return (
@@ -109,6 +109,11 @@ const AppLayout = () => {
               <CongregacionesList />
             </ProtectedRoute>
           } />
+          <Route path="/grupos" element={
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial']}>
+              <Grupos />
+            </ProtectedRoute>
+          } />
           <Route path="/profile" element={<Profile />} />
           <Route path="/exhibidores" element={<Exhibidores />} />
           <Route path="/backup" element={
@@ -130,7 +135,7 @@ const AppLayout = () => {
           }}
         >
           <div
-            className="w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[50vw] lg:max-w-[35vw] xl:max-w-[28vw] animate-scale-in"
+            className="w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[50vw] lg:max-w-[35vw] xl:max-w-[28vw] animate-scale-in light-surface"
             style={{
               background: '#FFFFFF',
               borderRadius: '1.25rem',
@@ -144,11 +149,10 @@ const AppLayout = () => {
                 <Bell size={28} style={{ color: '#2563EB' }} />
               </div>
               <h3 className="text-lg font-bold mb-2" style={{ color: '#0F172A' }}>
-                Activar Notificaciones
+                {t('Activar Notificaciones')}
               </h3>
               <p className="text-sm mb-6 leading-relaxed" style={{ color: '#64748B' }}>
-                Activa las notificaciones para recibir alertas de emergencia
-                de tus compañeros incluso con la app cerrada.
+                {t('Activa las notificaciones para recibir alertas de emergencia de tus compañeros incluso con la app cerrada.')}
               </p>
               <div className="flex gap-3 w-full">
                 <button
@@ -158,7 +162,7 @@ const AppLayout = () => {
                   }}
                   className="btn btn-outline flex-1"
                 >
-                  Ahora no
+                  {t('Ahora no')}
                 </button>
                 <button
                   onClick={() => {
@@ -167,7 +171,7 @@ const AppLayout = () => {
                   }}
                   className="btn btn-primary flex-1"
                 >
-                  Activar
+                  {t('Activar')}
                 </button>
               </div>
             </div>
@@ -187,21 +191,28 @@ const AppLayout = () => {
 function App() {
   return (
     <ThemeProvider>
+    <LanguageProvider>
     <AuthProvider>
       <DataProvider>
+        <GruposProvider>
         <NotificationProvider>
         <ToastProvider>
           <BrowserRouter>
+            <LangKeyed>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/shared/:id" element={<SharedTerritory />} />
               <Route path="/*" element={<AppLayout />} />
             </Routes>
+            <PWAPrompts />
+            </LangKeyed>
           </BrowserRouter>
         </ToastProvider>
         </NotificationProvider>
+        </GruposProvider>
       </DataProvider>
     </AuthProvider>
+    </LanguageProvider>
     </ThemeProvider>
   );
 }

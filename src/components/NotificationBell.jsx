@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Home, User, AlertTriangle, ShoppingCart, Check, X } from 'lucide-react';
+import { Bell, Home, User, AlertTriangle, Check, X } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { useData } from '../context/DataContext';
 import { supabase } from '../supabaseClient';
+import ExhibidorIcon from './ExhibidorIcon';
+import { t as tx } from '../i18n';
 
 function formatRelative(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -20,8 +22,8 @@ const TIPO_ICON = {
   estado_casa: <Home size={15} />,
   alerta: <AlertTriangle size={15} />,
   sistema: <Bell size={15} />,
-  exhibidor: <ShoppingCart size={15} />,
-  exhibidor_respuesta: <ShoppingCart size={15} />,
+  exhibidor: <ExhibidorIcon size={15} />,
+  exhibidor_respuesta: <ExhibidorIcon size={15} />,
 };
 
 const TIPO_COLOR = {
@@ -131,7 +133,7 @@ export default function NotificationBell() {
           color: 'var(--text-secondary)',
           transition: 'background 0.15s',
         }}
-        aria-label="Notificaciones"
+        aria-label={tx('Notificaciones')}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -187,7 +189,7 @@ export default function NotificationBell() {
             }}
           >
             <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
-              Notificaciones
+              {tx('Notificaciones')}
             </span>
             {unreadCount > 0 && (
               <button
@@ -203,7 +205,7 @@ export default function NotificationBell() {
                   borderRadius: '6px',
                 }}
               >
-                Marcar todas como leídas
+                {tx('Marcar todas como leídas')}
               </button>
             )}
           </div>
@@ -212,7 +214,7 @@ export default function NotificationBell() {
           <div style={{ maxHeight: '384px', overflowY: 'auto' }}>
             {notificaciones.length === 0 ? (
               <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-                Sin notificaciones
+                {tx('Sin notificaciones')}
               </div>
             ) : (
               notificaciones.map((n) => (
@@ -309,7 +311,7 @@ export default function NotificationBell() {
                             opacity: actionLoading === n.id ? 0.6 : 1,
                           }}
                         >
-                          <Check size={12} /> Confirmo asistencia
+                          <Check size={12} /> {tx('Confirmo asistencia')}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleExhibidorAction(n, false); }}
@@ -329,7 +331,7 @@ export default function NotificationBell() {
                             opacity: actionLoading === n.id ? 0.6 : 1,
                           }}
                         >
-                          <X size={12} /> No asistiré
+                          <X size={12} /> {tx('No asistiré')}
                         </button>
                       </div>
                     )}

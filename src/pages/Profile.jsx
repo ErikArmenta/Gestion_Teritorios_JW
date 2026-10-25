@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import { supabase } from '../supabaseClient';
+import { t as tx } from '../i18n';
 
 const ROLE_STYLES = {
   'Super Admin':     { bg: 'rgba(37,99,235,0.1)',   color: '#2563EB' },
@@ -47,7 +48,7 @@ const Profile = () => {
   // ── Save name + photo ──
   const handleSaveInfo = async () => {
     if (!nombre.trim()) {
-      toast.error('El nombre no puede estar vacío');
+      toast.error(tx('El nombre no puede estar vacío'));
       return;
     }
     setSavingInfo(true);
@@ -59,11 +60,11 @@ const Profile = () => {
       }
 
       await updateProfile({ nombre: nombre.trim(), foto_url });
-      toast.success('Perfil actualizado correctamente');
+      toast.success(tx('Perfil actualizado correctamente'));
       setPhotoFile(null);
       setPhotoPreview(null);
     } catch (err) {
-      toast.error('Error al guardar: ' + (err.message || 'Inténtalo de nuevo'));
+      toast.error(tx('Error al guardar: ') + (err.message || 'Inténtalo de nuevo'));
     } finally {
       setSavingInfo(false);
     }
@@ -72,15 +73,15 @@ const Profile = () => {
   // ── Change password ──
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Completa todos los campos de contraseña');
+      toast.error(tx('Completa todos los campos de contraseña'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error('La nueva contraseña y la confirmación no coinciden');
+      toast.error(tx('La nueva contraseña y la confirmación no coinciden'));
       return;
     }
     if (newPassword.length < 4) {
-      toast.error('La nueva contraseña debe tener al menos 4 caracteres');
+      toast.error(tx('La nueva contraseña debe tener al menos 4 caracteres'));
       return;
     }
 
@@ -93,9 +94,9 @@ const Profile = () => {
         .eq('id', user.id)
         .single();
 
-      if (fetchError || !data) throw new Error('No se pudo verificar la contraseña actual');
+      if (fetchError || !data) throw new Error(tx('No se pudo verificar la contraseña actual'));
       if (data.password !== currentPassword) {
-        toast.error('La contraseña actual es incorrecta');
+        toast.error(tx('La contraseña actual es incorrecta'));
         return;
       }
 
@@ -106,12 +107,12 @@ const Profile = () => {
 
       if (updateError) throw updateError;
 
-      toast.success('Contraseña actualizada correctamente');
+      toast.success(tx('Contraseña actualizada correctamente'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      toast.error('Error: ' + (err.message || 'Inténtalo de nuevo'));
+      toast.error(tx('Error: ') + (err.message || 'Inténtalo de nuevo'));
     } finally {
       setSavingPass(false);
     }
@@ -123,10 +124,10 @@ const Profile = () => {
       {/* ── Header ── */}
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="heading-gradient" style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
-          Mi Perfil
+          {tx('Mi Perfil')}
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-          Administra tu información personal y seguridad
+          {tx('Administra tu información personal y seguridad')}
         </p>
       </div>
 
@@ -134,7 +135,7 @@ const Profile = () => {
       <div className="card" style={{ marginBottom: '1.25rem' }}>
         <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <User size={17} style={{ color: 'var(--primary-color)' }} />
-          Información personal
+          {tx('Información personal')}
         </h2>
 
         {/* Photo + fields row */}
@@ -146,7 +147,7 @@ const Profile = () => {
               {(photoPreview || user?.foto_url) ? (
                 <img
                   src={photoPreview || user.foto_url}
-                  alt="Foto de perfil"
+                  alt={tx('Foto de perfil')}
                   style={{
                     width: 96, height: 96, borderRadius: '50%',
                     objectFit: 'cover',
@@ -180,7 +181,7 @@ const Profile = () => {
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
                 onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                title="Cambiar foto"
+                title={tx('Cambiar foto')}
               >
                 <Camera size={13} color="#fff" />
               </button>
@@ -195,7 +196,7 @@ const Profile = () => {
             />
             {photoFile && (
               <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>
-                Nueva foto lista
+                {tx('Nueva foto lista')}
               </span>
             )}
           </div>
@@ -205,12 +206,12 @@ const Profile = () => {
 
             {/* Nombre */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Nombre completo</label>
+              <label className="form-label">{tx('Nombre completo')}</label>
               <input
                 type="text"
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
-                placeholder="Tu nombre completo"
+                placeholder={tx('Tu nombre completo')}
               />
             </div>
 
@@ -218,7 +219,7 @@ const Profile = () => {
             <div>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <AtSign size={12} />
-                Usuario de acceso
+                {tx('Usuario de acceso')}
               </label>
               <div style={{
                 padding: '0.625rem 0.875rem',
@@ -238,7 +239,7 @@ const Profile = () => {
               <div style={{ flex: 1, minWidth: 120 }}>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <Shield size={12} />
-                  Rol
+                  {tx('Rol')}
                 </label>
                 <div style={{ paddingTop: '0.25rem' }}>
                   <span style={{
@@ -258,7 +259,7 @@ const Profile = () => {
               <div style={{ flex: 1, minWidth: 140 }}>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <Building2 size={12} />
-                  Congregación
+                  {tx('Congregación')}
                 </label>
                 <div style={{
                   padding: '0.625rem 0.875rem',
@@ -293,44 +294,44 @@ const Profile = () => {
       <div className="card">
         <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Lock size={17} style={{ color: 'var(--primary-color)' }} />
-          Cambiar Contraseña
+          {tx('Cambiar Contraseña')}
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Contraseña actual</label>
+            <label className="form-label">{tx('Contraseña actual')}</label>
             <input
               type="password"
               value={currentPassword}
               onChange={e => setCurrentPassword(e.target.value)}
-              placeholder="Ingresa tu contraseña actual"
+              placeholder={tx('Ingresa tu contraseña actual')}
               autoComplete="current-password"
             />
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Nueva contraseña</label>
+            <label className="form-label">{tx('Nueva contraseña')}</label>
             <input
               type="password"
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              placeholder="Mínimo 4 caracteres"
+              placeholder={tx('Mínimo 4 caracteres')}
               autoComplete="new-password"
             />
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Confirmar nueva contraseña</label>
+            <label className="form-label">{tx('Confirmar nueva contraseña')}</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Repite la nueva contraseña"
+              placeholder={tx('Repite la nueva contraseña')}
               autoComplete="new-password"
             />
             {confirmPassword && newPassword !== confirmPassword && (
               <p style={{ fontSize: '0.75rem', color: '#DC2626', marginTop: '0.375rem' }}>
-                Las contraseñas no coinciden
+                {tx('Las contraseñas no coinciden')}
               </p>
             )}
           </div>

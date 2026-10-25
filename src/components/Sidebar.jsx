@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil, Sun, Moon, Database, ShoppingCart } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil, Sun, Moon, Database, UsersRound, Languages } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import ExhibidorIcon from './ExhibidorIcon';
+import { t, useLanguage } from '../i18n';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { lang, toggleLang } = useLanguage();
   const navigate = useNavigate();
   const [expandedPhoto, setExpandedPhoto] = useState(null);
 
@@ -36,8 +39,9 @@ const Sidebar = () => {
     { path: '/register', name: 'Registrar Casa', icon: <Home size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
     { path: '/stats', name: 'Estadísticas', icon: <BarChart2 size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
     { path: '/list', name: 'Lista de Casas', icon: <List size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/exhibidores', name: 'Exhibidores', icon: <ShoppingCart size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+    { path: '/exhibidores', name: 'Exhibidores', icon: <ExhibidorIcon size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
     { path: '/users', name: 'Usuarios', icon: <Users size={18} />, roles: ['Super Admin', 'Admin Principal'] },
+    { path: '/grupos', name: 'Grupos', icon: <UsersRound size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
     { path: '/alerts', name: 'Alertas', icon: <Bell size={18} />, roles: ['Super Admin', 'Admin Principal'] },
     { path: '/congregaciones', name: 'Congregaciones', icon: <Building2 size={18} />, roles: ['Super Admin'] },
     { path: '/backup', name: 'Backup', icon: <Database size={18} />, roles: ['Super Admin'] },
@@ -56,7 +60,7 @@ const Sidebar = () => {
           <img src="/JW.jpg" alt="JW Logo" className="w-full h-full object-cover" />
         </div>
         <h2 className="text-lg font-bold text-center leading-snug tracking-tight text-primary">
-          Gestión Territorial
+          {t('Gestión Territorial')}
         </h2>
         <span className="text-xs font-medium mt-0.5 text-muted">JW</span>
       </div>
@@ -77,7 +81,7 @@ const Sidebar = () => {
             }
           >
             {item.icon}
-            {item.name}
+            {t(item.name)}
           </NavLink>
         ))}
       </nav>
@@ -109,7 +113,7 @@ const Sidebar = () => {
               <span className="text-sm font-semibold truncate text-primary">{user.nombre}</span>
               <Pencil size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             </div>
-            <div className="text-xs truncate text-muted">{user.rol}</div>
+            <div className="text-xs truncate text-muted">{t(user.rol)}</div>
             {user.congregacion_nombre && (
               <div className="text-xs truncate mt-0.5 font-medium" style={{ color: '#3B82F6' }}>
                 {user.congregacion_nombre}
@@ -127,7 +131,19 @@ const Sidebar = () => {
           }}
         >
           {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-          {theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
+          {theme === 'light' ? t('Modo oscuro') : t('Modo claro')}
+        </button>
+        <button
+          onClick={toggleLang}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-full mb-2 text-sm font-medium transition-colors duration-200"
+          style={{
+            background: 'var(--bg-hover)',
+            color: 'var(--text-secondary)',
+            border: 'none',
+          }}
+        >
+          <Languages size={16} />
+          {lang === 'es' ? 'English' : 'Español'}
         </button>
         <button
           onClick={handleLogout}
@@ -140,7 +156,7 @@ const Sidebar = () => {
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,38,38,0.12)'}
           onMouseLeave={e => e.currentTarget.style.background = 'rgba(220,38,38,0.07)'}
         >
-          <LogOut size={15} /> Cerrar Sesión
+          <LogOut size={15} /> {t('Cerrar Sesión')}
         </button>
       </div>
     </div>

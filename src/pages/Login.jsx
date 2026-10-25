@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Languages } from 'lucide-react';
+import { t, useLanguage } from '../i18n';
 
 const Login = () => {
+  const { lang, toggleLang } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -31,6 +34,15 @@ const Login = () => {
         background: 'radial-gradient(ellipse at 60% 0%, rgba(37,99,235,0.18) 0%, transparent 60%), linear-gradient(160deg, #0A0F1E 0%, #0F172A 50%, #0C1326 100%)',
       }}
     >
+      {/* Idioma */}
+      <button
+        type="button"
+        onClick={toggleLang}
+        className="fixed top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+        style={{ marginTop: 'env(safe-area-inset-top)', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+      >
+        <Languages size={14} /> {lang === 'es' ? 'English' : 'Español'}
+      </button>
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo FUERA del card, encima */}
         <div className="flex flex-col items-center mb-[-3rem] relative z-10">
@@ -63,10 +75,10 @@ const Login = () => {
                 textShadow: '0 0 15px rgba(255,255,255,0.6), 0 0 40px rgba(255,255,255,0.3), 0 0 80px rgba(255,255,255,0.15)',
               }}
             >
-              Gestión Territorial
+              {t('Gestión Territorial')}
             </h1>
             <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.38)' }}>
-              Inicia sesión para continuar
+              {t('Inicia sesión para continuar')}
             </p>
           </div>
 
@@ -91,14 +103,14 @@ const Login = () => {
                 className="block text-xs font-semibold mb-1.5 uppercase tracking-wider"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
               >
-                Usuario
+                {t('Usuario')}
               </label>
               <input
                 type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ej. hermano_juan"
+                placeholder={t('Ej. hermano_juan')}
                 className="login-input"
                 autoComplete="username"
               />
@@ -109,7 +121,7 @@ const Login = () => {
                 className="block text-xs font-semibold mb-1.5 uppercase tracking-wider"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
               >
-                Contraseña
+                {t('Contraseña')}
               </label>
               <input
                 type="password"
@@ -137,9 +149,9 @@ const Login = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Entrando...
+                  {t('Entrando...')}
                 </span>
-              ) : 'Iniciar Sesión'}
+              ) : t('Iniciar Sesión')}
             </button>
           </form>
         </div>
@@ -152,7 +164,7 @@ const Login = () => {
             textShadow: '0 0 10px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.3), 0 0 60px rgba(255,255,255,0.15)',
           }}
         >
-          Desarrollado por{' '}
+          {t('Desarrollado por')}{' '}
           <span
             style={{
               color: 'rgba(255,255,255,0.9)',

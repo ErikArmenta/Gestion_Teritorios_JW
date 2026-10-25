@@ -1,6 +1,7 @@
 import React from 'react';
 import { useData } from '../context/DataContext';
 import { WifiOff, CloudOff, RefreshCw } from 'lucide-react';
+import { t as tx } from '../i18n';
 
 const OfflineIndicator = () => {
   const { isOnline, pendingCount, syncing } = useData();
@@ -19,12 +20,13 @@ const OfflineIndicator = () => {
             : 'linear-gradient(90deg, #D97706, #B45309)',
         color: 'white',
         boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+        paddingTop: 'calc(0.5rem + env(safe-area-inset-top))',
       }}
     >
       {!isOnline ? (
         <>
           <WifiOff size={14} />
-          <span>Sin conexión — Los datos se guardarán localmente</span>
+          <span>{tx('Sin conexión — Los datos se guardarán localmente')}</span>
           {pendingCount > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: 'rgba(255,255,255,0.25)' }}>
               {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}

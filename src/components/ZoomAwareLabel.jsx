@@ -1,5 +1,11 @@
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
+import { PROGRESO } from '../utils/territoryProgress';
+import { t } from '../i18n';
+
+// Etiqueta de territorio / manzana sobre el mapa.
+// Estilos en index.css (.terr-label, .mz-label). El centrado es con CSS
+// (translate -50%), así no hay que estimar el ancho del texto.
 
 const calcCentroid = (coordenadas) => {
   if (!coordenadas?.length) return null;
@@ -8,55 +14,52 @@ const calcCentroid = (coordenadas) => {
   return [lat, lng];
 };
 
-const getZoomStyle = (zoom) => {
-  if (zoom >= 16) return { fontSize: '18px', opacity: 1, showName: true };
-  if (zoom >= 14) return { fontSize: '15px', opacity: 1, showName: false };
-  if (zoom >= 12) return { fontSize: '12px', opacity: 0.7, showName: false };
-  return { fontSize: '10px', opacity: 0.5, showName: false };
+const escapeHtml = (s) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+// Tamaño según zoom: lejos solo el número; cerca, número + nombre
+const getSize = (zoom) => {
+  if (zoom >= 16) return 'lg';
+  if (zoom >= 14) return 'md';
+  return 'sm';
 };
 
-const ZoomAwareLabel = ({ coordenadas, numero, nombre, color = '#3b82f6', isManzana = false, zoom }) => {
+const ZoomAwareLabel = ({ coordenadas, numero, nombre, color = '#3b82f6', isManzana = false, zoom, minZoom = 0, progreso }) => {
   const centroid = calcCentroid(coordenadas);
   if (!centroid) return null;
 
-  const { fontSize, opacity, showName } = getZoomStyle(zoom);
-  const label = numero || nombre || '';
-  const displayName = nombre && nombre !== numero ? nombre : null;
+  // Por debajo de minZoom la etiqueta la "absorbe" el cluster de casas
+  if (zoom < minZoom) return null;
+  // Manzanas: solo con zoom cercano, si no se amontonan
+  if (isManzana && zoom < 17) return null;
 
-  const baseFontSize = parseFloat(fontSize);
-  const actualFontSize = isManzana ? `${Math.round(baseFontSize * 0.7)}px` : fontSize;
+  let html;
+  if (isManzana) {
+    html = `<div class="mz-label" style="--c:${escapeHtml(color)}">${escapeHtml(nombre || numero)}</div>`;
+  } else {
+    // "numero" a veces es un número corto ("10") y a veces el nombre completo
+    const num = String(numero ?? '').trim();
+    const name = String(nombre ?? '').trim();
+    const shortNum = num && num.length <= 4 ? num : '';
+    const title = name && name !== num ? name : (shortNum ? '' : num || name);
+    const size = getSize(zoom);
+    const showTitle = size !== 'sm' && title;
 
-  const text = showName && displayName ? `${label} ${displayName}` : label;
-
-  const bgOpacity = isManzana ? 0.75 : 0.85;
-  const borderStyle = isManzana
-    ? 'border: none;'
-    : 'border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
-
-  // Estimar ancho del texto para centrar el iconAnchor
-  const estimatedWidth = Math.max(text.length * (baseFontSize * 0.5), 30);
-  const estimatedHeight = baseFontSize + 8;
+    html = `<div class="terr-label terr-label--${size}" style="--c:${escapeHtml(color)}">`
+      + (shortNum ? `<span class="terr-label__num">${escapeHtml(shortNum)}</span>` : '')
+      + (showTitle || !shortNum ? `<span class="terr-label__name">${escapeHtml(title || name || num)}</span>` : '')
+      + (progreso
+        ? `<span class="terr-label__pct" style="--p:${PROGRESO[progreso.estado]?.color || '#94A3B8'}" title="${escapeHtml(t(PROGRESO[progreso.estado]?.label || ''))}">${progreso.pct}%</span>`
+        : '')
+      + `</div>`;
+  }
 
   const icon = L.divIcon({
-    className: '',
-    html: `<div style="
-      font-weight: 700;
-      color: #1E293B;
-      text-shadow: 0 0 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.6);
-      background: rgba(255,255,255,${bgOpacity});
-      border-radius: 6px;
-      padding: 3px 8px;
-      font-size: ${actualFontSize};
-      opacity: ${opacity};
-      pointer-events: none;
-      white-space: nowrap;
-      line-height: 1.3;
-      user-select: none;
-      letter-spacing: 0.3px;
-      ${borderStyle}
-    ">${text}</div>`,
+    className: 'map-label-anchor',
+    html,
     iconSize: [0, 0],
-    iconAnchor: [Math.round(estimatedWidth / 2), Math.round(estimatedHeight / 2)],
+    iconAnchor: [0, 0],
   });
 
   return (

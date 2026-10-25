@@ -1,3 +1,5 @@
+import { t as tx } from '../i18n';
+
 export default function Pagination({ currentPage, totalItems, itemsPerPage, onPageChange }) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -78,7 +80,7 @@ export default function Pagination({ currentPage, totalItems, itemsPerPage, onPa
           disabled={currentPage === 1}
           style={currentPage === 1 ? btnDisabled : btnBase}
         >
-          ← Anterior
+          {tx('← Anterior')}
         </button>
 
         {getPageNumbers().map((page, idx) =>
@@ -105,7 +107,7 @@ export default function Pagination({ currentPage, totalItems, itemsPerPage, onPa
           disabled={currentPage === totalPages}
           style={currentPage === totalPages ? btnDisabled : btnBase}
         >
-          Siguiente →
+          {tx('Siguiente →')}
         </button>
       </div>
     </div>

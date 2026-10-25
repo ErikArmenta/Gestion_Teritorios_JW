@@ -6,7 +6,7 @@
  * 3. Verificar en consola del navegador los logs [PanicHistory]
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polygon } from 'react-leaflet';
+import { MapContainer, Marker, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +21,10 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { Bell, MapPin, Clock, User, Filter, X, ExternalLink, FileText, Table, Shield, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import DarkTileLayers from '../components/DarkTileLayers';
+import LocateButton from '../components/LocateButton';
+import { chartToPNG } from '../utils/chartImage';
+import { t as tx } from '../i18n';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartTooltip, Legend, Title, PointElement, LineElement, Filler);
 
@@ -96,7 +100,7 @@ const TypeBadge = ({ tipo }) => {
   const cfg = TYPE_CONFIG[tipo] || { label: tipo, bg: 'bg-gray-600', text: 'text-white' };
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${cfg.bg} ${cfg.text}`}>
-      {cfg.label}
+      {tx(cfg.label)}
     </span>
   );
 };
@@ -106,14 +110,14 @@ const StatusBadge = ({ activa }) => {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white animate-pulse">
         <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
-        Activa
+        {tx('Activa')}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-600 text-slate-200">
       <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />
-      Cerrada
+      {tx('Cerrada')}
     </span>
   );
 };
@@ -207,7 +211,7 @@ const AlertCard = ({ alerta, territorios }) => {
           {duracion && (
             <span className="flex items-center gap-1.5 text-secondary">
               <Clock size={12} style={{ color: '#2563EB' }} />
-              Duración: <strong style={{ color: '#D97706' }}>{duracion}</strong>
+              {tx('Duración:')} <strong style={{ color: '#D97706' }}>{duracion}</strong>
             </span>
           )}
           {hasCoords && (
@@ -246,14 +250,7 @@ const AlertCard = ({ alerta, territorios }) => {
               dragging={true}
               scrollWheelZoom={true}
             >
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-                attribution='&copy; OpenStreetMap &copy; CARTO'
-              />
-              <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-                className="neon-labels"
-              />
+              <DarkTileLayers />
               {territorio?.coordenadas && (
                 <Polygon
                   positions={territorio.coordenadas}
@@ -267,6 +264,7 @@ const AlertCard = ({ alerta, territorios }) => {
                 />
               )}
               <Marker position={[alerta.latitud, alerta.longitud]} icon={redDotIcon} />
+              <LocateButton />
             </MapContainer>
           </div>
         )}
@@ -467,33 +465,33 @@ const PanicHistory = () => {
   // ── KPI Cards ──
   const kpiCards = [
     {
-      label: 'Total Alertas',
+      label: tx('Total Alertas'),
       value: totalAlertas,
-      sub: `${alertasActivas} activa${alertasActivas !== 1 ? 's' : ''} ahora`,
+      sub: tx(alertasActivas === 1 ? '{n} activa ahora' : '{n} activas ahora', { n: alertasActivas }),
       icon: <Bell size={22} style={{ color: '#EF4444' }} />,
       gradient: 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)',
       accent: '#EF4444',
     },
     {
-      label: 'Cerradas',
+      label: tx('Cerradas'),
       value: alertasCerradas,
-      sub: 'Alertas resueltas',
+      sub: tx('Alertas resueltas'),
       icon: <Shield size={22} style={{ color: '#059669' }} />,
       gradient: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
       accent: '#059669',
     },
     {
-      label: 'Tiempo Prom.',
+      label: tx('Tiempo Prom.'),
       value: `${tiempoPromedio}`,
-      sub: 'Minutos de respuesta',
+      sub: tx('Minutos de respuesta'),
       icon: <Activity size={22} style={{ color: '#2563EB' }} />,
       gradient: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
       accent: '#2563EB',
     },
     {
-      label: 'Respuestas',
+      label: tx('Respuestas'),
       value: totalResponses,
-      sub: '"Voy en camino" totales',
+      sub: tx('"Voy en camino" totales'),
       icon: <TrendingUp size={22} style={{ color: '#D97706' }} />,
       gradient: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
       accent: '#D97706',
@@ -510,7 +508,7 @@ const PanicHistory = () => {
   };
 
   const donutAlertData = {
-    labels: tipoLabels.map(t => TYPE_CONFIG[t]?.label || t),
+    labels: tipoLabels.map(t => tx(TYPE_CONFIG[t]?.label || t)),
     datasets: [{
       data: tipoValues,
       backgroundColor: tipoLabels.map(t => TIPO_COLORS[t]?.bg || 'rgba(156,163,175,0.7)'),
@@ -523,7 +521,7 @@ const PanicHistory = () => {
   const barAlertData = {
     labels: Object.keys(porMes),
     datasets: [{
-      label: 'Alertas',
+      label: tx('Alertas'),
       data: Object.values(porMes),
       backgroundColor: 'rgba(239,68,68,0.8)',
       borderRadius: 7,
@@ -578,21 +576,21 @@ const PanicHistory = () => {
     labels: rankingTerritorios.map(t => t.nombre),
     datasets: [
       {
-        label: 'Seguridad',
+        label: tx('Seguridad'),
         data: rankingTerritorios.map(t => t.tipos.seguridad || 0),
         backgroundColor: 'rgba(239,68,68,0.8)',
         borderRadius: 5,
         borderSkipped: false,
       },
       {
-        label: 'Médica',
+        label: tx('Médica'),
         data: rankingTerritorios.map(t => t.tipos.medica || 0),
         backgroundColor: 'rgba(59,130,246,0.8)',
         borderRadius: 5,
         borderSkipped: false,
       },
       {
-        label: 'Accidente',
+        label: tx('Accidente'),
         data: rankingTerritorios.map(t => t.tipos.accidente || 0),
         backgroundColor: 'rgba(249,115,22,0.8)',
         borderRadius: 5,
@@ -641,7 +639,7 @@ const PanicHistory = () => {
   const lineData = {
     labels: Object.keys(porMes),
     datasets: [{
-      label: 'Alertas',
+      label: tx('Alertas'),
       data: Object.values(porMes),
       borderColor: '#EF4444',
       backgroundColor: 'rgba(239,68,68,0.1)',
@@ -819,7 +817,7 @@ const PanicHistory = () => {
       ];
       doc.text(tipoLabels.join('   |   '), 14, y);
       y += 8;
-      const donutImg = chartDonutRef.current.toBase64Image();
+      const donutImg = chartToPNG(chartDonutRef, { width: 1200, height: 900 });
       // Centrar el donut con buen tamaño
       const donutW = Math.min(pageW - 60, 120);
       const donutX = (pageW - donutW) / 2;
@@ -842,7 +840,7 @@ const PanicHistory = () => {
       const mesLabels = meses.map(([mes, count]) => `${mes}: ${count}`).join('   |   ');
       doc.text(mesLabels, 14, y);
       y += 8;
-      const barImg = chartBarRef.current.toBase64Image();
+      const barImg = chartToPNG(chartBarRef, { width: 1600, height: 720 });
       const barW = pageW - 30;
       doc.addImage(barImg, 'PNG', 15, y, barW, barW * 0.45);
     }
@@ -862,7 +860,7 @@ const PanicHistory = () => {
       const terrLabels = rankingTerritorios.slice(0, 5).map(t => `${t.nombre}: ${t.total}`).join('   |   ');
       doc.text(terrLabels, 14, y);
       y += 8;
-      const terrImg = chartTerrRef.current.toBase64Image();
+      const terrImg = chartToPNG(chartTerrRef, { width: 1600, height: 800 });
       const terrW = pageW - 30;
       doc.addImage(terrImg, 'PNG', 15, y, terrW, terrW * 0.5);
     }
@@ -881,7 +879,7 @@ const PanicHistory = () => {
       doc.setTextColor(100, 116, 139);
       doc.text(`Período: últimos 6 meses  |  Total: ${totalAlertas} alertas`, 14, y);
       y += 8;
-      const lineImg = chartLineRef.current.toBase64Image();
+      const lineImg = chartToPNG(chartLineRef, { width: 1600, height: 720 });
       const lineW = pageW - 30;
       doc.addImage(lineImg, 'PNG', 15, y, lineW, lineW * 0.45);
     }
@@ -956,8 +954,8 @@ const PanicHistory = () => {
             <Bell size={20} style={{ color: '#F87171' }} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Historial de Alertas</h1>
-            <p className="text-sm mt-0.5 text-secondary">Analytics y registro completo de alertas</p>
+            <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{tx('Historial de Alertas')}</h1>
+            <p className="text-sm mt-0.5 text-secondary">{tx('Analytics y registro completo de alertas')}</p>
           </div>
         </div>
         <div className="flex gap-2.5">
@@ -986,7 +984,7 @@ const PanicHistory = () => {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: `${k.accent}20` }}>
                 {k.icon}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{k.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{tx(k.label)}</p>
               <p className="num-display text-3xl sm:text-4xl font-black leading-none my-1.5 tabular-nums text-primary">{k.value}</p>
               <p className="text-xs font-semibold" style={{ color: k.accent }}>{k.sub}</p>
             </div>
@@ -999,23 +997,23 @@ const PanicHistory = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#EF4444' }} />
-            <h3 className="text-sm font-bold text-primary">Por Tipo de Emergencia</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Por Tipo de Emergencia')}</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
               ? <Doughnut ref={chartDonutRef} data={donutAlertData} options={donutOptions} />
-              : <p className="text-center pt-24 text-sm text-secondary">Sin alertas registradas</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">{tx('Sin alertas registradas')}</p>}
           </div>
         </div>
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F97316' }} />
-            <h3 className="text-sm font-bold text-primary">Alertas por Mes</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Alertas por Mes')}</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
               ? <Bar ref={chartBarRef} data={barAlertData} options={barOptions} />
-              : <p className="text-center pt-24 text-sm text-secondary">Sin datos</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">{tx('Sin datos')}</p>}
           </div>
         </div>
       </div>
@@ -1025,23 +1023,23 @@ const PanicHistory = () => {
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#DC2626' }} />
-            <h3 className="text-sm font-bold text-primary">Alertas por Territorio</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Alertas por Territorio')}</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {rankingTerritorios.length > 0
               ? <Bar ref={chartTerrRef} data={barTerrData} options={barTerrOptions} />
-              : <p className="text-center pt-24 text-sm text-secondary">Sin datos</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">{tx('Sin datos')}</p>}
           </div>
         </div>
         <div className="card">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#F59E0B' }} />
-            <h3 className="text-sm font-bold text-primary">Tendencia de Alertas</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Tendencia de Alertas')}</h3>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
             {totalAlertas > 0
               ? <Line ref={chartLineRef} data={lineData} options={lineOptions} />
-              : <p className="text-center pt-24 text-sm text-secondary">Sin datos</p>}
+              : <p className="text-center pt-24 text-sm text-secondary">{tx('Sin datos')}</p>}
           </div>
         </div>
       </div>
@@ -1051,7 +1049,7 @@ const PanicHistory = () => {
         <div className="card mb-5">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-1 h-5 rounded-full shrink-0" style={{ background: '#DC2626' }} />
-            <h3 className="text-sm font-bold text-primary">Ranking de Reportes por Usuario</h3>
+            <h3 className="text-sm font-bold text-primary">{tx('Ranking de Reportes por Usuario')}</h3>
             <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
               {rankingUsuarios.length} usuario{rankingUsuarios.length !== 1 ? 's' : ''}
             </span>
@@ -1083,7 +1081,7 @@ const PanicHistory = () => {
                         background: tipo === 'seguridad' ? 'rgba(239,68,68,0.1)' : tipo === 'medica' ? 'rgba(59,130,246,0.1)' : 'rgba(249,115,22,0.1)',
                         color: tipo === 'seguridad' ? '#EF4444' : tipo === 'medica' ? '#3B82F6' : '#F97316',
                       }}>
-                        {TYPE_CONFIG[tipo]?.label || tipo}: {count}
+                        {tx(TYPE_CONFIG[tipo]?.label || tipo)}: {count}
                       </span>
                     ))}
                   </div>
@@ -1098,19 +1096,19 @@ const PanicHistory = () => {
       <div className="card mb-5 p-4">
         <div className="flex items-center gap-2 mb-3">
           <Filter size={14} style={{ color: '#3B82F6' }} />
-          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>Filtros</span>
+          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#3B82F6' }}>{tx('Filtros')}</span>
           {hasFilters && (
             <button
               onClick={clearFilters}
               className="ml-auto flex items-center gap-1 text-xs transition-colors text-secondary"
             >
-              <X size={12} /> Limpiar
+              <X size={12} /> {tx('Limpiar')}
             </button>
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>Fecha inicio</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>{tx('Fecha inicio')}</label>
             <input
               type="date"
               value={filterFechaInicio}
@@ -1118,7 +1116,7 @@ const PanicHistory = () => {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>Fecha fin</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>{tx('Fecha fin')}</label>
             <input
               type="date"
               value={filterFechaFin}
@@ -1126,38 +1124,38 @@ const PanicHistory = () => {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: '#8B5CF6' }}>Usuario</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#8B5CF6' }}>{tx('Usuario')}</label>
             <select
               value={filterUsuario}
               onChange={(e) => setFilterUsuario(e.target.value)}
             >
-              <option value="">Todos</option>
+              <option value="">{tx('Todos')}</option>
               {usuarios.map((u) => (
                 <option key={u.id} value={String(u.id)}>{u.nombre}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: '#F59E0B' }}>Tipo</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#F59E0B' }}>{tx('Tipo')}</label>
             <select
               value={filterTipo}
               onChange={(e) => setFilterTipo(e.target.value)}
             >
-              <option value="">Todos</option>
-              <option value="seguridad">Seguridad</option>
-              <option value="medica">Médica</option>
-              <option value="accidente">Accidente</option>
+              <option value="">{tx('Todos')}</option>
+              <option value="seguridad">{tx('Seguridad')}</option>
+              <option value="medica">{tx('Médica')}</option>
+              <option value="accidente">{tx('Accidente')}</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: '#10B981' }}>Estado</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: '#10B981' }}>{tx('Estado')}</label>
             <select
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value)}
             >
-              <option value="todos">Todos</option>
-              <option value="activa">Activas</option>
-              <option value="cerrada">Cerradas</option>
+              <option value="todos">{tx('Todos')}</option>
+              <option value="activa">{tx('Activas')}</option>
+              <option value="cerrada">{tx('Cerradas')}</option>
             </select>
           </div>
         </div>
@@ -1169,18 +1167,16 @@ const PanicHistory = () => {
           <div className="flex items-start gap-3">
             <AlertTriangle size={18} style={{ color: '#EF4444', marginTop: 2 }} />
             <div>
-              <p className="text-sm font-bold" style={{ color: '#DC2626' }}>Error al cargar alertas</p>
+              <p className="text-sm font-bold" style={{ color: '#DC2626' }}>{tx('Error al cargar alertas')}</p>
               <p className="text-xs mt-1" style={{ color: '#FCA5A5' }}>{fetchError}</p>
               <p className="text-xs mt-2" style={{ color: '#94A3B8' }}>
-                Si el error es de permisos (RLS), ve al dashboard de Supabase → tabla <code style={{ color: '#60A5FA' }}>alertas_panico</code> → Authentication → Policies,
-                y agrega una policy "Enable read access for all users" con <code style={{ color: '#60A5FA' }}>USING (true)</code>.
-                O desactiva RLS en esta tabla si tu autenticación es custom.
+                {tx('Si el error es de permisos (RLS): en Supabase → tabla alertas_panico → Authentication → Policies, agrega una policy "Enable read access for all users" con USING (true), o desactiva RLS en esta tabla.')}
               </p>
               <button
                 onClick={fetchAlertas}
                 className="mt-3 btn btn-primary text-xs px-4 py-2"
               >
-                Reintentar
+                {tx('Reintentar')}
               </button>
             </div>
           </div>
@@ -1190,7 +1186,7 @@ const PanicHistory = () => {
       {/* Results count */}
       <p className="text-lg sm:text-xl font-bold mb-4 px-1 text-primary">
         {loading ? (
-          <span style={{ color: '#60A5FA' }}>Cargando...</span>
+          <span style={{ color: '#60A5FA' }}>{tx('Cargando...')}</span>
         ) : (
           <>
             <span style={{ color: '#3B82F6' }}>{filtered.length}</span>{' '}

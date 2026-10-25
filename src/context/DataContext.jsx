@@ -33,6 +33,36 @@ export const DataProvider = ({ children }) => {
 
   useEffect(() => { territoriosRef.current = territorios; }, [territorios]);
 
+  // ── Exhibidores: cada congregación ve solo los suyos (Super Admin sin congregación ve todos) ──
+  const TURNOS_SELECT = '*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)';
+  const byCongregacion = (query) =>
+    congregacionIdRef.current ? query.eq('congregacion_id', congregacionIdRef.current) : query;
+  const queryExhibidores = () =>
+    byCongregacion(supabase.from('exhibidores').select('*')).order('nombre');
+  const queryExhibidorTurnos = () =>
+    byCongregacion(supabase.from('exhibidor_turnos').select(TURNOS_SELECT)).order('fecha', { ascending: true });
+
+  // ── Resto de datos para uso sin conexión (manzanas, usuarios, asignaciones, exhibidores) ──
+  const claveOffline = (nombre) => `${nombre}:${congregacionIdRef.current || 'todas'}`;
+  const EXTRAS = {
+    manzanas: setManzanas,
+    usuarios: setUsuarios,
+    asignaciones: setAsignaciones,
+    exhibidores: setExhibidores,
+    exhibidorTurnos: setExhibidorTurnos,
+  };
+  const guardarExtrasOffline = (datos) => {
+    Object.entries(datos).forEach(([nombre, valor]) => {
+      offlineStore.guardarDatos(claveOffline(nombre), valor).catch(() => {});
+    });
+  };
+  const restaurarExtrasOffline = async () => {
+    await Promise.all(Object.entries(EXTRAS).map(async ([nombre, setter]) => {
+      const valor = await offlineStore.leerDatos(claveOffline(nombre)).catch(() => null);
+      if (valor) setter(valor);
+    }));
+  };
+
   // ── Fetch con fallback a cache ──
   const fetchData = async () => {
     if (!user) { setLoading(false); return; }
@@ -95,17 +125,11 @@ export const DataProvider = ({ children }) => {
         const usuariosData = usuariosRes.error ? [] : (usuariosRes.data || []);
 
         // Exhibidores
-        const { data: exhibidoresData } = await supabase
-          .from('exhibidores')
-          .select('*')
-          .order('nombre');
+        const { data: exhibidoresData } = await queryExhibidores();
         if (exhibidoresData) setExhibidores(exhibidoresData);
 
         // Turnos de exhibidores
-        const { data: turnosData } = await supabase
-          .from('exhibidor_turnos')
-          .select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)')
-          .order('fecha', { ascending: true });
+        const { data: turnosData } = await queryExhibidorTurnos();
         if (turnosData) setExhibidorTurnos(turnosData);
 
         setTerritorios(terrData);
@@ -114,8 +138,16 @@ export const DataProvider = ({ children }) => {
         setUsuarios(usuariosData);
         setManzanas(manzanasData);
         // Cache para uso offline
-        await offlineStore.cacheTerritorios(terrData).catch(() => {});
-        await offlineStore.cacheCasas(casasData).catch(() => {});
+        // Sin await: guardar la copia local nunca debe retrasar la pantalla
+        offlineStore.cacheTerritorios(terrData).catch(() => {});
+        offlineStore.cacheCasas(casasData).catch(() => {});
+        guardarExtrasOffline({
+          manzanas: manzanasData,
+          usuarios: usuariosData,
+          ...(asignacionesFetchError ? {} : { asignaciones: asignacionesData }),
+          ...(exhibidoresData ? { exhibidores: exhibidoresData } : {}),
+          ...(turnosData ? { exhibidorTurnos: turnosData } : {}),
+        });
       } else {
         // Sin conexión — servir desde cache
         const [cachedTerr, cachedCasas] = await Promise.all([
@@ -124,6 +156,7 @@ export const DataProvider = ({ children }) => {
         ]);
         setTerritorios(cachedTerr);
         setCasas(cachedCasas);
+        await restaurarExtrasOffline();
       }
     } catch (err) {
       console.error('fetchData error:', err);
@@ -137,6 +170,7 @@ export const DataProvider = ({ children }) => {
           setTerritorios(cachedTerr);
           setCasas(cachedCasas);
         }
+        await restaurarExtrasOffline();
       } catch {}
     } finally {
       setLoading(false);
@@ -210,6 +244,13 @@ export const DataProvider = ({ children }) => {
     fetchData();
     offlineStore.getPendingQueue().then(q => setPendingCount(q.length)).catch(() => {});
   }, [congregacionId, user?.id]);
+
+  // ── Al volver la conexión, traer lo más reciente (al perderla no se recarga) ──
+  const prevOnlineRef = useRef(isOnline);
+  useEffect(() => {
+    if (isOnline && !prevOnlineRef.current) fetchData();
+    prevOnlineRef.current = isOnline;
+  }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Realtime (solo cuando online) ──
   useEffect(() => {
@@ -299,7 +340,7 @@ export const DataProvider = ({ children }) => {
     const exhibidoresSub = supabase
       .channel('public:exhibidores')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'exhibidores' }, () => {
-        supabase.from('exhibidores').select('*').order('nombre').then(({ data }) => {
+        queryExhibidores().then(({ data }) => {
           if (data) setExhibidores(data);
         });
       })
@@ -308,12 +349,9 @@ export const DataProvider = ({ children }) => {
     const exhibidorTurnosSub = supabase
       .channel('public:exhibidor_turnos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'exhibidor_turnos' }, () => {
-        supabase.from('exhibidor_turnos')
-          .select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)')
-          .order('fecha', { ascending: true })
-          .then(({ data }) => {
-            if (data) setExhibidorTurnos(data);
-          });
+        queryExhibidorTurnos().then(({ data }) => {
+          if (data) setExhibidorTurnos(data);
+        });
       })
       .subscribe();
 
@@ -519,14 +557,14 @@ export const DataProvider = ({ children }) => {
     const payload = { ...turnoData };
     if (user?.congregacion_id) payload.congregacion_id = user.congregacion_id;
     payload.asignado_por = user?.id;
-    const { data, error } = await supabase.from('exhibidor_turnos').insert([payload]).select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)').single();
+    const { data, error } = await supabase.from('exhibidor_turnos').insert([payload]).select(TURNOS_SELECT).single();
     if (error) throw error;
     setExhibidorTurnos(prev => [...prev, data]);
     return data;
   };
 
   const updateExhibidorTurno = async (id, updates) => {
-    const { data, error } = await supabase.from('exhibidor_turnos').update(updates).eq('id', id).select('*, usuario:app_usuarios!usuario_id(id, nombre, foto_url), asignador:app_usuarios!asignado_por(id, nombre), exhibidores(nombre)').single();
+    const { data, error } = await supabase.from('exhibidor_turnos').update(updates).eq('id', id).select(TURNOS_SELECT).single();
     if (error) throw error;
     setExhibidorTurnos(prev => prev.map(t => t.id === id ? data : t));
     return data;

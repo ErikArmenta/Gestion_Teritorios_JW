@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2, Sun, Moon, Database, ShoppingCart } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2, Sun, Moon, Database, UsersRound, Languages } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import ExhibidorIcon from './ExhibidorIcon';
+import { t, useLanguage } from '../i18n';
 
 const menuItems = [
   { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/register', name: 'Registrar', icon: <Home size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/stats', name: 'Stats', icon: <BarChart2 size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/list', name: 'Lista', icon: <List size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-  { path: '/exhibidores', name: 'Exhibidores', icon: <ShoppingCart size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+  { path: '/exhibidores', name: 'Exhibidores', icon: <ExhibidorIcon size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/users', name: 'Usuarios', icon: <Users size={20} />, roles: ['Super Admin', 'Admin Principal'] },
+  { path: '/grupos', name: 'Grupos', icon: <UsersRound size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/alerts', name: 'Alertas', icon: <Bell size={20} />, roles: ['Super Admin', 'Admin Principal'] },
   { path: '/congregaciones', name: 'Congregaciones', icon: <Building2 size={20} />, roles: ['Super Admin'] },
   { path: '/backup', name: 'Backup', icon: <Database size={20} />, roles: ['Super Admin'] },
@@ -48,7 +51,7 @@ const NavItem = ({ item }) => (
           />
         )}
         {item.icon}
-        <span className="text-[10px] font-semibold leading-none">{item.name}</span>
+        <span className="text-[10px] font-semibold leading-none">{t(item.name)}</span>
       </>
     )}
   </NavLink>
@@ -57,6 +60,7 @@ const NavItem = ({ item }) => (
 const BottomNav = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { lang, toggleLang } = useLanguage();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expandedPhoto, setExpandedPhoto] = useState(null);
@@ -110,7 +114,7 @@ const BottomNav = () => {
             style={{ color: INACTIVE, background: 'transparent' }}
           >
             <MoreHorizontal size={20} />
-            <span className="text-[10px] font-semibold leading-none">Más</span>
+            <span className="text-[10px] font-semibold leading-none">{t('Más')}</span>
           </button>
         ) : (
           /* LogOut as last item when <= 4 items */
@@ -120,7 +124,7 @@ const BottomNav = () => {
             style={{ color: '#DC2626', background: 'transparent' }}
           >
             <LogOut size={20} />
-            <span className="text-[10px] font-semibold leading-none">Salir</span>
+            <span className="text-[10px] font-semibold leading-none">{t('Salir')}</span>
           </button>
         )}
       </div>
@@ -177,7 +181,7 @@ const BottomNav = () => {
               )}
               <div>
                 <div className="text-sm font-bold text-primary">{user.nombre}</div>
-                <div className="text-xs font-medium mt-0.5 text-muted">{user.rol}</div>
+                <div className="text-xs font-medium mt-0.5 text-muted">{t(user.rol)}</div>
               </div>
             </div>
 
@@ -198,7 +202,7 @@ const BottomNav = () => {
                 })}
               >
                 {item.icon}
-                <span className="text-sm font-semibold">{item.name}</span>
+                <span className="text-sm font-semibold">{t(item.name)}</span>
               </NavLink>
             ))}
 
@@ -213,8 +217,18 @@ const BottomNav = () => {
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
               <span className="text-sm font-semibold">
-                {theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
+                {theme === 'light' ? t('Modo oscuro') : t('Modo claro')}
               </span>
+            </button>
+
+            {/* Idioma */}
+            <button
+              onClick={toggleLang}
+              className="w-full flex items-center gap-3 px-5 py-3 transition-colors duration-150 text-left"
+              style={{ color: 'var(--text-secondary)', background: 'transparent' }}
+            >
+              <Languages size={20} />
+              <span className="text-sm font-semibold">{lang === 'es' ? 'English' : 'Español'}</span>
             </button>
 
             {/* Mi Perfil */}
@@ -224,7 +238,7 @@ const BottomNav = () => {
               style={{ color: 'var(--text-secondary)', background: 'transparent' }}
             >
               <User size={20} />
-              <span className="text-sm font-semibold">Mi Perfil</span>
+              <span className="text-sm font-semibold">{t('Mi Perfil')}</span>
             </button>
 
             {/* Logout */}
@@ -238,7 +252,7 @@ const BottomNav = () => {
                 border: '1px solid rgba(220,38,38,0.15)',
               }}
             >
-              <LogOut size={16} /> Cerrar Sesión
+              <LogOut size={16} /> {t('Cerrar Sesión')}
             </button>
           </div>
         </>

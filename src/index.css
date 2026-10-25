@@ -92,13 +92,35 @@
   --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
 }
 
+/* ── Superficies siempre claras (modales con fondo blanco fijo) ──────────────────
+   En modo oscuro, el texto/bordes del tema son claros y se pierden sobre blanco;
+   esta clase fuerza la paleta clara dentro del modal. */
+.light-surface {
+  --bg-card:    #FFFFFF;
+  --bg-elevated:#FFFFFF;
+  --bg-surface: #F8FAFC;
+  --bg-hover:   rgba(0,0,0,0.04);
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #94A3B8;
+  --border-color:  rgba(0,0,0,0.12);
+  --border-focus:  rgba(37,99,235,0.5);
+  --border-subtle: rgba(0,0,0,0.04);
+  color: #0F172A;
+  color-scheme: light;
+}
+
 /* ── Smooth theme transition ─────────────────────────────────────────────────── */
 body, .card {
   transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
 /* ── Reset ──────────────────────────────────────────────────────────────────── */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* Dentro de @layer base: si queda sin capa, gana sobre TODAS las utilidades
+   de Tailwind v4 (p-*, m-*, space-y-*) y las anula. */
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+}
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -154,27 +176,30 @@ p { color: var(--text-secondary); }
   letter-spacing: 0.01em;
 }
 
-input, select, textarea {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1.5px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  background-color: var(--bg-card);
-  transition: all 0.2s;
-  color-scheme: light dark;
+/* En @layer base para que utilidades como pl-9 (espacio para la lupa) sí apliquen */
+@layer base {
+  input, select, textarea {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    transition: all 0.2s;
+    color-scheme: light dark;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    background-color: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+  }
+  select option { background-color: var(--bg-card); color: var(--text-primary); }
+  textarea { resize: vertical; min-height: 80px; }
 }
-input::placeholder, textarea::placeholder { color: var(--text-muted); }
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  background-color: var(--bg-card);
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-}
-select option { background-color: var(--bg-card); color: var(--text-primary); }
-textarea { resize: vertical; min-height: 80px; }
 
 /* ── Login inputs (glassmorphism kept dark for login page) ──────────────────── */
 .login-input {
@@ -389,37 +414,195 @@ textarea { resize: vertical; min-height: 80px; }
 .leaflet-popup-close-button { color: #94A3B8 !important; }
 .leaflet-popup-close-button:hover { color: #FFFFFF !important; }
 
-/* Cluster outer circle */
-.marker-cluster-small,
-.marker-cluster-medium,
-.marker-cluster-large {
-  background-color: rgba(37, 99, 235, 0.2) !important;
-  border: 2px solid rgba(37, 99, 235, 0.5) !important;
-  border-radius: 50% !important;
+/* ── Cluster de casas (createClusterIcon en TerritoriesMap.jsx) ──────────────── */
+.house-cluster {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none !important;
+  border: none !important;
+  cursor: pointer;
+}
+.house-cluster svg {
+  display: block;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45)) drop-shadow(0 0 10px rgba(59,130,246,0.45));
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.house-cluster:hover svg { transform: translateY(-2px) scale(1.06); }
+.house-cluster__bar {
+  display: flex;
+  width: 70%;
+  height: 5px;
+  border-radius: 99px;
+  overflow: hidden;
+  gap: 1px;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
-/* Cluster inner circle */
-.marker-cluster-small div,
-.marker-cluster-medium div,
-.marker-cluster-large div {
-  background-color: rgba(37, 99, 235, 0.85) !important;
-  color: white !important;
-  font-weight: 700;
+/* ── Etiquetas de territorio / manzana (ZoomAwareLabel.jsx) ──────────────────── */
+.map-label-anchor { background: none !important; border: none !important; }
+.terr-label, .mz-label {
+  position: absolute;
+  left: 0; top: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.terr-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 12px color-mix(in srgb, var(--c) 35%, transparent);
+}
+.terr-label__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--c);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.terr-label__name {
+  color: #F8FAFC;
   font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  border-radius: 50% !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding-right: 8px;
+}
+.terr-label__name:first-child { padding-left: 8px; }
+.terr-label__name + .terr-label__pct { margin-left: -2px; }
+.terr-label__pct {
+  margin-right: 1px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--p) 55%, transparent);
+  color: var(--p);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+/* Filas del panel de progreso: 1 columna en móvil, 3 en escritorio */
+.progress-row {
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "nombre estado" "barra barra";
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.progress-row:hover { background: var(--bg-hover); }
+@container (min-width: 560px) {
+  .progress-row {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.4fr) auto;
+    grid-template-areas: "nombre barra estado";
+  }
+}
+
+/* Aviso centrado sobre el mapa (p. ej. "Mis territorios" vacío) */
+.map-empty-notice {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  width: min(340px, calc(100% - 32px));
+  padding: 14px 18px;
+  text-align: center;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  pointer-events: none;
+}
+
+/* Botón flotante de progreso (dentro del mapa, abajo a la izquierda) */
+.progress-fab {
+  position: absolute;
+  left: 12px;
+  bottom: 28px;
+  z-index: 1001;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.9);
+  background: linear-gradient(135deg, #10B981, #047857);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(16,185,129,0.45), 0 2px 6px rgba(0,0,0,0.35);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.progress-fab:hover { transform: scale(1.06); }
+.progress-fab.is-open { background: linear-gradient(135deg, #334155, #0F172A); box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
+.progress-fab__badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #0F172A;
+  border: 1.5px solid #10B981;
+  color: #34D399;
+  font-size: 10px;
+  font-weight: 800;
 }
 
-.marker-cluster-small div { width: 30px; height: 30px; }
-.marker-cluster-medium div { width: 36px; height: 36px; }
-.marker-cluster-large div { width: 42px; height: 42px; }
+/* Panel desplegado sobre el mapa (no modal: el mapa sigue usable) */
+.progress-popover {
+  position: absolute;
+  left: 12px;
+  bottom: 92px;
+  z-index: 1001;
+  width: min(440px, calc(100% - 24px));
+  max-height: calc(100% - 120px);
+  overflow-y: auto;
+  container-type: inline-size;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  transform-origin: bottom left;
+}
 
-.marker-cluster span {
-  line-height: 1 !important;
+/* Puntos de leyenda: anillo para que los colores oscuros (No tocar) se vean en modo oscuro */
+.legend-dot { box-shadow: 0 0 0 1.5px var(--bg-card), 0 0 0 2.5px var(--text-muted); }
+.terr-label--sm { padding: 2px; opacity: 0.9; }
+.terr-label--sm .terr-label__num { min-width: 18px; height: 18px; font-size: 10px; }
+.terr-label--lg .terr-label__num { min-width: 24px; height: 24px; font-size: 12px; }
+.terr-label--lg .terr-label__name { font-size: 13px; }
+.mz-label {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px dashed color-mix(in srgb, var(--c) 80%, transparent);
+  color: #E2E8F0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 @keyframes panic-pulse {
@@ -449,6 +632,12 @@ textarea { resize: vertical; min-height: 80px; }
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+/* Modo oscuro: el degradado azul marino → azul se pierde sobre fondo oscuro */
+[data-theme='dark'] .heading-gradient {
+  background: linear-gradient(135deg, #F8FAFC 0%, #93C5FD 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
 .heading-gradient-blue {
   background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 50%, #60A5FA 100%);
   -webkit-background-clip: text;
@@ -466,6 +655,14 @@ textarea { resize: vertical; min-height: 80px; }
 .stat-card-amber  { box-shadow: 0 4px 20px rgba(217,119,6,0.18), 0 1px 4px rgba(0,0,0,0.06) !important; }
 .stat-card-slate  { box-shadow: 0 4px 20px rgba(100,116,139,0.14), 0 1px 4px rgba(0,0,0,0.06) !important; }
 
+/* KPI del dashboard en modo oscuro: fondo oscuro teñido con el color de la tarjeta
+   (los fondos pastel del modo claro dejaban el número blanco sobre pastel) */
+[data-theme='dark'] .kpi-card {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, var(--bg-card)) 0%, var(--bg-card) 100%) !important;
+}
+[data-theme='dark'] .kpi-card p:last-child { color: color-mix(in srgb, var(--accent) 60%, #fff) !important; }
+[data-theme='dark'] .kpi-card svg { color: color-mix(in srgb, var(--accent) 55%, #fff); }
+
 /* ── Table ──────────────────────────────────────────────────────────────────── */
 table { border-collapse: collapse; }
 th { font-weight: 700; }
@@ -476,9 +673,39 @@ th { font-weight: 700; }
   input, select, textarea { min-height: 44px; font-size: 16px; }
 }
 
-/* Neon map labels — makes street names glow bright on dark tiles */
-.neon-labels {
-  filter: brightness(2.2) contrast(1.3) drop-shadow(0 0 2px rgba(255, 255, 255, 0.25));
+/* ── Responsive helpers ─────────────────────────────────────────────────────── */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+img, video { max-width: 100%; }
+button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+/* Mapa principal: en pantallas angostas los filtros bajan para no chocar con el buscador */
+@media (max-width: 639px) {
+  .map-filter-toggle { top: 60px !important; }
+}
+
+/* Popups de Leaflet nunca más anchos que la pantalla */
+@media (max-width: 480px) {
+  .leaflet-popup-content-wrapper { max-width: calc(100vw - 48px); }
+  .leaflet-popup-content { max-width: calc(100vw - 72px) !important; }
+}
+
+/* App instalada (standalone): sin "pull to refresh" accidental al mover el mapa */
+@media (display-mode: standalone) {
+  body { overscroll-behavior-y: none; }
+}
+
+/* Mapa oscuro: OpenStreetMap invertido + nombres en blanco neón (ver DarkTileLayers.jsx) */
+.dark-tiles {
+  filter: invert(1) hue-rotate(180deg) grayscale(0.85) brightness(0.8) contrast(1.2);
+}
+.dark-tiles-text {
+  filter: invert(1) grayscale(1) brightness(1.15) contrast(6);
+  mix-blend-mode: lighten;
+}
+.dark-tiles-glow {
+  filter: invert(1) grayscale(1) contrast(5) brightness(0.9) blur(2px);
+  mix-blend-mode: screen;
+  opacity: 0.75 !important;
 }
 
 /* ── Theme-aware utility classes ─────────────────────────────────────────────── */
@@ -492,6 +719,35 @@ th { font-weight: 700; }
 /* ── Leaflet draggable marker cursor ────────────────────────────────────────── */
 .leaflet-marker-draggable { cursor: grab !important; }
 .leaflet-marker-draggable:active { cursor: grabbing !important; }
+
+/* ── Mi ubicación (LocateButton): control de Leaflet ─────────────────────────── */
+.locate-control__btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #2563EB;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.locate-control__btn:hover { background: #F1F5F9; }
+.locate-control__btn.is-active { background: #2563EB; color: #fff; }
+.locate-control__btn.is-locating svg { animation: spin 1s linear infinite; color: #94A3B8; }
+@media (max-width: 767px) { .locate-control__btn { width: 36px; height: 36px; } }
+
+/* Fondo de los mapas oscuros mientras cargan los tiles (evita franjas blancas) */
+.leaflet-container:has(.dark-tiles) { background: #0B0B0F; }
+
+/* ── Mi ubicación (LocateButton): punto azul pulsante ───────────────────────── */
+.my-location-dot { animation: my-location-pulse 2s ease-out infinite; }
+@keyframes my-location-pulse {
+  0%   { filter: drop-shadow(0 0 0 rgba(37,99,235,0.8)); }
+  70%  { filter: drop-shadow(0 0 10px rgba(37,99,235,0)); }
+  100% { filter: drop-shadow(0 0 0 rgba(37,99,235,0)); }
+}
 
 /* ── Spin animation for LocateButton ──────────────────────────────────────── */
 @keyframes spin {

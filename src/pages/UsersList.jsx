@@ -9,6 +9,7 @@ import { ROLES } from '../utils/constants';
 import { createPortal } from 'react-dom';
 import { Eye, EyeOff, Pencil, Trash2, UserPlus, X, Search } from 'lucide-react';
 import Pagination from '../components/Pagination';
+import { t as tx } from '../i18n';
 
 const UsersList = () => {
   const { user } = useAuth();
@@ -88,7 +89,7 @@ const UsersList = () => {
           activo: formData.activo, foto_url,
         }).eq('id', formData.id);
         if (error) throw error;
-        toast.success('Usuario actualizado correctamente');
+        toast.success(tx('Usuario actualizado correctamente'));
       } else {
         const congId = user.rol === 'Super Admin'
           ? (formData.congregacion_id || null)
@@ -100,7 +101,7 @@ const UsersList = () => {
           congregacion_id: congId,
         }]);
         if (error) throw error;
-        toast.success('Usuario creado correctamente');
+        toast.success(tx('Usuario creado correctamente'));
       }
 
       setShowModal(false);
@@ -120,18 +121,31 @@ const UsersList = () => {
       toast.success(`Usuario "${deleteTarget.nombre}" eliminado`);
       fetchUsuarios();
     } catch (err) {
-      toast.error('Error al eliminar: ' + err.message);
+      toast.error(tx('Error al eliminar: ') + err.message);
     } finally {
       setDeleteTarget(null);
     }
   };
 
+  useEffect(() => {
+    if (!expandedPhoto) return;
+    document.body.style.overflow = 'hidden';
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setExpandedPhoto(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [expandedPhoto]);
+
   if (user?.rol !== 'Admin Principal' && user?.rol !== 'Super Admin') {
     return (
       <div className="flex items-center justify-center h-48">
         <div className="text-center">
-          <p className="text-red-500 font-bold mb-1">Acceso denegado</p>
-          <p className="text-sm text-gray-400">Este módulo es exclusivo para Administradores.</p>
+          <p className="text-red-500 font-bold mb-1">{tx('Acceso denegado')}</p>
+          <p className="text-sm text-gray-400">{tx('Este módulo es exclusivo para Administradores.')}</p>
         </div>
       </div>
     );
@@ -177,18 +191,6 @@ const UsersList = () => {
     </div>
   );
 
-  useEffect(() => {
-    if (!expandedPhoto) return;
-    document.body.style.overflow = 'hidden';
-    const handleKey = (e) => {
-      if (e.key === 'Escape') setExpandedPhoto(null);
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKey);
-    };
-  }, [expandedPhoto]);
 
   const filteredUsuarios = usuarios.filter(u => {
     if (!searchQuery.trim()) return true;
@@ -211,11 +213,11 @@ const UsersList = () => {
       {/* Header */}
       <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">Gestión de Usuarios</h1>
-          <p className="text-sm mt-0.5 text-secondary">Administración de cuentas del sistema</p>
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{tx('Gestión de Usuarios')}</h1>
+          <p className="text-sm mt-0.5 text-secondary">{tx('Administración de cuentas del sistema')}</p>
         </div>
         <button className="btn btn-primary flex items-center gap-2" onClick={openNew}>
-          <UserPlus size={15} /> Nuevo Usuario
+          <UserPlus size={15} /> {tx('Nuevo Usuario')}
         </button>
       </div>
 
@@ -224,17 +226,17 @@ const UsersList = () => {
         <div className="flex flex-wrap gap-2 mb-5">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)' }}>
             <span className="text-xs font-bold tabular-nums" style={{ color: '#2563EB' }}>{usuarios.length}</span>
-            <span className="text-xs font-medium text-secondary">total</span>
+            <span className="text-xs font-medium text-secondary">{tx('total')}</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10B981' }} />
             <span className="text-xs font-bold tabular-nums" style={{ color: '#059669' }}>{activeCount}</span>
-            <span className="text-xs font-medium text-secondary">activos</span>
+            <span className="text-xs font-medium text-secondary">{tx('activos')}</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#EF4444' }} />
             <span className="text-xs font-bold tabular-nums" style={{ color: '#DC2626' }}>{inactiveCount}</span>
-            <span className="text-xs font-medium text-secondary">inactivos</span>
+            <span className="text-xs font-medium text-secondary">{tx('inactivos')}</span>
           </div>
         </div>
       )}
@@ -249,7 +251,7 @@ const UsersList = () => {
             />
             <input
               type="text"
-              placeholder="Buscar por nombre, usuario, rol o congregación..."
+              placeholder={tx('Buscar por nombre, usuario, rol o congregación...')}
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm"
@@ -287,16 +289,16 @@ const UsersList = () => {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Foto</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Nombre</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Usuario</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Contraseña</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Rol</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Foto')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Nombre')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Usuario')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Contraseña')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Rol')}</th>
                   {user?.rol === 'Super Admin' && (
-                    <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Congregación</th>
+                    <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Congregación')}</th>
                   )}
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">Estado</th>
-                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>Acciones</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-secondary">{tx('Estado')}</th>
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: '#475569' }}>{tx('Acciones')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,7 +335,7 @@ const UsersList = () => {
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-2 justify-end">
                         <button onClick={() => openEdit(u)} className="btn btn-secondary py-1 px-2.5 text-xs flex items-center gap-1">
-                          <Pencil size={12} /> Editar
+                          <Pencil size={12} /> {tx('Editar')}
                         </button>
                         <button
                           onClick={() => setDeleteTarget(u)}
@@ -341,7 +343,7 @@ const UsersList = () => {
                           className="btn btn-danger py-1 px-2.5 text-xs flex items-center gap-1 disabled:opacity-30"
                           title={u.id === user.id ? 'No puedes eliminar tu propia cuenta' : 'Eliminar'}
                         >
-                          <Trash2 size={12} /> Eliminar
+                          <Trash2 size={12} /> {tx('Eliminar')}
                         </button>
                       </div>
                     </td>
@@ -384,14 +386,14 @@ const UsersList = () => {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => openEdit(u)} className="btn btn-secondary py-1.5 px-3 text-xs flex-1 flex items-center justify-center gap-1">
-                    <Pencil size={12} /> Editar
+                    <Pencil size={12} /> {tx('Editar')}
                   </button>
                   <button
                     onClick={() => setDeleteTarget(u)}
                     disabled={u.id === user.id}
                     className="btn btn-danger py-1.5 px-3 text-xs flex-1 flex items-center justify-center gap-1 disabled:opacity-30"
                   >
-                    <Trash2 size={12} /> Eliminar
+                    <Trash2 size={12} /> {tx('Eliminar')}
                   </button>
                 </div>
               </div>
@@ -413,7 +415,7 @@ const UsersList = () => {
             <div className="card p-8 text-center">
               <Search size={32} style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
               <p className="text-sm font-semibold text-secondary">
-                No se encontraron usuarios
+                {tx('No se encontraron usuarios')}
               </p>
               <p className="text-xs mt-1 text-muted">
                 {searchQuery
@@ -431,34 +433,34 @@ const UsersList = () => {
           <h3 className="mb-5 text-lg font-bold">{formData.id ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Nombre Completo *</label>
-              <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej. Juan Pérez" />
+              <label className="form-label">{tx('Nombre Completo *')}</label>
+              <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder={tx('Ej. Juan Pérez')} />
             </div>
             <div className="form-group">
-              <label className="form-label">Usuario de Acceso *</label>
-              <input required value={formData.usuario} onChange={e => setFormData(f => ({ ...f, usuario: e.target.value }))} placeholder="Para iniciar sesión" />
+              <label className="form-label">{tx('Usuario de Acceso *')}</label>
+              <input required value={formData.usuario} onChange={e => setFormData(f => ({ ...f, usuario: e.target.value }))} placeholder={tx('Para iniciar sesión')} />
             </div>
             <div className="form-group">
-              <label className="form-label">Contraseña *</label>
-              <input required value={formData.password} onChange={e => setFormData(f => ({ ...f, password: e.target.value }))} type="text" placeholder="Contraseña de acceso" />
+              <label className="form-label">{tx('Contraseña *')}</label>
+              <input required value={formData.password} onChange={e => setFormData(f => ({ ...f, password: e.target.value }))} type="text" placeholder={tx('Contraseña de acceso')} />
             </div>
             <div className="form-group">
-              <label className="form-label">Rol del Sistema *</label>
+              <label className="form-label">{tx('Rol del Sistema *')}</label>
               <select value={formData.rol} onChange={e => setFormData(f => ({ ...f, rol: e.target.value }))}>
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                {ROLES.map(r => <option key={r.value} value={r.value}>{tx(r.label)}</option>)}
               </select>
             </div>
             {user?.rol === 'Super Admin' && (
               <div className="form-group">
-                <label className="form-label">Congregación *</label>
+                <label className="form-label">{tx('Congregación *')}</label>
                 <select required value={formData.congregacion_id} onChange={e => setFormData(f => ({ ...f, congregacion_id: e.target.value }))}>
-                  <option value="">Seleccionar congregación...</option>
+                  <option value="">{tx('Seleccionar congregación...')}</option>
                   {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
             )}
             <div className="form-group">
-              <label className="form-label">Foto de Perfil</label>
+              <label className="form-label">{tx('Foto de Perfil')}</label>
               {(formData.foto_url || photoFile) && (
                 <div className="flex justify-center mb-3">
                   <img
@@ -486,17 +488,17 @@ const UsersList = () => {
                     checked={formData.activo}
                     onChange={e => setFormData(f => ({ ...f, activo: e.target.checked }))}
                   />
-                  Permitir acceso al sistema (Activo)
+                  {tx('Permitir acceso al sistema (Activo)')}
                 </label>
               </div>
             )}
             <div className="flex gap-3 mt-6">
-              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">Cancelar</button>
+              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline flex-1">{tx('Cancelar')}</button>
               <button type="submit" className="btn btn-primary flex-1" disabled={saving}>
                 {saving ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Guardando...
+                    {tx('Guardando...')}
                   </span>
                 ) : 'Guardar'}
               </button>
