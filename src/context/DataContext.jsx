@@ -397,6 +397,12 @@ export const DataProvider = ({ children }) => {
     await supabase.from('casas').delete().eq('territorio_id', id);
     const { error } = await supabase.from('territorios').delete().eq('id', id);
     if (error) throw error;
+    // Quitar de la pantalla al momento: Supabase no manda el DELETE en tiempo real a canales
+    // filtrados por congregación, así que no se puede esperar al evento.
+    setTerritorios(prev => { const next = prev.filter(t => t.id !== id); offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
+    setCasas(prev => { const next = prev.filter(c => String(c.territorio_id) !== String(id)); offlineStore.cacheCasas(next).catch(() => {}); return next; });
+    setManzanas(prev => prev.filter(m => String(m.territorio_id) !== String(id)));
+    setAsignaciones(prev => prev.filter(a => String(a.territorio_id) !== String(id)));
   };
 
   const addCasa = async (casa, photoBase64 = null) => {
@@ -436,6 +442,7 @@ export const DataProvider = ({ children }) => {
   const deleteCasa = async (id) => {
     const { error } = await supabase.from('casas').delete().eq('id', id);
     if (error) throw error;
+    setCasas(prev => { const next = prev.filter(c => c.id !== id); offlineStore.cacheCasas(next).catch(() => {}); return next; });
   };
 
   const uploadPhoto = async (file) => {
@@ -531,6 +538,7 @@ export const DataProvider = ({ children }) => {
   const deleteManzana = async (id) => {
     const { error } = await supabase.from('territorio_manzanas').delete().eq('id', id);
     if (error) throw error;
+    setManzanas(prev => prev.filter(m => m.id !== id));
   };
 
   // ── CRUD Exhibidores ──

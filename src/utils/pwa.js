@@ -95,6 +95,10 @@ export const registerPwa = () => {
         trackWaiting(reg);
         // Buscar nuevas versiones cada hora (la app suele quedar abierta)
         setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+        // Y cada vez que el usuario vuelve a la app (la app instalada suele quedar abierta días)
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        });
       })
       .catch((err) => console.warn('[PWA] Error registrando SW:', err));
   });

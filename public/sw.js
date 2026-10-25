@@ -6,8 +6,11 @@
 // versiones distintas y se reemplazarían sin fin ("Nueva versión disponible" en bucle).
 
 const CACHE_VERSION = 'v4';
-const SHELL_CACHE = `territorial-shell-${CACHE_VERSION}`;
-const ASSET_CACHE = `territorial-assets-${CACHE_VERSION}`;
+// Lo reemplaza vite.config.js (plugin sw-build-id) en cada build: cada despliegue = SW nuevo =
+// aviso "Nueva versión disponible". Shell y assets de builds viejos se borran al activar.
+const BUILD_ID = '__BUILD_ID__';
+const SHELL_CACHE = `territorial-shell-${CACHE_VERSION}-${BUILD_ID}`;
+const ASSET_CACHE = `territorial-assets-${CACHE_VERSION}-${BUILD_ID}`;
 const DATA_CACHE = `territorial-data-${CACHE_VERSION}`;
 const TILE_CACHE = `territorial-tiles-${CACHE_VERSION}`;
 const KNOWN_CACHES = [SHELL_CACHE, ASSET_CACHE, DATA_CACHE, TILE_CACHE];

@@ -390,8 +390,10 @@ const TerritoriesMap = () => {
 
   const { disponible: gruposDisponibles, grupos, trabajos, historial, miGrupo } = useGrupos();
 
-  // "Mis territorios" = asignados a mí o que mi grupo está trabajando ahora
-  const territoriosFiltrados = filtroMisTerr
+  // "Mis territorios" = asignados a mí o que mi grupo está trabajando ahora.
+  // useMemo: un array nuevo en cada render disparaba efectos en bucle (la app se redibujaba sin
+  // parar en "Mis territorios" y los toques en el popup se perdían).
+  const territoriosFiltrados = useMemo(() => (filtroMisTerr
     ? territorios.filter(t =>
         asignaciones.some(
           a => String(a.territorio_id) === String(t.id) && String(a.usuario_id) === String(user?.id) && a.activa
@@ -400,7 +402,7 @@ const TerritoriesMap = () => {
           tr => String(tr.territorio_id) === String(t.id) && String(tr.grupo_id) === String(miGrupo.id) && tr.estado === 'en_progreso'
         ))
       )
-    : territorios;
+    : territorios), [filtroMisTerr, territorios, asignaciones, user?.id, miGrupo, trabajos]);
 
   // Progreso de cada territorio (trabajo de grupos + % casas visitadas)
   const progresoPorTerritorio = useMemo(() => {
@@ -428,9 +430,9 @@ const TerritoriesMap = () => {
     mapInstance.flyToBounds(L.polygon(t.coordenadas).getBounds(), { padding: [40, 40], maxZoom: 18, duration: 1 });
   };
 
-  const casasFiltradas = filtroMisTerr
+  const casasFiltradas = useMemo(() => (filtroMisTerr
     ? casas.filter(c => territoriosFiltrados.some(t => String(t.id) === String(c.territorio_id)))
-    : casas;
+    : casas), [filtroMisTerr, casas, territoriosFiltrados]);
 
   // Debounce búsqueda
   useEffect(() => {
@@ -443,7 +445,7 @@ const TerritoriesMap = () => {
   // Filtrar resultados según busquedaDebounced
   useEffect(() => {
     if (!busquedaDebounced) {
-      setResultadosBusqueda([]);
+      setResultadosBusqueda(prev => (prev.length ? [] : prev)); // no crear [] nuevo si ya está vacío
       return;
     }
     const q = busquedaDebounced.toLowerCase();

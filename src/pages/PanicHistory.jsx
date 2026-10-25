@@ -10,6 +10,7 @@ import { MapContainer, Marker, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useData } from '../context/DataContext';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
@@ -302,6 +303,10 @@ const AlertCard = ({ alerta, territorios }) => {
 const PanicHistory = () => {
   const { user } = useAuth();
   const { territorios } = useData();
+  const { theme } = useTheme();
+  // Colores de gráficas según el tema (en oscuro los grises oscuros no se leían)
+  const CH_LABEL = theme === 'dark' ? '#CBD5E1' : '#475569';
+  const CH_GRID = theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
 
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -568,7 +573,7 @@ const PanicHistory = () => {
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94A3B8' } },
-      y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#94A3B8', stepSize: 1 }, beginAtZero: true },
+      y: { grid: { color: CH_GRID }, ticks: { font: { size: 11 }, color: '#94A3B8', stepSize: 1 }, beginAtZero: true },
     },
   };
 
@@ -631,8 +636,8 @@ const PanicHistory = () => {
       },
     },
     scales: {
-      x: { stacked: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { stepSize: 1, font: { size: 11 }, color: '#94A3B8' }, beginAtZero: true },
-      y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#475569' } },
+      x: { stacked: true, grid: { color: CH_GRID }, ticks: { stepSize: 1, font: { size: 11 }, color: '#94A3B8' }, beginAtZero: true },
+      y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: CH_LABEL } },
     },
   };
 
@@ -698,7 +703,7 @@ const PanicHistory = () => {
     },
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#94A3B8' } },
-      y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#94A3B8', stepSize: 1 }, beginAtZero: true },
+      y: { grid: { color: CH_GRID }, ticks: { font: { size: 11 }, color: '#94A3B8', stepSize: 1 }, beginAtZero: true },
     },
   };
 
@@ -973,8 +978,9 @@ const PanicHistory = () => {
         {kpiCards.map((k, i) => (
           <div
             key={i}
-            className="rounded-2xl p-4 sm:p-5 cursor-default transition-all duration-250 hover:-translate-y-1"
+            className="kpi-card rounded-2xl p-4 sm:p-5 cursor-default transition-all duration-250 hover:-translate-y-1"
             style={{
+              '--accent': k.accent,
               background: k.gradient,
               border: `1px solid ${k.accent}30`,
               borderTop: `3px solid ${k.accent}`,

@@ -84,7 +84,9 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - Notificaciones locales: `showSystemNotification()` marca `data.local`; el SW solo maneja el clic de esas.
 - `public/sw.js`: shell precacheado, assets cache-first, Supabase GET network-first, tiles del mapa
   cache-first (máx. 600). Auth/realtime y peticiones no-GET nunca se cachean.
-- **Si se modifica `sw.js`, subir `CACHE_VERSION`.** El usuario ve "Nueva versión disponible" y actualiza.
+- Cada build marca `dist/sw.js` con un `BUILD_ID` (plugin `sw-build-id` en `vite.config.js`): cada
+  despliegue es un SW nuevo y la app muestra "Nueva versión disponible". No quitar `__BUILD_ID__` de
+  `public/sw.js`. Subir `CACHE_VERSION` solo si cambia la lógica de caché del SW.
 - Notificaciones del sistema: usar `showSystemNotification()` de `utils/pwa.js`
   (`new Notification()` falla en Android y en la app instalada).
 - Iconos: si cambia el logo, regenerar todos los PNG de `public/icons/` (ver su README).
@@ -138,6 +140,11 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 
 ## Convenciones de código
 
+- Tiempo real: Supabase **no** manda DELETE a canales filtrados (p. ej. por congregación). Toda función
+  de borrado en `DataContext` debe quitar el registro del estado local al confirmar. Los INSERT de
+  tiempo real usan `agregarSinDuplicar` (el mismo registro puede llegar por re-fetch y por realtime).
+- Listas derivadas que se pasan a efectos o a hijos (`filter`/`map`) van en `useMemo`: un array nuevo
+  por render + un `setState` en un efecto = render infinito (pasó con "Mis territorios").
 - Componentes funcionales con hooks; **nunca** llamar hooks después de un `return` condicional
   (ya causó pantalla en blanco en Estadísticas). `npx eslint src` lo detecta (rules-of-hooks).
 - Estilo mixto existente: clases Tailwind + `style={{}}` inline. Seguir el estilo del archivo que se edita.
