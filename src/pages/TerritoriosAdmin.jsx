@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MapContainer, Polygon, useMap } from 'react-leaflet';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { MapContainer, Polygon, useMap, useMapEvents } from 'react-leaflet';
 import { useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import {
@@ -18,7 +18,8 @@ import TerritorioTrabajo from '../components/TerritorioTrabajo';
 import DarkTileLayers from '../components/DarkTileLayers';
 import LocateButton from '../components/LocateButton';
 import { CustomEditControl, GlobalMapFitter } from '../components/MapHelpers';
-import { getTerritoryProgress, indexarHistorial } from '../utils/territoryProgress';
+import { getTerritoryProgress, indexarHistorial, PROGRESO } from '../utils/territoryProgress';
+import ZoomAwareLabel from '../components/ZoomAwareLabel';
 // "t" se usa para territorios en los .map, por eso la función de traducción es tx
 import { t as tx } from '../i18n';
 
@@ -35,6 +36,14 @@ const FlyToTerritorio = ({ territorio }) => {
     map.flyToBounds(L.polygon(territorio.coordenadas).getBounds(), { padding: [30, 30], maxZoom: 18, duration: 0.8 });
   }, [territorio?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
+};
+
+// Zoom actual del mapa (para el tamaño de las etiquetas)
+const ConZoom = ({ children }) => {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+  useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
+  return children(zoom);
 };
 
 const TerritorioForm = ({ form, setForm, congregaciones, pedirCongregacion }) => (
@@ -224,24 +233,36 @@ const TerritoriosAdmin = () => {
       </div>
 
       {/* Mapa para dibujar / ubicar */}
-      <div id="territorios-mapa" className="card p-0 overflow-hidden mb-2 isolate" style={{ height: 'min(460px, 52dvh)' }}>
+      <div id="territorios-mapa" className="card p-0 overflow-hidden mb-2 isolate" style={{ height: 'min(680px, 72dvh)' }}>
         {!loading && (
           <MapContainer center={[31.7619, -106.4850]} zoom={13} style={{ height: '100%', width: '100%' }}>
             <DarkTileLayers />
             <GlobalMapFitter territorios={territorios} fitKey={0} />
             <CustomEditControl onCreated={handleDibujado} />
             <FlyToTerritorio territorio={seleccionado} />
-            {territorios.map(t => {
+            {/* Borde = color del territorio; relleno = estado de progreso, más intenso según el % */}
+            <ConZoom>{(zoom) => territorios.map(t => {
               const activo = String(t.id) === String(seleccionadoId);
+              const p = progreso[t.id];
+              const colorEstado = PROGRESO[p?.estado]?.color || '#94A3B8';
               return (
-                <Polygon
-                  key={t.id}
-                  positions={t.coordenadas}
-                  pathOptions={{ color: t.color, fillColor: t.color, fillOpacity: activo ? 0.45 : 0.2, weight: activo ? 4 : 2 }}
-                  eventHandlers={{ click: () => seleccionar(t, { scroll: 'tarjeta' }) }}
-                />
+                <Fragment key={t.id}>
+                  <Polygon
+                    positions={t.coordenadas}
+                    pathOptions={{
+                      color: t.color,
+                      fillColor: colorEstado,
+                      fillOpacity: 0.15 + ((p?.pct || 0) / 100) * 0.4 + (activo ? 0.15 : 0),
+                      weight: activo ? 4 : 2.5,
+                      dashArray: p?.estado === 'sin_trabajar' ? '6 5' : null,
+                    }}
+                    eventHandlers={{ click: () => seleccionar(t, { scroll: 'tarjeta' }) }}
+                  />
+                  {/* Etiquetas solo de cerca (de lejos se enciman); el progreso se ve por el relleno */}
+                  <ZoomAwareLabel coordenadas={t.coordenadas} numero={t.numero} nombre={t.nombre} color={t.color} zoom={zoom} minZoom={17} progreso={p} />
+                </Fragment>
               );
-            })}
+            })}</ConZoom>
             {manzanas.map(m => (
               <Polygon key={`m-${m.id}`} positions={m.coordenadas} interactive={false}
                 pathOptions={{ color: m.color || '#94A3B8', fillOpacity: 0.08, weight: 1.5, dashArray: '5 4' }} />
@@ -249,6 +270,14 @@ const TerritoriosAdmin = () => {
             <LocateButton />
           </MapContainer>
         )}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-1 mt-1">
+        {Object.values(PROGRESO).map(p => (
+          <span key={p.label} className="flex items-center gap-1.5 text-xs font-medium text-muted">
+            <span className="legend-dot w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+            {tx(p.label)}
+          </span>
+        ))}
       </div>
       <p className="text-xs text-muted mb-4 flex items-center gap-1.5">
         <Info size={12} /> {tx('Dibuja un territorio con las herramientas del mapa. Toca un territorio para ver su tarjeta.')}

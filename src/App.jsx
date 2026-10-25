@@ -72,7 +72,7 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="flex min-h-screen overflow-x-hidden">
+    <div className="flex min-h-screen" style={{ overflowX: 'clip' }}>
       <Sidebar />
       <OfflineIndicator />
       <main

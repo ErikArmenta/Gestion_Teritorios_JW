@@ -131,14 +131,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
-  overflow-x: hidden;
+  /* clip (no hidden): hidden convierte al body en contenedor de scroll y rompe el sticky del Sidebar */
+  overflow-x: clip;
   background-image:
     radial-gradient(ellipse 80% 50% at 20% -10%, rgba(37,99,235,0.05) 0%, transparent 60%),
     radial-gradient(ellipse 60% 40% at 80% 110%, rgba(124,58,237,0.04) 0%, transparent 55%);
   background-attachment: fixed;
 }
 
-#root { overflow-x: hidden; }
+#root { overflow-x: clip; }
 
 /* ── Typography ─────────────────────────────────────────────────────────────── */
 /* En @layer base: sin capa le ganaba a text-white/m-0 (título del login oscuro sobre oscuro) */

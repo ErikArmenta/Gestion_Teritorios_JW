@@ -172,7 +172,7 @@ const Sidebar = () => {
     <>
       {/* Sidebar desktop */}
       <div
-        className="hidden md:flex md:flex-col md:w-64 md:sticky md:top-0 md:h-screen shrink-0"
+        className="hidden md:flex md:flex-col md:w-64 md:sticky md:top-0 md:h-screen md:overflow-y-auto shrink-0"
         style={{
           backgroundColor: 'var(--bg-card)',
           borderRight: '1px solid var(--border-color)',
