@@ -7,6 +7,11 @@ import { useAuth } from './AuthContext';
 const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
+// Agrega un registro llegado por tiempo real sin duplicarlo (si el canal quedó suscrito dos veces
+// o el registro ya llegó por un re-fetch, se reemplaza)
+const agregarSinDuplicar = (lista, item) =>
+  lista.some(x => x.id === item.id) ? lista.map(x => (x.id === item.id ? item : x)) : [...lista, item];
+
 export const DataProvider = ({ children }) => {
   const { user } = useAuth();
   const congregacionId = useMemo(() => {
@@ -264,7 +269,7 @@ export const DataProvider = ({ children }) => {
       .channel('public:territorios')
       .on('postgres_changes', terrChannel, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setTerritorios(prev => { const next = [...prev, payload.new]; offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
+          setTerritorios(prev => { const next = agregarSinDuplicar(prev, payload.new); offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
         } else if (payload.eventType === 'UPDATE') {
           setTerritorios(prev => { const next = prev.map(t => t.id === payload.new.id ? payload.new : t); offlineStore.cacheTerritorios(next).catch(() => {}); return next; });
         } else if (payload.eventType === 'DELETE') {
@@ -282,7 +287,7 @@ export const DataProvider = ({ children }) => {
           setCasas(prev => {
             // Remover el placeholder offline si existe con la misma dirección/territorio
             const cleaned = prev.filter(c => !(c._offline && c.direccion === payload.new.direccion && c.territorio_id === payload.new.territorio_id));
-            const next = [...cleaned, payload.new];
+            const next = agregarSinDuplicar(cleaned, payload.new);
             offlineStore.cacheCasas(next).catch(() => {});
             return next;
           });
@@ -305,8 +310,8 @@ export const DataProvider = ({ children }) => {
               .select('*, app_usuarios!territorio_asignaciones_usuario_id_fkey(id, nombre)')
               .eq('id', payload.new.id)
               .single();
-            if (asigData) setAsignaciones(prev => [...prev, asigData]);
-            else setAsignaciones(prev => [...prev, payload.new]);
+            // Si ya está (llegó por el re-fetch de asignarTerritorio) se reemplaza, no se duplica
+            setAsignaciones(prev => agregarSinDuplicar(prev, asigData || payload.new));
           })();
         } else if (payload.eventType === 'UPDATE') {
           (async () => {
@@ -328,7 +333,7 @@ export const DataProvider = ({ children }) => {
       .channel('public:territorio_manzanas')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'territorio_manzanas' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setManzanas(prev => [...prev, payload.new]);
+          setManzanas(prev => agregarSinDuplicar(prev, payload.new));
         } else if (payload.eventType === 'UPDATE') {
           setManzanas(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
         } else if (payload.eventType === 'DELETE') {
