@@ -7,7 +7,8 @@ import { t } from '../i18n';
 
 // Sección "Progreso / Grupo" dentro del popup de un territorio en el mapa.
 // Popups de Leaflet usan fondo oscuro → colores fijos claros.
-const TerritorioTrabajo = ({ territorio, progreso }) => {
+// soloLectura: sin botones de asignar/terminar (mapa principal; se gestiona en Territorios)
+const TerritorioTrabajo = ({ territorio, progreso, soloLectura = false }) => {
   const { disponible, grupos, puedeGestionar, puedeTerminar, asignarTerritorioAGrupo, terminarTrabajo, cancelarTrabajo } = useGrupos();
   const toast = useToast();
   const [grupoSel, setGrupoSel] = useState('');
@@ -53,7 +54,7 @@ const TerritorioTrabajo = ({ territorio, progreso }) => {
       </p>
 
       {/* Acciones de grupo */}
-      {disponible && trabajoActivo && (puedeTerminar(trabajoActivo) || puedeGestionar) && (
+      {!soloLectura && disponible && trabajoActivo && (puedeTerminar(trabajoActivo) || puedeGestionar) && (
         <div className="flex gap-1.5 mt-2">
           {puedeTerminar(trabajoActivo) && (
             <button
@@ -81,7 +82,7 @@ const TerritorioTrabajo = ({ territorio, progreso }) => {
         </div>
       )}
 
-      {disponible && !trabajoActivo && puedeGestionar && (
+      {!soloLectura && disponible && !trabajoActivo && puedeGestionar && (
         gruposDelTerritorio.length ? (
           <div className="flex gap-1.5 mt-2">
             <select

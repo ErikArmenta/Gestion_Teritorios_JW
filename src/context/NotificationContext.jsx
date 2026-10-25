@@ -49,6 +49,8 @@ export const NotificationProvider = ({ children }) => {
         },
         (payload) => {
           setNotificaciones(prev => {
+            // Si el canal quedó suscrito dos veces llega el mismo INSERT doble: no duplicar
+            if (prev.some(n => n.id === payload.new.id)) return prev;
             const updated = [payload.new, ...prev].slice(0, 20);
             setUnreadCount(updated.filter(n => !n.leida).length);
             return updated;

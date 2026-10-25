@@ -101,6 +101,12 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - Mapas: usar `<DarkTileLayers />` (mapa oscuro con nombres de calles en blanco neón; clases
   `dark-tiles*` en `index.css`) o `<TileLayer {...LIGHT_MAP_TILES} />` para mapa claro. **No usar
   CARTO** (`basemaps.cartocdn.com`): exige API key y muestra "API KEY REQUIRED".
+- **Mapa principal (`TerritoriesMap`) = solo consulta**: casas, etiquetas, progreso y ruta de visitas.
+  Su popup de territorio es compacto (`TerritorioTrabajo soloLectura`) con botón "Gestionar" →
+  `/territorios?id=X`. **No** agregar ahí editar/eliminar/dibujar/asignaciones/manzanas/compartir:
+  todo eso vive en `TerritoriosAdmin` (`/territorios`, ancianos/ministeriales/admins), que tiene su
+  propio mapa con `CustomEditControl` (`components/MapHelpers.jsx`).
+- `GlobalMapFitter` encuadra solo cuando cambia el conjunto de ids o `fitKey` (antes saltaba en cada render).
 - Mapa principal: por debajo de `DETAIL_ZOOM` (17) el cluster en forma de casa (`createClusterIcon`)
   "absorbe" casas y etiquetas; al hacer clic (`handleClusterClick`) vuela a zoom de detalle y aparecen
   todas las casas y las etiquetas (`ZoomAwareLabel`, píldora con color del territorio y % de avance).

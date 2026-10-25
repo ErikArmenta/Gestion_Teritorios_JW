@@ -16,6 +16,7 @@ import SharedTerritory from './pages/SharedTerritory';
 import Backup from './pages/Backup';
 import Exhibidores from './pages/Exhibidores';
 import Grupos from './pages/Grupos';
+import TerritoriosAdmin from './pages/TerritoriosAdmin';
 import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
@@ -107,6 +108,11 @@ const AppLayout = () => {
           <Route path="/congregaciones" element={
             <ProtectedRoute allowedRoles={['Super Admin']}>
               <CongregacionesList />
+            </ProtectedRoute>
+          } />
+          <Route path="/territorios" element={
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial']}>
+              <TerritoriosAdmin />
             </ProtectedRoute>
           } />
           <Route path="/grupos" element={

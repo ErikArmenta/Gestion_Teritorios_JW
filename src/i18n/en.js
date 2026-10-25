@@ -586,6 +586,23 @@ const en = {
   'Notificaciones activas': 'Notifications on',
   'Notificaciones bloqueadas': 'Notifications blocked',
   'Activar notificaciones': 'Enable notifications',
+  'Casas, etiquetas y progreso de los territorios. Para editarlos usa el módulo Territorios.': 'Houses, labels and territory progress. To edit territories use the Territories module.',
+  'Gestionar': 'Manage',
+  'Gestión de Territorios': 'Territory Management',
+  'Crea, edita y organiza los territorios, sus manzanas y asignaciones': 'Create, edit and organize territories, their blocks and assignments',
+  'Nuevo territorio': 'New territory',
+  'Para crear un territorio, dibújalo en el mapa con el pentágono (polígono) o el cuadro (rectángulo).': 'To create a territory, draw it on the map with the pentagon (polygon) or the square (rectangle).',
+  'Dibuja un territorio con las herramientas del mapa. Toca un territorio para ver su tarjeta.': 'Draw a territory with the map tools. Tap a territory to see its card.',
+  'Buscar territorio...': 'Search territory...',
+  'Asignaciones': 'Assignments',
+  'Manzanas': 'Blocks',
+  'Compartir': 'Share',
+  'Generando...': 'Generating...',
+  'Copiar': 'Copy',
+  'Territorio compartido:': 'Shared territory:',
+  '¿Eliminar el territorio "{nombre}"?': 'Delete the territory "{nombre}"?',
+  'También se eliminarán las {n} casas registradas en este territorio.': 'The {n} houses registered in this territory will also be deleted.',
+  'Este territorio no tiene casas registradas.': 'This territory has no registered houses.',
 };
 
 export default en;

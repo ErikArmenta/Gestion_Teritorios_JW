@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { MapContainer, Polygon, Polyline, Marker, Popup, FeatureGroup, useMap, useMapEvents } from 'react-leaflet';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { MapContainer, Polygon, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { useNavigate } from 'react-router-dom';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import TerritoryProgressPanel from '../components/TerritoryProgressPanel';
 import { getTerritoryProgress, indexarHistorial, PROGRESO } from '../utils/territoryProgress';
@@ -7,71 +8,22 @@ import { useGrupos } from '../context/GruposContext';
 import TerritorioTrabajo from '../components/TerritorioTrabajo';
 // "t" se usa para territorios en los .map, por eso la función de traducción es tx
 import { t as tx } from '../i18n';
-import 'leaflet-draw';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
-import ConfirmModal from '../components/ConfirmModal';
-import ModalOverlay from '../components/ModalOverlay';
 import ZoomAwareLabel from '../components/ZoomAwareLabel';
 import { STATUS_COLORS, getStatusColor } from '../utils/constants';
-import { Trash2, Pencil, X, Check, Search, Navigation, Share2, Copy } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { Search, Navigation, Settings2, X, Pencil } from 'lucide-react';
 import EditHouseModal from '../components/EditHouseModal';
-import AsignacionesModal from '../components/AsignacionesModal';
-import ManzanasModal from '../components/ManzanasModal';
 
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import DarkTileLayers from '../components/DarkTileLayers';
 import LocateButton from '../components/LocateButton';
+import { GlobalMapFitter } from '../components/MapHelpers';
 
 const DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
-
-const CustomEditControl = ({ onCreated }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (map.__drawControlAdded) return;
-    map.__drawControlAdded = true;
-    const drawControl = new L.Control.Draw({
-      draw: { polyline: false, polygon: true, circle: false, circlemarker: false, marker: false, rectangle: true },
-      edit: false,
-    });
-    map.addControl(drawControl);
-    map.on(L.Draw.Event.CREATED, onCreated);
-    return () => {
-      map.removeControl(drawControl);
-      map.off(L.Draw.Event.CREATED, onCreated);
-      map.__drawControlAdded = false;
-    };
-  }, [map, onCreated]);
-  return null;
-};
-
-const GlobalMapFitter = ({ territorios, fitKey }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (!territorios?.length) {
-      console.log('GlobalMapFitter: no territorios to fit');
-      return;
-    }
-    const all = territorios.flatMap(t => t.coordenadas || []);
-    if (!all.length) return;
-    try {
-      const bounds = L.latLngBounds(all);
-      if (bounds.isValid()) {
-        setTimeout(() => {
-          map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16, animate: true });
-        }, 50);
-      }
-    } catch (err) {
-      console.error('GlobalMapFitter error:', err);
-    }
-  }, [territorios, map, fitKey]);
-  return null;
-};
 
 const createHouseIcon = (estado, isOffline = false) => {
   const color = STATUS_COLORS[estado]?.hex || '#9CA3AF';
@@ -143,6 +95,9 @@ const createClusterIcon = (cluster) => {
 // Zoom "de detalle": desde aquí se separan las casas y aparecen las etiquetas.
 // Por debajo, el cluster "absorbe" casas y etiquetas.
 const DETAIL_ZOOM = 17;
+
+// Al abrir un popup, Leaflet lo acomoda dejando libre la franja del buscador
+const POPUP_PADDING_TOP = [12, 84];
 
 // Clic en cluster: vuela hasta sus casas con zoom de detalle → se ven todas las casas y etiquetas
 const handleClusterClick = (e) => {
@@ -403,29 +358,18 @@ const calcularRutaNN = (casasPendientes, startLat = null, startLng = null) => {
 };
 
 const TerritoriesMap = () => {
-  const { territorios, casas, asignaciones, usuarios, addTerritorio, updateTerritorio, deleteTerritorio, loading, manzanas, addManzana, deleteManzana } = useData();
+  const { territorios, casas, asignaciones, usuarios, loading, manzanas } = useData();
   const { user } = useAuth();
-  const toast = useToast();
+  const navigate = useNavigate();
+  const esAdmin = ADMIN_ROLES.includes(user?.rol);
 
-  const [newPolygonCoords, setNewPolygonCoords] = useState(null);
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [formData, setFormData] = useState({ numero: '', nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
-  const [congregaciones, setCongregaciones] = useState([]);
-
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm]   = useState({});
-  const [deleteTarget, setDeleteTarget] = useState(null);
   const [editCasa, setEditCasa] = useState(null);
-  const [gestionarTerritorio, setGestionarTerritorio] = useState(null);
   const [filtroMisTerr, setFiltroMisTerr] = useState(false);
   const [modoProgreso, setModoProgreso] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
   const [fitCounter, setFitCounter] = useState(0);
   const filtroInitialized = useRef(false);
   const [rutaActiva, setRutaActiva] = useState(null); // { territorioId, casasOrdenadas, polylinePoints }
-  const [compartirModal, setCompartirModal] = useState(null); // null | { territorioId, link }
-  const [compartirLoading, setCompartirLoading] = useState(false);
-  const [manzanasModalTerritorio, setManzanasModalTerritorio] = useState(null);
 
   // Búsqueda en mapa
   const [busqueda, setBusqueda] = useState('');
@@ -443,14 +387,6 @@ const TerritoriesMap = () => {
       setFiltroMisTerr(tieneAsignaciones);
     }
   }, [asignaciones, user]);
-
-  useEffect(() => {
-    if (user?.rol === 'Super Admin' && !user?.congregacion_id) {
-      supabase.from('congregaciones').select('id, nombre').then(({ data }) => {
-        if (data) setCongregaciones(data);
-      });
-    }
-  }, [user?.rol, user?.congregacion_id]);
 
   const { disponible: gruposDisponibles, grupos, trabajos, historial, miGrupo } = useGrupos();
 
@@ -519,52 +455,6 @@ const TerritoriesMap = () => {
     setResultadosBusqueda(encontrados);
   }, [busquedaDebounced, casasFiltradas]);
 
-  const handleDrawCreated = useCallback((e) => {
-    const { layerType, layer } = e;
-    if (layerType === 'polygon' || layerType === 'rectangle') {
-      setNewPolygonCoords(layer.getLatLngs()[0].map(ll => [ll.lat, ll.lng]));
-      setShowNewModal(true);
-      layer.remove();
-    }
-  }, []);
-
-  const handleSaveNew = async (e) => {
-    e.preventDefault();
-    if (!newPolygonCoords) return;
-    try {
-      const payload = { ...formData, coordenadas: newPolygonCoords };
-      if (formData.congregacion_id_override) payload.congregacion_id = formData.congregacion_id_override;
-      delete payload.congregacion_id_override;
-      await addTerritorio(payload);
-      setShowNewModal(false);
-      setFormData({ numero: '', nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' });
-      setNewPolygonCoords(null);
-      toast.success(tx('Territorio creado correctamente'));
-    } catch (err) {
-      toast.error(tx('Error al guardar: ') + (err.message || err));
-    }
-  };
-
-  const openEdit = (t) => {
-    setEditingId(t.id);
-    setEditForm({ numero: t.numero || '', nombre: t.nombre, descripcion: t.descripcion || '', color: t.color, responsable: t.responsable || '' });
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      await updateTerritorio(editingId, editForm);
-      setEditingId(null);
-      toast.success(tx('Territorio actualizado'));
-    } catch (err) {
-      toast.error(tx('Error al actualizar: ') + (err.message || err));
-    }
-  };
-
-  const confirmDelete = (t) => {
-    const count = casas.filter(c => String(c.territorio_id) === String(t.id)).length;
-    setDeleteTarget({ id: t.id, nombre: t.nombre, count });
-  };
-
   const iniciarRuta = (territorioId) => {
     const pendientes = casas.filter(
       c => String(c.territorio_id) === String(territorioId) && c.estado === 'Pendiente'
@@ -609,39 +499,6 @@ const TerritoriesMap = () => {
     return `https://www.google.com/maps/dir/${waypoints.join('/')}`;
   };
 
-  const handleCompartir = async (t) => {
-    setCompartirLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('territorio_compartidos')
-        .insert({
-          territorio_id: t.id,
-          creado_por: user.id,
-          expira_en: new Date(Date.now() + 86400000).toISOString(),
-        })
-        .select('id')
-        .single();
-      if (error) throw error;
-      const link = window.location.origin + '/shared/' + data.id;
-      setCompartirModal({ territorioId: t.id, territorioNombre: t.nombre, link });
-    } catch (err) {
-      toast.error(tx('Error al compartir: ') + (err.message || err));
-    } finally {
-      setCompartirLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteTerritorio(deleteTarget.id);
-      toast.success(tx('Territorio "{nombre}" eliminado', { nombre: deleteTarget.nombre }));
-    } catch (err) {
-      toast.error(tx('Error al eliminar: ') + (err.message || err));
-    } finally {
-      setDeleteTarget(null);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full min-h-[60vh]">
       {/* Header */}
@@ -649,7 +506,7 @@ const TerritoriesMap = () => {
         <div>
           <h1 className="text-lg sm:text-2xl font-bold heading-gradient">{tx('Mapa Principal y Territorios')}</h1>
           <p className="hidden sm:block text-sm mt-0.5 text-secondary">
-            {tx('Dibuja polígonos para crear territorios. Clic en un polígono para editar o eliminar.')}
+            {tx('Casas, etiquetas y progreso de los territorios. Para editarlos usa el módulo Territorios.')}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -752,9 +609,6 @@ const TerritoriesMap = () => {
               busquedaDebounced={busquedaDebounced}
               resultadosBusqueda={resultadosBusqueda}
             />
-            <FeatureGroup>
-              <CustomEditControl onCreated={handleDrawCreated} />
-            </FeatureGroup>
 
             <ZoomProvider>{(currentZoom) => (<>
             {/* Polígonos de territorios y sus manzanas */}
@@ -770,162 +624,47 @@ const TerritoriesMap = () => {
                   mouseout:  (e) => e.target.setStyle(territoryPathOptions(t)),
                 }}
               >
-                <Popup minWidth={220} maxWidth={280}>
-                  {editingId === t.id ? (
-                    <div className="py-1 space-y-2" style={{ minWidth: 210 }}>
-                      <p className="font-bold text-sm mb-2" style={{ color: '#F1F5F9' }}>{tx('Editar territorio')}</p>
-                      <input
-                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
-                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
-                        value={editForm.numero || ''}
-                        onChange={e => setEditForm(f => ({ ...f, numero: e.target.value }))}
-                        placeholder={tx('Número (ej: 1, T-3)')}
-                      />
-                      <input
-                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
-                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
-                        value={editForm.nombre}
-                        onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))}
-                        placeholder={tx('Nombre')}
-                      />
-                      <textarea
-                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none resize-none"
-                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
-                        rows={2}
-                        value={editForm.descripcion}
-                        onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))}
-                        placeholder={tx('Descripción')}
-                      />
-                      <input
-                        className="w-full rounded-lg px-2 py-1.5 text-xs focus:outline-none"
-                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#F1F5F9' }}
-                        value={editForm.responsable || ''}
-                        onChange={e => setEditForm(f => ({ ...f, responsable: e.target.value }))}
-                        placeholder={tx('Responsable')}
-                      />
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs" style={{ color: '#94A3B8' }}>{tx('Color:')}</label>
-                        <input
-                          type="color"
-                          value={editForm.color}
-                          onChange={e => setEditForm(f => ({ ...f, color: e.target.value }))}
-                          className="w-8 h-6 p-0.5 rounded cursor-pointer"
-                          style={{ border: '1px solid rgba(255,255,255,0.15)' }}
-                        />
-                      </div>
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 text-slate-300 bg-slate-700/50 font-medium"
-                        >
-                          <X size={11} /> {tx('Cancelar')}
-                        </button>
-                        <button
-                          onClick={handleSaveEdit}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-medium"
-                        >
-                          <Check size={11} /> Guardar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-1" style={{ minWidth: 210 }}>
-                      <h4 className="font-bold text-sm mb-1" style={{ color: t.color }}>{t.nombre}</h4>
-                      {t.descripcion && <p className="text-xs text-slate-400 mb-2">{t.descripcion}</p>}
+                <Popup autoPanPaddingTopLeft={POPUP_PADDING_TOP} minWidth={200} maxWidth={250} className="popup-compacto">
+                  <div style={{ minWidth: 190 }}>
+                    <h4 className="font-bold text-sm mb-1.5 truncate" style={{ color: t.color }}>
+                      {[t.numero && String(t.numero) !== String(t.nombre) ? t.numero : null, t.nombre].filter(Boolean).join(' · ')}
+                    </h4>
 
-                      {/* Progreso + grupo de predicación */}
-                      <TerritorioTrabajo territorio={t} progreso={progresoPorTerritorio[t.id]} />
+                    {/* Progreso + grupo (solo lectura; se gestiona en Territorios) */}
+                    <TerritorioTrabajo territorio={t} progreso={progresoPorTerritorio[t.id]} soloLectura />
 
-                      {/* Asignados */}
-                      {(() => {
-                        const activasT = asignaciones.filter(a => String(a.territorio_id) === String(t.id) && a.activa);
-                        return (
-                          <div className="mb-2">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="text-xs font-semibold" style={{ color: '#CBD5E1' }}>{tx('Asignados:')}</span>
-                              <span
-                                className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-                                style={{ background: activasT.length > 0 ? 'rgba(37,99,235,0.2)' : 'rgba(100,116,139,0.2)', color: activasT.length > 0 ? '#93C5FD' : '#94A3B8' }}
-                              >
-                                {activasT.length} publicador{activasT.length !== 1 ? 'es' : ''} asignado{activasT.length !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                            {activasT.length === 0 ? (
-                              <p className="text-xs" style={{ color: '#64748B' }}>{tx('Sin asignaciones')}</p>
-                            ) : (
-                              <div className="flex flex-col gap-0.5">
-                                {activasT.map(a => (
-                                  <p key={a.id} className="text-xs" style={{ color: '#94A3B8' }}>
-                                    {a.app_usuarios?.nombre || usuarios.find(u => String(u.id) === String(a.usuario_id))?.nombre || `Usuario ${a.usuario_id}`}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {t.responsable && (
-                        <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>
-                          <span style={{ color: '#CBD5E1' }}>{tx('Responsable:')}</span> {t.responsable}
+                    {(() => {
+                      const activasT = asignaciones.filter(a => String(a.territorio_id) === String(t.id) && a.activa);
+                      if (!activasT.length) return null;
+                      return (
+                        <p className="text-[11px] mb-2 truncate" style={{ color: '#94A3B8' }}>
+                          <span style={{ color: '#CBD5E1' }}>{tx('Asignados:')}</span>{' '}
+                          {activasT.map(a => a.app_usuarios?.nombre || usuarios.find(u => String(u.id) === String(a.usuario_id))?.nombre || `#${a.usuario_id}`).join(', ')}
                         </p>
+                      );
+                    })()}
+
+                    <div className="flex flex-col gap-1.5">
+                      {casas.some(c => String(c.territorio_id) === String(t.id) && c.estado === 'Pendiente') && (
+                        <button
+                          onClick={() => iniciarRuta(t.id)}
+                          className="flex items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium w-full"
+                          style={{ background: 'rgba(16,185,129,0.15)', color: '#34D399', border: '1px solid rgba(16,185,129,0.3)' }}
+                        >
+                          <Navigation size={11} /> {tx('Ruta de Visitas')}
+                        </button>
                       )}
-                      <p className="text-xs text-slate-500 mb-1">
-                        {casas.filter(c => String(c.territorio_id) === String(t.id)).length} casas registradas
-                      </p>
-                      <div className="flex flex-wrap gap-2">
+                      {esAdmin && (
                         <button
-                          onClick={() => openEdit(t)}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                          onClick={() => navigate(`/territorios?id=${t.id}`)}
+                          className="flex items-center justify-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium w-full"
+                          style={{ background: 'rgba(37,99,235,0.15)', color: '#93C5FD', border: '1px solid rgba(37,99,235,0.3)' }}
                         >
-                          <Pencil size={11} /> Editar
+                          <Settings2 size={11} /> {tx('Gestionar')}
                         </button>
-                        <button
-                          onClick={() => confirmDelete(t)}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
-                        >
-                          <Trash2 size={11} /> Eliminar
-                        </button>
-                        {ADMIN_ROLES.includes(user?.rol) && (
-                          <button
-                            onClick={() => setGestionarTerritorio(t)}
-                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium"
-                            style={{ background: 'rgba(37,99,235,0.15)', color: '#93C5FD', border: '1px solid rgba(37,99,235,0.3)' }}
-                          >
-                            {tx('Gestionar Asignaciones')}
-                          </button>
-                        )}
-                        {ADMIN_ROLES.includes(user?.rol) && (
-                          <button
-                            onClick={() => setManzanasModalTerritorio(t)}
-                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium"
-                            style={{ background: 'rgba(16,185,129,0.15)', color: '#6EE7B7', border: '1px solid rgba(16,185,129,0.3)' }}
-                          >
-                            {tx('Gestionar manzanas')}
-                          </button>
-                        )}
-                        {casas.some(c => String(c.territorio_id) === String(t.id) && c.estado === 'Pendiente') && (
-                          <button
-                            onClick={() => iniciarRuta(t.id)}
-                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium w-full mt-1"
-                            style={{ background: 'rgba(16,185,129,0.15)', color: '#34D399', border: '1px solid rgba(16,185,129,0.3)' }}
-                          >
-                            <Navigation size={11} /> {tx('Ruta de Visitas')}
-                          </button>
-                        )}
-                        {ADMIN_ROLES.includes(user?.rol) && (
-                          <button
-                            onClick={() => handleCompartir(t)}
-                            disabled={compartirLoading}
-                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium w-full mt-1"
-                            style={{ background: 'rgba(124,58,237,0.15)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.3)', opacity: compartirLoading ? 0.6 : 1, cursor: compartirLoading ? 'not-allowed' : 'pointer' }}
-                          >
-                            <Share2 size={11} /> {compartirLoading ? 'Generando...' : 'Compartir'}
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </Popup>
               </Polygon>
               <ZoomAwareLabel coordenadas={t.coordenadas} numero={t.numero} nombre={t.nombre} color={t.color} zoom={currentZoom} minZoom={DETAIL_ZOOM} progreso={progresoPorTerritorio[t.id]} />
@@ -960,7 +699,7 @@ const TerritoriesMap = () => {
             >
               {casasFiltradas.map((c) => (
                 <Marker key={c.id} position={[c.latitud, c.longitud]} icon={createHouseIcon(c.estado, c._offline)} estado={c.estado}>
-                  <Popup className="ficha-tecnica" maxWidth={300} minWidth={240}>
+                  <Popup autoPanPaddingTopLeft={POPUP_PADDING_TOP} className="ficha-tecnica" maxWidth={300} minWidth={240}>
                     <div className="min-w-[220px] max-w-[280px]">
                       {/* Header con color del estado */}
                       <div style={{ background: STATUS_COLORS[c.estado]?.hex || '#6B7280', padding: '10px 14px', margin: '-12px -12px 12px -12px', borderRadius: '12px 12px 0 0' }}>
@@ -1232,70 +971,6 @@ const TerritoriesMap = () => {
         )}
       </div>
 
-      {/* Modal nuevo territorio */}
-      {showNewModal && (
-        <ModalOverlay onClose={() => { setShowNewModal(false); setNewPolygonCoords(null); }} size="default">
-          <h3 className="text-lg font-bold mb-5">{tx('Nuevo Territorio')}</h3>
-          <form onSubmit={handleSaveNew}>
-            <div className="form-group">
-              <label className="form-label">{tx('Número del territorio')}</label>
-              <input value={formData.numero} onChange={e => setFormData(f => ({ ...f, numero: e.target.value }))} placeholder={tx('Ej: 1, 2, T-3 (opcional)')} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">{tx('Nombre *')}</label>
-              <input required value={formData.nombre} onChange={e => setFormData(f => ({ ...f, nombre: e.target.value }))} placeholder={tx('Ej: Zona Norte')} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">{tx('Descripción')}</label>
-              <textarea rows={3} value={formData.descripcion} onChange={e => setFormData(f => ({ ...f, descripcion: e.target.value }))} placeholder="Notas sobre este territorio..." />
-            </div>
-            <div className="form-group">
-              <label className="form-label">{tx('Responsable')}</label>
-              <input value={formData.responsable} onChange={e => setFormData(f => ({ ...f, responsable: e.target.value }))} placeholder={tx('Nombre del responsable')} />
-            </div>
-            {user?.rol === 'Super Admin' && !user?.congregacion_id && (
-              <div className="form-group">
-                <label className="form-label">{tx('Congregación *')}</label>
-                <select required value={formData.congregacion_id_override} onChange={e => setFormData(f => ({ ...f, congregacion_id_override: e.target.value }))}>
-                  <option value="">{tx('Seleccionar...')}</option>
-                  {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              </div>
-            )}
-            <div className="form-group">
-              <label className="form-label">{tx('Color del polígono')}</label>
-              <div className="flex items-center gap-3">
-                <input type="color" value={formData.color} onChange={e => setFormData(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 rounded-xl cursor-pointer" style={{ border: '1px solid rgba(0,0,0,0.15)' }} />
-                <span className="text-sm text-secondary">{tx('Color visible en el mapa')}</span>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button type="button" className="btn btn-outline flex-1" onClick={() => { setShowNewModal(false); setNewPolygonCoords(null); }}>
-                {tx('Cancelar')}
-              </button>
-              <button type="submit" className="btn btn-primary flex-1">
-                {tx('Guardar Territorio')}
-              </button>
-            </div>
-          </form>
-        </ModalOverlay>
-      )}
-
-      {/* Modal gestionar asignaciones */}
-      {gestionarTerritorio && (
-        <AsignacionesModal
-          territorio={gestionarTerritorio}
-          onClose={() => setGestionarTerritorio(null)}
-        />
-      )}
-
-      {manzanasModalTerritorio && (
-        <ManzanasModal
-          territorio={manzanasModalTerritorio}
-          onClose={() => setManzanasModalTerritorio(null)}
-        />
-      )}
-
       {/* Modal edición de casa */}
       {editCasa && (
         <EditHouseModal
@@ -1305,73 +980,6 @@ const TerritoriesMap = () => {
         />
       )}
 
-      {/* Modal compartir territorio */}
-      {compartirModal && (
-        <ModalOverlay onClose={() => setCompartirModal(null)} size="small">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <Share2 size={18} style={{ color: '#7C3AED' }} />
-            <h3 className="text-lg font-bold">{tx('Compartir Territorio')}</h3>
-          </div>
-          <p className="text-sm text-secondary mb-4">
-            {compartirModal.territorioNombre}
-          </p>
-          <div className="form-group">
-            <label className="form-label">{tx('Enlace de acceso')}</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input
-                readOnly
-                value={compartirModal.link}
-                style={{ flex: 1, fontSize: '12px', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'text' }}
-                onFocus={e => e.target.select()}
-              />
-              <button
-                className="btn btn-outline"
-                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', fontSize: '13px' }}
-                onClick={() => {
-                  navigator.clipboard.writeText(compartirModal.link);
-                  toast.success(tx('Enlace copiado al portapapeles'));
-                }}
-              >
-                <Copy size={13} /> Copiar
-              </button>
-            </div>
-          </div>
-          <p className="text-xs text-muted mt-2 mb-5">
-            {tx('Este enlace expira en 24 horas.')}
-          </p>
-          <div className="flex gap-3">
-            <button
-              className="btn btn-outline flex-1"
-              onClick={() => setCompartirModal(null)}
-            >
-              {tx('Cerrar')}
-            </button>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent('Territorio compartido: ' + compartirModal.link)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary flex-1"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', textDecoration: 'none' }}
-            >
-              <Share2 size={14} /> WhatsApp
-            </a>
-          </div>
-        </ModalOverlay>
-      )}
-
-      {/* Modal confirmar eliminación */}
-      {deleteTarget && (
-        <ConfirmModal
-          message={`¿Eliminar el territorio "${deleteTarget.nombre}"?`}
-          detail={deleteTarget.count > 0
-            ? `También se eliminarán las ${deleteTarget.count} casas registradas en este territorio.`
-            : 'Este territorio no tiene casas registradas.'}
-          confirmText="Sí, eliminar"
-          danger
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
     </div>
   );
 };
