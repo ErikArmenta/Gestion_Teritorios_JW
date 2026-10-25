@@ -8,7 +8,8 @@ El código ya está listo en el repositorio:
 | Pieza | Archivo | Qué hace |
 |---|---|---|
 | SDK en la app | `src/utils/onesignal.js` | Suscribe el teléfono y lo etiqueta con usuario, congregación, rol y grupo |
-| Service worker | `public/sw.js` | Recibe los push (carga el SDK de OneSignal) y sigue manejando el modo sin conexión |
+| Service worker de push | `public/push/onesignal/OneSignalSDKWorker.js` | Recibe los push (SDK de OneSignal), en su propia carpeta |
+| Service worker de la app | `public/sw.js` | Modo sin conexión (no toca los push) |
 | Envío automático | `supabase/functions/enviar-push/index.ts` | Manda el push cuando pasa algo en la base de datos |
 
 ## Qué notificaciones se envían
@@ -39,12 +40,14 @@ El código ya está listo en el repositorio:
    - **Default Icon URL:** `https://gestion-teritorios-jw.vercel.app/icons/notification-icon.png` (logo JW, 256 × 256)
 5. Busca la sección **Service Workers** (a veces dentro de *Advanced*) y activa
    **"Customize service worker paths and filenames"**:
-   - Path to service worker files: `/`
-   - Main service worker filename: `sw.js`
-   - Updater service worker filename: `sw.js`
-   - Service worker registration scope: `/`
+   - Path to service worker files: `/push/onesignal/`
+   - Main service worker filename: `OneSignalSDKWorker.js`
+   - Updater service worker filename: `OneSignalSDKWorker.js`
+   - Service worker registration scope: `/push/onesignal/`
 
-   Esto es necesario porque la app usa **un solo** service worker propio que ya incluye OneSignal.
+   OneSignal vive en **su propia carpeta** para no chocar con el service worker de la app
+   (`/sw.js`, modo sin conexión). Si ambos usan el mismo archivo, la app muestra
+   "Nueva versión disponible" una y otra vez.
 6. Guarda. Si te muestra un código para pegar en la página, **sáltalo**: ya está integrado.
 
 ## Paso 2 — Poner el App ID en Vercel
@@ -139,7 +142,8 @@ Crea estos 3, todos con:
 | Logs de la función dicen `401 No autorizado` | El header `x-webhook-secret` del webhook no coincide con el secreto `WEBHOOK_SECRET` |
 | Logs dicen `omitido: sin destinatarios` | Nadie cumple el filtro (p. ej. el grupo no tiene publicadores, o eres el único en la congregación) |
 | OneSignal responde error de autenticación | Revisa `ONESIGNAL_REST_API_KEY` y `ONESIGNAL_APP_ID` en los secretos |
-| Llegan notificaciones dobles | No crear otro service worker ni pegar el snippet de OneSignal en `index.html` |
+| Llegan notificaciones dobles | No pegar el snippet de OneSignal en `index.html` (ya está integrado) |
+| "Nueva versión disponible" en bucle | Las rutas de service worker en OneSignal deben ser las de `/push/onesignal/` (paso 1), no `sw.js` |
 | El link abre la página equivocada | Revisa `APP_URL` (sin `/` al final) |
 
 ## Notas para quien mantenga el código

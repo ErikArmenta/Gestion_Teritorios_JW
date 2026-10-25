@@ -1,8 +1,9 @@
 // Notificaciones push con OneSignal (Web SDK v16).
 //
 // Se activa solo si existe VITE_ONESIGNAL_APP_ID y en producción (en dev no hay service worker).
-// OneSignal usa NUESTRO service worker (public/sw.js hace importScripts de su SDK), así la app
-// sigue teniendo un solo SW con caché offline + push.
+// OneSignal tiene su PROPIO service worker en /push/onesignal/ (scope separado); el de la app
+// (/sw.js) solo maneja el modo offline. Compartir el mismo archivo causaba un bucle de
+// "Nueva versión disponible".
 //
 // Cada dispositivo queda identificado con:
 //   external_id = id del usuario (para avisos a una persona)
@@ -36,8 +37,10 @@ export const initOneSignal = () => {
   document.head.appendChild(script);
   conOneSignal((OneSignal) => OneSignal.init({
     appId: APP_ID,
-    serviceWorkerPath: 'sw.js',
-    serviceWorkerParam: { scope: '/' },
+    // Worker propio de OneSignal en su carpeta (ver public/push/onesignal/). Debe coincidir con
+    // OneSignal → Settings → Web → Service workers.
+    serviceWorkerPath: 'push/onesignal/OneSignalSDKWorker.js',
+    serviceWorkerParam: { scope: '/push/onesignal/' },
     notifyButton: { enable: false },
     // Usamos nuestro propio aviso para pedir permiso (App.jsx)
     promptOptions: { autoPrompt: false },

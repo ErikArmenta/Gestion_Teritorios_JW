@@ -75,7 +75,8 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   usuarios, asignaciones, exhibidores y grupos. Todo conjunto nuevo que deba verse sin internet se
   guarda ahí al cargarlo y se restaura en el camino offline. Al volver la conexión se recarga.
 - **Push (OneSignal)**: `src/utils/onesignal.js`. Activo solo con `VITE_ONESIGNAL_APP_ID` y en
-  producción. Usa nuestro `sw.js` (importScripts del SDK; no crear otro service worker).
+  producción. Tiene su propio worker en `public/push/onesignal/` (scope `/push/onesignal/`);
+  **no** meter OneSignal en `sw.js` (dos registros del mismo archivo = bucle de "Nueva versión").
   Dispositivo = `external_id` (id de usuario) + tags `congregacion_id`, `rol`, `grupo_id`.
   La REST API key de OneSignal es secreta: solo en Supabase (Edge Function), nunca en el frontend.
   Envío automático: `supabase/functions/enviar-push` (webhooks de BD). Configuración paso a paso:

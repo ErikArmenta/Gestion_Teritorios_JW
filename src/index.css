@@ -141,11 +141,14 @@ body {
 #root { overflow-x: hidden; }
 
 /* ── Typography ─────────────────────────────────────────────────────────────── */
-h1, h2, h3, h4 {
-  color: var(--text-primary);
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.02em;
+/* En @layer base: sin capa le ganaba a text-white/m-0 (título del login oscuro sobre oscuro) */
+@layer base {
+  h1, h2, h3, h4 {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
+  }
 }
 p { color: var(--text-secondary); }
 

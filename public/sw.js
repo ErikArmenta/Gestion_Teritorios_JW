@@ -1,15 +1,11 @@
 // Service Worker — Gestion Territorios JW
 // IMPORTANTE: subir CACHE_VERSION cuando cambie la lógica de este archivo.
 
-// Notificaciones push: OneSignal (src/utils/onesignal.js) usa este mismo SW.
-// En try/catch: si el CDN falla, el SW igual se instala (la caché offline sigue funcionando).
-try {
-  importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
-} catch (err) {
-  console.warn('[SW] OneSignal no disponible:', err);
-}
+// Las notificaciones push NO pasan por aquí: OneSignal tiene su propio service worker en
+// /push/onesignal/ (scope separado). Si ambos usaran este archivo, el navegador los vería como
+// versiones distintas y se reemplazarían sin fin ("Nueva versión disponible" en bucle).
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `territorial-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `territorial-assets-${CACHE_VERSION}`;
 const DATA_CACHE = `territorial-data-${CACHE_VERSION}`;
