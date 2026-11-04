@@ -306,7 +306,7 @@ const TerritoriesMap3D = ({ onVistaClasica }) => {
           </div>
         )}
 
-        <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} onVistaClasica={onVistaClasica} />
+        <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} />
 
         {sinConexion && (
           <div className="m3d-aviso">

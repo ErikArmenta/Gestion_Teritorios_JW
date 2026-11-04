@@ -539,7 +539,7 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
         </div>
 
         {/* Mientras se dibuja no se cambia de estilo (borraría el dibujo) */}
-        {!sesion && <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} onVistaClasica={onVistaClasica} />}
+        {!sesion && <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} />}
 
         {sinConexion && (
           <div className="m3d-aviso">

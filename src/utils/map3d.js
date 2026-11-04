@@ -45,6 +45,27 @@ export const ESTILO_SATELITE = {
 
 export const estiloPara = (satelite, oscuro) => (satelite ? ESTILO_SATELITE : oscuro ? ESTILO_OSCURO : ESTILO_CLARO);
 
+// Pin negro con casa amarilla para elegir un punto (sin texto de usuario: es seguro como HTML fijo)
+export const PIN_CASA_HTML = `
+  <div class="m3d-pin__icono">
+    <svg width="44" height="56" viewBox="0 0 44 56" aria-hidden="true">
+      <ellipse cx="22" cy="53" rx="7" ry="2.5" fill="rgba(0,0,0,0.28)"/>
+      <path d="M22 2C11.5 2 3 10.3 3 20.6 3 34.5 22 52 22 52S41 34.5 41 20.6C41 10.3 32.5 2 22 2Z"
+            fill="#0F172A" stroke="#FFFFFF" stroke-width="2.5"/>
+      <path d="M22 11.5 13.5 18.6V29h6.2v-6h4.6v6h6.2V18.6Z" fill="#FACC15"/>
+    </svg>
+  </div>`;
+
+// Pin fijo en el centro del mapa (no recibe toques: arrastrar encima mueve el mapa). Devuelve el Marker.
+export const crearPinCentro = (map) => {
+  const el = document.createElement('div');
+  el.className = 'm3d-pin';
+  el.innerHTML = PIN_CASA_HTML;
+  const pin = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, 4] }).setLngLat(map.getCenter()).addTo(map);
+  map.on('move', () => pin.setLngLat(map.getCenter()));
+  return pin;
+};
+
 export const FUENTE_ETIQUETAS = ['Noto Sans Bold'];
 export const VACIO = { type: 'FeatureCollection', features: [] };
 const AMARILLO = '#FACC15';

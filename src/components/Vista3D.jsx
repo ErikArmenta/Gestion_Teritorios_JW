@@ -1,40 +1,14 @@
-import React, { Component, Suspense, useEffect, useState } from 'react';
+import React, { Component, Suspense, useState } from 'react';
+import { soportaWebGL2 } from '../utils/webgl';
 import { t } from '../i18n';
 
-// Elección entre mapa 3D (MapLibre, móvil) y vista clásica (Leaflet) — la usan el mapa principal y
-// "Registrar casa". 3D solo si la pantalla es < md (768px) y hay WebGL2; el usuario puede elegir la
-// clásica y se recuerda para todos los mapas (localStorage 'vista_mapas').
-// Si la vista 3D truena (chunk sin red, error de WebGL…) se cae a la clásica, nunca pantalla en blanco.
+// Elección entre mapa 3D (MapLibre) y vista clásica (Leaflet) en las pantallas con mapa: mapa principal,
+// "Registrar casa" y Territorios. El 3D es para todos (móvil y escritorio); la clásica queda solo como
+// respaldo automático: sin WebGL2, o si la vista 3D truena (chunk sin red, error de WebGL…) — nunca
+// pantalla en blanco. En ese caso la clásica muestra "Mapa 3D" para reintentar.
+// Los links compartidos (/shared) y las alertas de pánico siguen en 2D (Leaflet) a propósito.
 
-const VISTA_KEY = 'vista_mapas'; // '3d' | 'clasica'
-const VISTA_KEY_VIEJA = 'registro_vista';
-const MQ_MOVIL = '(max-width: 767px)';
-
-const leerVista = () => {
-  try { return localStorage.getItem(VISTA_KEY) || localStorage.getItem(VISTA_KEY_VIEJA); } catch { return null; }
-};
-
-const soportaWebGL2 = () => {
-  try {
-    const gl = document.createElement('canvas').getContext('webgl2');
-    gl?.getExtension('WEBGL_lose_context')?.loseContext(); // liberar el contexto de prueba
-    return !!gl;
-  } catch { return false; }
-};
-
-const useEsMovil = () => {
-  const [esMovil, setEsMovil] = useState(() => !!window.matchMedia?.(MQ_MOVIL).matches);
-  useEffect(() => {
-    const mq = window.matchMedia?.(MQ_MOVIL);
-    if (!mq?.addEventListener) return undefined;
-    const onChange = (e) => setEsMovil(e.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return esMovil;
-};
-
-class Fallo3D extends Component {
+export class Fallo3D extends Component {
   constructor(props) {
     super(props);
     this.state = { error: false };
@@ -55,34 +29,24 @@ const CargandoMapa3D = () => (
 );
 
 /**
- * Pinta la vista 3D o la clásica.
- *  - Vista3DComp: componente lazy (recibe onVistaClasica)
- *  - render(onVista3D): la vista clásica; onVista3D es null si este equipo no puede usar 3D
+ * Pinta la vista 3D o, como respaldo, la clásica.
+ *  - Vista3DComp: componente lazy (recibe onVistaClasica: se llama si el mapa no se puede crear)
+ *  - render(onVista3D): la vista clásica; onVista3D (reintentar el 3D) es null si no hay WebGL2
  */
 const ElegirVista = ({ Vista3DComp, render, props3D }) => {
-  const esMovil = useEsMovil();
   const [webgl] = useState(soportaWebGL2);
-  const [vista, setVista] = useState(() => leerVista() || '3d');
   const [fallo, setFallo] = useState(false); // solo esta vez; la próxima visita lo vuelve a intentar
 
-  const elegirVista = (v) => {
-    setVista(v);
-    setFallo(false);
-    try { localStorage.setItem(VISTA_KEY, v); } catch { /* sin storage */ }
-  };
-
-  const puede3D = esMovil && webgl;
-
-  if (puede3D && vista === '3d' && !fallo) {
+  if (webgl && !fallo) {
     return (
       <Fallo3D onError={() => setFallo(true)}>
         <Suspense fallback={<CargandoMapa3D />}>
-          <Vista3DComp {...props3D} onVistaClasica={() => elegirVista('clasica')} />
+          <Vista3DComp {...props3D} onVistaClasica={() => setFallo(true)} />
         </Suspense>
       </Fallo3D>
     );
   }
-  return render(puede3D ? () => elegirVista('3d') : null);
+  return render(webgl ? () => setFallo(false) : null);
 };
 
 export default ElegirVista;

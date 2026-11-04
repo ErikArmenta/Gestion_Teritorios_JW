@@ -16,7 +16,7 @@ import useMapa3D, { leerPrefs3D, guardarPrefs3D } from '../hooks/useMapa3D';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 import {
   maplibregl, actualizarFuente, poligonosGeoJSON, casasBloquesGeoJSON, casasPuntosGeoJSON,
-  seleccionGeoJSON, cuadrado, limitesDe, VACIO,
+  seleccionGeoJSON, cuadrado, limitesDe, VACIO, crearPinCentro,
 } from '../utils/map3d';
 import { t } from '../i18n';
 
@@ -31,17 +31,6 @@ const EMPTY_FORM = {
   tiene_caso_especial: false, tipo_caso: '', detalles_caso: '', notas: '',
 };
 const CENTRO_DEFAULT = { lat: 31.7619, lng: -106.4850 };
-
-// Pin negro con casa amarilla (sin texto de usuario: es seguro como HTML fijo)
-const PIN_HTML = `
-  <div class="m3d-pin__icono">
-    <svg width="44" height="56" viewBox="0 0 44 56" aria-hidden="true">
-      <ellipse cx="22" cy="53" rx="7" ry="2.5" fill="rgba(0,0,0,0.28)"/>
-      <path d="M22 2C11.5 2 3 10.3 3 20.6 3 34.5 22 52 22 52S41 34.5 41 20.6C41 10.3 32.5 2 22 2Z"
-            fill="#0F172A" stroke="#FFFFFF" stroke-width="2.5"/>
-      <path d="M22 11.5 13.5 18.6V29h6.2v-6h4.6v6h6.2V18.6Z" fill="#FACC15"/>
-    </svg>
-  </div>`;
 
 const puntoEn = (feature, pt) => {
   try { return turf.booleanPointInPolygon(pt, feature); } catch { return false; }
@@ -121,12 +110,7 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
   // ── Eventos propios de esta pantalla (se registran una vez al crear el mapa) ──
   const alCrear = (map, geo) => {
     // Pin fijo en el centro (no recibe toques: arrastrar sobre él mueve el mapa)
-    const pinEl = document.createElement('div');
-    pinEl.className = 'm3d-pin';
-    pinEl.innerHTML = PIN_HTML;
-    const pin = new maplibregl.Marker({ element: pinEl, anchor: 'bottom', offset: [0, 4] })
-      .setLngLat(map.getCenter())
-      .addTo(map);
+    crearPinCentro(map);
 
     // Bloque amarillo bajo el pin: el edificio de OSM si hay, si no un cuadrado del tamaño de una casa
     const resaltar = () => {
@@ -145,7 +129,6 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
     map.on('style.load', resaltar);
     geo.on('geolocate', () => { ubicadoRef.current = true; });
     map.on('movestart', () => { setMoviendo(true); actualizarFuente(map, 'seleccion', VACIO); });
-    map.on('move', () => pin.setLngLat(map.getCenter()));
     map.on('moveend', () => {
       const c = map.getCenter();
       setMoviendo(false);
@@ -286,7 +269,7 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
           <div className="m3d-campana"><NotificationBell /></div>
         </div>
 
-        <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} onVistaClasica={onVistaClasica} />
+        <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} />
 
         {sinConexion && (
           <div className="m3d-aviso">

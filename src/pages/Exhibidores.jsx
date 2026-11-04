@@ -12,6 +12,7 @@ import ExhibidorIcon from '../components/ExhibidorIcon';
 import { EXHIBIDOR_ICON_SVG_PATHS } from '../utils/constants';
 import DarkTileLayers from '../components/DarkTileLayers';
 import LocateButton from '../components/LocateButton';
+import MapaConRespaldo from '../components/MapaConRespaldo';
 import { t as tx } from '../i18n';
 
 const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'];
@@ -234,6 +235,11 @@ const Exhibidores = () => {
     return [lat, lng];
   }, [exhibidores]);
 
+  // Exhibidores activos para el mapa 3D (memorizado: un array nuevo por render recrearía los marcadores)
+  const puntosExhibidores = useMemo(() => exhibidores
+    .filter(e => e.activo !== false)
+    .map(e => ({ id: e.id, lat: e.latitud, lng: e.longitud, color: e.color || '#F59E0B' })), [exhibidores]);
+
   // ====== Render ======
   return (
     <div style={{ flex: 1 }}>
@@ -280,18 +286,26 @@ const Exhibidores = () => {
         <div>
           {/* Mini mapa */}
           <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
-            <MapContainer
-              center={mapCenter}
-              zoom={14}
-              style={{ height: 'min(450px, 55dvh)', width: '100%' }}
-              scrollWheelZoom={true}
-            >
-              <DarkTileLayers />
-              {exhibidores.filter(e => e.activo !== false).map(e => (
-                <Marker key={e.id} position={[e.latitud, e.longitud]} icon={exhibidorIcon(e.color || '#F59E0B')} />
-              ))}
-              <LocateButton />
-            </MapContainer>
+            {/* 3D (MapLibre); Leaflet si no hay WebGL2 */}
+            <MapaConRespaldo
+              modo="puntos"
+              puntos={puntosExhibidores}
+              alto="min(450px, 55dvh)"
+              clasico={(
+                <MapContainer
+                  center={mapCenter}
+                  zoom={14}
+                  style={{ height: 'min(450px, 55dvh)', width: '100%' }}
+                  scrollWheelZoom={true}
+                >
+                  <DarkTileLayers />
+                  {exhibidores.filter(e => e.activo !== false).map(e => (
+                    <Marker key={e.id} position={[e.latitud, e.longitud]} icon={exhibidorIcon(e.color || '#F59E0B')} />
+                  ))}
+                  <LocateButton />
+                </MapContainer>
+              )}
+            />
           </div>
 
           {/* Boton nuevo exhibidor */}
@@ -539,19 +553,29 @@ const Exhibidores = () => {
             </div>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>
-                {tx('Ubicacion *')} <span style={{ fontWeight: 400, color: '#94A3B8' }}>{tx('(click en el mapa o arrastra el marcador)')}</span>
+                {tx('Ubicacion *')} <span style={{ fontWeight: 400, color: '#94A3B8' }}>{tx('(mueve el mapa o toca el punto)')}</span>
               </label>
               <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
-                <MapContainer
-                  center={mapCenter}
-                  zoom={14}
-                  style={{ height: '320px', width: '100%' }}
-                  scrollWheelZoom={true}
-                >
-                  <DarkTileLayers />
-                  <LocationMarker position={newPosition} setPosition={setNewPosition} />
-                  <LocateButton onLocate={(latlng) => setNewPosition(latlng)} />
-                </MapContainer>
+                {/* 3D: pin al centro, mueve el mapa o toca el punto. Leaflet si no hay WebGL2 */}
+                <MapaConRespaldo
+                  modo="selector"
+                  posicion={newPosition}
+                  onCambiar={setNewPosition}
+                  centro={mapCenter}
+                  alto="320px"
+                  clasico={(
+                    <MapContainer
+                      center={mapCenter}
+                      zoom={14}
+                      style={{ height: '320px', width: '100%' }}
+                      scrollWheelZoom={true}
+                    >
+                      <DarkTileLayers />
+                      <LocationMarker position={newPosition} setPosition={setNewPosition} />
+                      <LocateButton onLocate={(latlng) => setNewPosition(latlng)} />
+                    </MapContainer>
+                  )}
+                />
               </div>
               {newPosition && (
                 <p style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>

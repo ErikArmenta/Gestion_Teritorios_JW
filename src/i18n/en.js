@@ -647,6 +647,10 @@ const en = {
   'Ver más': 'Show more',
   'Ver menos': 'Show less',
 
+  // ── Selectores de ubicación 3D (Exhibidores, Editar casa) ──
+  '(mueve el mapa o toca el punto)': '(move the map or tap the spot)',
+  'Mueve el mapa o toca el punto para reubicar la casa (o usa el botón de ubicación).': 'Move the map or tap the spot to relocate the house (or use the location button).',
+
   // ── Territorios 3D (móvil): dibujo ──
   'No se pudo iniciar el dibujo en este mapa': 'Could not start drawing on this map',
   'Esta forma no se puede editar (el polígono guardado no es válido). Dibuja una nueva.': 'This shape cannot be edited (the saved polygon is not valid). Draw a new one.',

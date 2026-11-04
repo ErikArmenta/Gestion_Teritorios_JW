@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-04 — 3D en escritorio y en todos los mapas (menos links compartidos y pánico)
+
+- `components/Vista3D.jsx` (3D para todos; la clásica solo como respaldo; sin botón "Vista clásica")
+- `components/MapaConRespaldo.jsx`, `components/Mapa3DEmbebido.jsx` (nuevos: mapa 3D pequeño / selector de ubicación)
+- `pages/Exhibidores.jsx` (mapa de exhibidores y selector de ubicación en 3D)
+- `components/EditHouseModal.jsx` (selector de ubicación en 3D, con las casas alrededor)
+- `utils/webgl.js` (nuevo), `utils/map3d.js` (pin compartido), `RegisterHouse3D.jsx`
+- `index.css` (escritorio: panel flotante a la izquierda; mapa embebido), `i18n/en.js`
+
 ## 2026-11-04 — Territorios y manzanas en 3D (móvil): dibujar y editar forma
 
 - `TerritoriosAdmin.jsx` (elige vista 3D en móvil / clásica en escritorio; lógica movida a `useTerritoriosAdmin`)

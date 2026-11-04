@@ -10,7 +10,7 @@ Multi-congregación. Desarrollada por Master Engenering EA. Idioma de la UI: **e
 - Tailwind CSS v4 (`@tailwindcss/postcss`) + CSS propio en `src/index.css`
 - Supabase (`src/supabaseClient.js`) — solo base de datos/storage/realtime, **no** Supabase Auth
 - Leaflet / react-leaflet 5 / leaflet-draw / react-leaflet-cluster / Turf
-- MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — mapa principal, "Registrar casa" y Territorios en móvil; dibujo con Terra Draw
+- MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — todos los mapas (móvil y escritorio) menos links compartidos y pánico; dibujo con Terra Draw
 - Chart.js, jsPDF + autotable, xlsx, lucide-react (iconos)
 - Deploy en Vercel (`vercel.json`: rewrite SPA + headers de `sw.js` y `manifest.json`)
 
@@ -102,10 +102,13 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - Modales: usar `ModalOverlay` (tamaños `small|default|large|full`), no crear overlays nuevos a mano.
   Todo contenedor con fondo blanco fijo debe llevar la clase `light-surface` (si no, en modo oscuro
   los textos y botones `btn-outline` salen blancos sobre blanco).
-- Mapas: usar `<DarkTileLayers />` (mapa oscuro con nombres de calles en blanco neón; clases
+- **Mapas 2D (Leaflet) solo en**: links compartidos (`/shared`), alertas de pánico (`PanicAlert`,
+  `PanicHistory`) y como **respaldo automático** de los mapas 3D (sin WebGL2 o si el 3D falla).
+  Para esos mapas: `<DarkTileLayers />` (mapa oscuro con nombres de calles en blanco neón; clases
   `dark-tiles*` en `index.css`) o `<TileLayer {...LIGHT_MAP_TILES} />` para mapa claro. **No usar
   CARTO** (`basemaps.cartocdn.com`): exige API key y muestra "API KEY REQUIRED".
-- **Mapa principal (`TerritoriesMap`, y `TerritoriesMap3D` en móvil) = solo consulta**: casas, etiquetas, progreso y ruta de visitas.
+  Todo lo demás es 3D (MapLibre): ver "Mapas 3D" abajo.
+- **Mapa principal (`TerritoriesMap3D`, y su respaldo `TerritoriesMap`) = solo consulta**: casas, etiquetas, progreso y ruta de visitas.
   Su popup de territorio es compacto (`TerritorioTrabajo soloLectura`) con botón "Gestionar" →
   `/territorios?id=X`. **No** agregar ahí editar/eliminar/dibujar/asignaciones/manzanas/compartir:
   todo eso vive en `TerritoriosAdmin` (`/territorios`, ancianos/ministeriales/admins), que tiene su
@@ -121,19 +124,25 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   en tiempo real (`onLocate` recibe la 1ª posición) y además hace `invalidateSize` al cambiar el
   tamaño del contenedor. No agregar botones "Usar mi ubicación" aparte. En mapas MapLibre el
   equivalente es `GeolocateControl` (arriba a la izquierda, `trackUserLocation`).
-- **Mapas 3D en móvil (MapLibre)**: el mapa principal (`TerritoriesMap3D`), "Registrar casa"
-  (`RegisterHouse3D`) y Territorios (`TerritoriosAdmin3D`) se abren en 3D a pantalla completa si la pantalla es < `md` y hay WebGL2.
-  `components/Vista3D.jsx` (`ElegirVista`) decide: en escritorio, sin WebGL2, si el 3D truena (`Fallo3D`)
-  o si el usuario elige "Vista clásica" (`localStorage vista_mapas`, vale para todos los mapas) se usa la
-  vista clásica con Leaflet, que sigue igual. Las pantallas 3D se cargan con import dinámico.
+- **Mapas 3D (MapLibre), móvil y escritorio**: el mapa principal (`TerritoriesMap3D`), "Registrar casa"
+  (`RegisterHouse3D`) y Territorios (`TerritoriosAdmin3D`) se abren en 3D a pantalla completa si hay WebGL2.
+  `components/Vista3D.jsx` (`ElegirVista`) pone la vista clásica (Leaflet) solo como respaldo: sin WebGL2
+  o si el 3D truena (`Fallo3D`); ahí la clásica muestra "Mapa 3D" para reintentar. Ya no hay botón
+  "Vista clásica" (la preferencia vieja `localStorage vista_mapas` se ignora). Las pantallas 3D se cargan
+  con import dinámico. Mapas pequeños dentro de páginas o modales (Exhibidores, Editar casa):
+  `components/MapaConRespaldo.jsx` → `Mapa3DEmbebido` (`modo="selector"` con pin al centro, o
+  `modo="puntos"`); recibe el Leaflet de siempre en `clasico` como respaldo.
   - Lógica compartida clásica/3D — los cambios van ahí, no en cada vista:
     `hooks/useMapaPrincipal.js` (filtro "Mis territorios", progreso, búsqueda, ruta de visitas) y
     `hooks/useGuardarCasa.js` (guardar casa nueva: foto, nota de voz, cola offline).
   - `hooks/useMapa3D.js`: crea el mapa (crédito, `GeolocateControl`, brújula), cambia estilo y 2D/3D y
     actualiza las fuentes GeoJSON (cada una de un `useMemo`). Botones flotantes: `components/BotonesMapa3D.jsx`.
-  - Layout: `.m3d` es `fixed` entre el borde superior y la `BottomNav`, `z-index: 40` (pánico, nav,
-    modales y toasts quedan encima). Mapa arriba y panel abajo (no se enciman). Lo que queda en la parte
-    baja del panel (estados, listas, botones) lleva `margin-right: 84px` para no quedar bajo el botón de pánico.
+  - Layout: `.m3d` es `fixed`, `z-index: 40` (pánico, nav, modales y toasts quedan encima).
+    Móvil: entre el borde superior y la `BottomNav`; mapa arriba y panel abajo (no se enciman); lo que
+    queda en la parte baja del panel (estados, listas, botones, `.m3d-pie`) lleva `margin-right: 84px`
+    para no quedar bajo el botón de pánico. Escritorio (`md+`): a la derecha de la `Sidebar` (256px), mapa
+    a todo lo ancho y el panel flota a la izquierda (`min(400px, 46%)`); los controles del mapa se corren
+    a la derecha del panel.
     El contenedor del mapa usa `.m3d .m3d-canvas` (doble clase): `.maplibregl-map { position: relative }`
     le ganaba según el orden de los CSS y el mapa salía en blanco.
   - Mapa principal 3D: también **solo consulta**. Panel con lista de territorios (progreso), ficha de
@@ -142,7 +151,7 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
     llamar, cómo llegar, historial).
   - Registrar casa 3D: pin fijo al centro; territorio y manzana se detectan con Turf según el pin (el
     usuario puede cambiarlos). `?territorio=X` abre sobre ese territorio ya elegido.
-  - Territorios 3D (`TerritoriosAdmin3D`, móvil): lista → ficha (progreso y grupo con `TerritorioTrabajo`,
+  - Territorios 3D (`TerritoriosAdmin3D`): lista → ficha (progreso y grupo con `TerritorioTrabajo`,
     Editar forma, Manzanas, Editar datos, Asignaciones, Compartir, Eliminar) → manzanas en el mismo mapa.
     Lógica y modales compartidos con la clásica: `hooks/useTerritoriosAdmin.js` y `components/TerritorioModales.jsx`
     (la clásica sigue con `leaflet-draw` y `ManzanasModal`).

@@ -12,6 +12,7 @@ import useVoiceRecorder from '../hooks/useVoiceRecorder';
 import { supabase } from '../supabaseClient';
 import DarkTileLayers from './DarkTileLayers';
 import LocateButton from './LocateButton';
+import MapaConRespaldo from './MapaConRespaldo';
 import { t as tx } from '../i18n';
 
 L.Marker.prototype.options.icon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
@@ -449,19 +450,29 @@ const EditHouseModal = ({ casa, onClose, onSaved }) => {
               </div>
             </div>
             <p className="text-xs mb-2" style={{ color: '#475569' }}>
-              {tx('Usa el botón de ubicación del mapa, arrastra el marcador o haz clic para reubicar la casa.')}
+              {tx('Mueve el mapa o toca el punto para reubicar la casa (o usa el botón de ubicación).')}
             </p>
 
             <div className="rounded-xl overflow-hidden" style={{ height: '260px' }}>
-              <MapContainer
-                center={[position.lat, position.lng]}
-                zoom={16}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <DarkTileLayers />
-                <DraggableMarker position={position} setPosition={setPosition} />
-                <LocateButton onLocate={setPosition} />
-              </MapContainer>
+              {/* 3D: pin al centro (con las casas alrededor). Leaflet si no hay WebGL2 */}
+              <MapaConRespaldo
+                modo="selector"
+                posicion={position}
+                onCambiar={setPosition}
+                mostrarCasas
+                alto="260px"
+                clasico={(
+                  <MapContainer
+                    center={[position.lat, position.lng]}
+                    zoom={16}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <DarkTileLayers />
+                    <DraggableMarker position={position} setPosition={setPosition} />
+                    <LocateButton onLocate={setPosition} />
+                  </MapContainer>
+                )}
+              />
             </div>
 
             <div className="flex items-center justify-center gap-4 mt-2 px-3 py-2 rounded-lg text-xs font-mono"
