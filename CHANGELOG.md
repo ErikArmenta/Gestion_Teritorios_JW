@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-04 — Territorios y manzanas en 3D (móvil): dibujar y editar forma
+
+- `TerritoriosAdmin.jsx` (elige vista 3D en móvil / clásica en escritorio; lógica movida a `useTerritoriosAdmin`)
+- `TerritoriosAdmin3D.jsx` (nuevo: dibujar territorio, editar forma, manzanas en el mismo mapa)
+- `utils/dibujo3d.js` (nuevo: Terra Draw sobre MapLibre)
+- `hooks/useTerritoriosAdmin.js`, `components/TerritorioModales.jsx` (nuevos, compartidos por las dos vistas)
+- `DataContext.jsx` (`updateTerritorio` / `updateManzana` reflejan el cambio al momento)
+- `utils/map3d.js` (`colorRelleno`), `index.css`, `i18n/en.js`
+- `package.json` (+ `terra-draw`, `terra-draw-maplibre-gl-adapter`)
+
 ## 2026-11-04 — Mapa principal en 3D (móvil) + registrar visita con un toque
 
 - `TerritoriesMap.jsx` (elige vista 3D en móvil / clásica en escritorio; lógica movida a `useMapaPrincipal`)

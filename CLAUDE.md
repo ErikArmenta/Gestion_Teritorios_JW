@@ -10,7 +10,7 @@ Multi-congregación. Desarrollada por Master Engenering EA. Idioma de la UI: **e
 - Tailwind CSS v4 (`@tailwindcss/postcss`) + CSS propio en `src/index.css`
 - Supabase (`src/supabaseClient.js`) — solo base de datos/storage/realtime, **no** Supabase Auth
 - Leaflet / react-leaflet 5 / leaflet-draw / react-leaflet-cluster / Turf
-- MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — mapa principal y "Registrar casa" en móvil
+- MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — mapa principal, "Registrar casa" y Territorios en móvil; dibujo con Terra Draw
 - Chart.js, jsPDF + autotable, xlsx, lucide-react (iconos)
 - Deploy en Vercel (`vercel.json`: rewrite SPA + headers de `sw.js` y `manifest.json`)
 
@@ -121,8 +121,8 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   en tiempo real (`onLocate` recibe la 1ª posición) y además hace `invalidateSize` al cambiar el
   tamaño del contenedor. No agregar botones "Usar mi ubicación" aparte. En mapas MapLibre el
   equivalente es `GeolocateControl` (arriba a la izquierda, `trackUserLocation`).
-- **Mapas 3D en móvil (MapLibre)**: el mapa principal (`TerritoriesMap3D`) y "Registrar casa"
-  (`RegisterHouse3D`) se abren en 3D a pantalla completa si la pantalla es < `md` y hay WebGL2.
+- **Mapas 3D en móvil (MapLibre)**: el mapa principal (`TerritoriesMap3D`), "Registrar casa"
+  (`RegisterHouse3D`) y Territorios (`TerritoriosAdmin3D`) se abren en 3D a pantalla completa si la pantalla es < `md` y hay WebGL2.
   `components/Vista3D.jsx` (`ElegirVista`) decide: en escritorio, sin WebGL2, si el 3D truena (`Fallo3D`)
   o si el usuario elige "Vista clásica" (`localStorage vista_mapas`, vale para todos los mapas) se usa la
   vista clásica con Leaflet, que sigue igual. Las pantallas 3D se cargan con import dinámico.
@@ -142,6 +142,17 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
     llamar, cómo llegar, historial).
   - Registrar casa 3D: pin fijo al centro; territorio y manzana se detectan con Turf según el pin (el
     usuario puede cambiarlos). `?territorio=X` abre sobre ese territorio ya elegido.
+  - Territorios 3D (`TerritoriosAdmin3D`, móvil): lista → ficha (progreso y grupo con `TerritorioTrabajo`,
+    Editar forma, Manzanas, Editar datos, Asignaciones, Compartir, Eliminar) → manzanas en el mismo mapa.
+    Lógica y modales compartidos con la clásica: `hooks/useTerritoriosAdmin.js` y `components/TerritorioModales.jsx`
+    (la clásica sigue con `leaflet-draw` y `ManzanasModal`).
+  - Dibujo en MapLibre: `utils/dibujo3d.js` (Terra Draw: polígono, rectángulo y `select` para mover vértices).
+    Al dibujar el mapa se pone plano (pitch 0) y se ocultan los botones de estilo (un `setStyle` borra las capas
+    de Terra Draw; si pasa, la sesión se cancela). Coordenadas: mismo formato de siempre `[[lat, lng], ...]`
+    sin repetir el primer punto (lo leen la vista clásica, los links compartidos y el pánico).
+    Una manzana que se sale del territorio pide confirmación.
+  - Editar la forma de un territorio manda su propio `congregacion_id` (`guardarForma`): `updateTerritorio`
+    pone la del usuario si no viene y un Super Admin lo movería de congregación.
 - `utils/map3d.js` (MapLibre): estilos OpenFreeMap (`positron` claro, `dark` oscuro) y satélite Esri
   (lleva atribución), capas propias (`agregarCapas`, se vuelven a poner en cada `style.load`), worker con
   `setWorkerUrl`. Las capas 3D van después de la última capa que no es texto del estilo (si no, el

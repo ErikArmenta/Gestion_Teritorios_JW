@@ -1019,3 +1019,12 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 [data-theme="dark"] .m3d .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(180deg); }
 [data-theme="dark"] .m3d .maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon,
 [data-theme="dark"] .m3d .maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon { filter: none; }
+
+/* ── Territorios 3D (TerritoriosAdmin3D): dibujo con Terra Draw ── */
+.m3d-accion--roja { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.3); color: #DC2626; }
+.m3d-accion:disabled { opacity: 0.55; }
+.m3d-buscador--plano { height: 44px; box-shadow: none; background: var(--bg-hover); }
+.m3d-canvas.is-drawing .maplibregl-canvas { cursor: crosshair; }
+.m3d-estado svg { flex-shrink: 0; }
+/* Texto en la parte baja del panel: libre la esquina del botón de pánico */
+.m3d-pie { margin-right: 84px; }

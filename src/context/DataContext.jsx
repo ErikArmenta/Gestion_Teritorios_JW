@@ -400,6 +400,8 @@ export const DataProvider = ({ children }) => {
     const safeUpdates = congregacionIdFinal && !updates.congregacion_id ? { ...updates, congregacion_id: congregacionIdFinal } : updates;
     const { error } = await supabase.from('territorios').update(safeUpdates).eq('id', id);
     if (error) throw error;
+    // Verlo ya (p. ej. la forma nueva de un territorio); el UPDATE de tiempo real trae lo mismo
+    setTerritorios(prev => prev.map(t => (t.id === id ? { ...t, ...safeUpdates } : t)));
   };
 
   const deleteTerritorio = async (id) => {
@@ -576,6 +578,7 @@ export const DataProvider = ({ children }) => {
   const updateManzana = async (id, updates) => {
     const { error } = await supabase.from('territorio_manzanas').update(updates).eq('id', id);
     if (error) throw error;
+    setManzanas(prev => prev.map(m => (m.id === id ? { ...m, ...updates } : m)));
   };
 
   const deleteManzana = async (id) => {

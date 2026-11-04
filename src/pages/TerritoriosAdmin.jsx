@@ -1,32 +1,27 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, lazy, useCallback, useEffect, useState } from 'react';
 import { MapContainer, Polygon, useMap, useMapEvents } from 'react-leaflet';
 import { useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import {
-  LandPlot, Plus, Search, Pencil, Trash2, Users, Grid2x2, Share2, Copy, MapPin, Info,
+  LandPlot, Plus, Search, Pencil, Trash2, Users, Grid2x2, Share2, MapPin, Info, Box,
 } from 'lucide-react';
-import { useData } from '../context/DataContext';
-import { useAuth } from '../context/AuthContext';
-import { useGrupos } from '../context/GruposContext';
 import { useToast } from '../components/Toast';
-import { supabase } from '../supabaseClient';
-import ModalOverlay from '../components/ModalOverlay';
-import ConfirmModal from '../components/ConfirmModal';
-import AsignacionesModal from '../components/AsignacionesModal';
 import ManzanasModal from '../components/ManzanasModal';
 import TerritorioTrabajo from '../components/TerritorioTrabajo';
+import TerritorioModales from '../components/TerritorioModales';
+import ElegirVista from '../components/Vista3D';
 import DarkTileLayers from '../components/DarkTileLayers';
 import LocateButton from '../components/LocateButton';
 import { CustomEditControl, GlobalMapFitter } from '../components/MapHelpers';
-import { getTerritoryProgress, indexarHistorial, PROGRESO } from '../utils/territoryProgress';
+import { PROGRESO } from '../utils/territoryProgress';
+import useTerritoriosAdmin from '../hooks/useTerritoriosAdmin';
 import ZoomAwareLabel from '../components/ZoomAwareLabel';
 // "t" se usa para territorios en los .map, por eso la función de traducción es tx
 import { t as tx } from '../i18n';
 
 // Gestión de territorios (ancianos, ministeriales y admins): dibujar, editar, eliminar,
 // asignaciones, manzanas, grupo y compartir. El mapa principal queda solo para consultar.
-
-const FORM_VACIO = { numero: '', nombre: '', descripcion: '', color: '#3B82F6', responsable: '', congregacion_id_override: '' };
+// Lógica compartida con la vista 3D (móvil): hooks/useTerritoriosAdmin.js + components/TerritorioModales.jsx
 
 // Vuela al territorio seleccionado
 const FlyToTerritorio = ({ territorio }) => {
@@ -46,84 +41,17 @@ const ConZoom = ({ children }) => {
   return children(zoom);
 };
 
-const TerritorioForm = ({ form, setForm, congregaciones, pedirCongregacion }) => (
-  <>
-    <div className="form-group">
-      <label className="form-label">{tx('Número del territorio')}</label>
-      <input value={form.numero} onChange={e => setForm(f => ({ ...f, numero: e.target.value }))} placeholder={tx('Ej: 1, 2, T-3 (opcional)')} />
-    </div>
-    <div className="form-group">
-      <label className="form-label">{tx('Nombre *')}</label>
-      <input required value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder={tx('Ej: Zona Norte')} />
-    </div>
-    <div className="form-group">
-      <label className="form-label">{tx('Descripción')}</label>
-      <textarea rows={3} value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} />
-    </div>
-    <div className="form-group">
-      <label className="form-label">{tx('Responsable')}</label>
-      <input value={form.responsable} onChange={e => setForm(f => ({ ...f, responsable: e.target.value }))} placeholder={tx('Nombre del responsable')} />
-    </div>
-    {pedirCongregacion && (
-      <div className="form-group">
-        <label className="form-label">{tx('Congregación *')}</label>
-        <select required value={form.congregacion_id_override} onChange={e => setForm(f => ({ ...f, congregacion_id_override: e.target.value }))}>
-          <option value="">{tx('Seleccionar...')}</option>
-          {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
-      </div>
-    )}
-    <div className="form-group">
-      <label className="form-label">{tx('Color del polígono')}</label>
-      <div className="flex items-center gap-3">
-        <input type="color" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} className="h-10 w-16 p-1 rounded-xl cursor-pointer" style={{ border: '1px solid rgba(0,0,0,0.15)' }} />
-        <span className="text-sm" style={{ color: '#64748B' }}>{tx('Color visible en el mapa')}</span>
-      </div>
-    </div>
-  </>
-);
-
-const TerritoriosAdmin = () => {
-  const { territorios, casas, asignaciones, usuarios, manzanas, addTerritorio, updateTerritorio, deleteTerritorio, loading } = useData();
-  const { user } = useAuth();
-  const { disponible: gruposDisponibles, grupos, trabajos, historial } = useGrupos();
+// Vista clásica (Leaflet): escritorio, o en móvil si no hay WebGL2 / falla el 3D
+const TerritoriosAdminClasica = ({ onVista3D }) => {
+  const admin = useTerritoriosAdmin();
+  const {
+    territorios, casas, asignaciones, manzanas, loading, progreso, lista, seleccionado,
+    busqueda, setBusqueda, seleccionadoId, setSeleccionadoId, setNuevo,
+    abrirEdicion, setBorrar, setAsignacionesDe, compartiendo, generarEnlace, nombreUsuario,
+  } = admin;
   const toast = useToast();
   const [searchParams] = useSearchParams();
-
-  const [busqueda, setBusqueda] = useState('');
-  const [seleccionadoId, setSeleccionadoId] = useState(null);
-  const [nuevo, setNuevo] = useState(null);         // coordenadas del polígono recién dibujado
-  const [formNuevo, setFormNuevo] = useState(FORM_VACIO);
-  const [editando, setEditando] = useState(null);   // territorio en edición
-  const [formEdit, setFormEdit] = useState(FORM_VACIO);
-  const [borrar, setBorrar] = useState(null);
-  const [asignacionesDe, setAsignacionesDe] = useState(null);
   const [manzanasDe, setManzanasDe] = useState(null);
-  const [compartir, setCompartir] = useState(null);
-  const [compartiendo, setCompartiendo] = useState(false);
-  const [congregaciones, setCongregaciones] = useState([]);
-
-  const pedirCongregacion = user?.rol === 'Super Admin' && !user?.congregacion_id;
-  useEffect(() => {
-    if (!pedirCongregacion) return;
-    supabase.from('congregaciones').select('id, nombre').then(({ data }) => setCongregaciones(data || []));
-  }, [pedirCongregacion]);
-
-  const progreso = useMemo(() => {
-    const ctx = { disponible: !!gruposDisponibles, trabajos, grupos, historialIdx: indexarHistorial(historial) };
-    const map = {};
-    territorios.forEach(t => { map[t.id] = getTerritoryProgress(t, casas, ctx); });
-    return map;
-  }, [territorios, casas, gruposDisponibles, trabajos, grupos, historial]);
-
-  const lista = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    return territorios
-      .filter(t => !q || `${t.numero || ''} ${t.nombre || ''}`.toLowerCase().includes(q))
-      .sort((a, b) => String(a.numero || a.nombre).localeCompare(String(b.numero || b.nombre), 'es', { numeric: true }));
-  }, [territorios, busqueda]);
-
-  const seleccionado = territorios.find(t => String(t.id) === String(seleccionadoId)) || null;
 
   const seleccionar = (t, { scroll } = {}) => {
     setSeleccionadoId(t.id);
@@ -145,71 +73,7 @@ const TerritoriosAdmin = () => {
       setNuevo(layer.getLatLngs()[0].map(ll => [ll.lat, ll.lng]));
       layer.remove();
     }
-  }, []);
-
-  const guardarNuevo = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = { ...formNuevo, coordenadas: nuevo };
-      if (formNuevo.congregacion_id_override) payload.congregacion_id = formNuevo.congregacion_id_override;
-      delete payload.congregacion_id_override;
-      await addTerritorio(payload);
-      setNuevo(null);
-      setFormNuevo(FORM_VACIO);
-      toast.success(tx('Territorio creado correctamente'));
-    } catch (err) {
-      toast.error(tx('Error al guardar: ') + (err.message || err));
-    }
-  };
-
-  const abrirEdicion = (t) => {
-    setEditando(t);
-    setFormEdit({ numero: t.numero || '', nombre: t.nombre || '', descripcion: t.descripcion || '', color: t.color || '#3B82F6', responsable: t.responsable || '', congregacion_id_override: '' });
-  };
-
-  const guardarEdicion = async (e) => {
-    e.preventDefault();
-    try {
-      const { congregacion_id_override, ...datos } = formEdit; // eslint-disable-line no-unused-vars
-      await updateTerritorio(editando.id, datos);
-      setEditando(null);
-      toast.success(tx('Territorio actualizado'));
-    } catch (err) {
-      toast.error(tx('Error al actualizar: ') + (err.message || err));
-    }
-  };
-
-  const eliminar = async () => {
-    try {
-      await deleteTerritorio(borrar.id);
-      toast.success(tx('Territorio "{nombre}" eliminado', { nombre: borrar.nombre }));
-      if (String(seleccionadoId) === String(borrar.id)) setSeleccionadoId(null);
-    } catch (err) {
-      toast.error(tx('Error al eliminar: ') + (err.message || err));
-    } finally {
-      setBorrar(null);
-    }
-  };
-
-  const generarEnlace = async (t) => {
-    setCompartiendo(true);
-    try {
-      const { data, error } = await supabase
-        .from('territorio_compartidos')
-        .insert({ territorio_id: t.id, creado_por: user.id, expira_en: new Date(Date.now() + 86400000).toISOString() })
-        .select('id')
-        .single();
-      if (error) throw error;
-      setCompartir({ nombre: t.nombre, link: `${window.location.origin}/shared/${data.id}` });
-    } catch (err) {
-      toast.error(tx('Error al compartir: ') + (err.message || err));
-    } finally {
-      setCompartiendo(false);
-    }
-  };
-
-  const nombreUsuario = (a) =>
-    a.app_usuarios?.nombre || usuarios.find(u => String(u.id) === String(a.usuario_id))?.nombre || `#${a.usuario_id}`;
+  }, [setNuevo]);
 
   const accion = 'flex items-center justify-center gap-1.5 text-xs font-semibold px-2.5 py-2 rounded-lg transition-colors';
 
@@ -221,15 +85,22 @@ const TerritoriosAdmin = () => {
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{tx('Gestión de Territorios')}</h1>
           <p className="text-sm mt-0.5 text-secondary">{tx('Crea, edita y organiza los territorios, sus manzanas y asignaciones')}</p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            document.getElementById('territorios-mapa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            toast.info(tx('Para crear un territorio, dibújalo en el mapa con el pentágono (polígono) o el cuadro (rectángulo).'));
-          }}
-        >
-          <Plus size={16} /> {tx('Nuevo territorio')}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {onVista3D && (
+            <button type="button" className="btn btn-outline flex items-center gap-1.5" onClick={onVista3D}>
+              <Box size={16} /> {tx('Mapa 3D')}
+            </button>
+          )}
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              document.getElementById('territorios-mapa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              toast.info(tx('Para crear un territorio, dibújalo en el mapa con el pentágono (polígono) o el cuadro (rectángulo).'));
+            }}
+          >
+            <Plus size={16} /> {tx('Nuevo territorio')}
+          </button>
+        </div>
       </div>
 
       {/* Mapa para dibujar / ubicar */}
@@ -374,87 +245,22 @@ const TerritoriosAdmin = () => {
         </div>
       )}
 
-      {/* Nuevo territorio (después de dibujar) */}
-      {nuevo && (
-        <ModalOverlay onClose={() => setNuevo(null)}>
-          <h3 className="text-lg font-bold mb-5" style={{ color: '#0F172A' }}>{tx('Nuevo Territorio')}</h3>
-          <form onSubmit={guardarNuevo}>
-            <TerritorioForm form={formNuevo} setForm={setFormNuevo} congregaciones={congregaciones} pedirCongregacion={pedirCongregacion} />
-            <div className="flex gap-3 mt-6">
-              <button type="button" className="btn btn-outline flex-1" onClick={() => setNuevo(null)}>{tx('Cancelar')}</button>
-              <button type="submit" className="btn btn-primary flex-1">{tx('Guardar Territorio')}</button>
-            </div>
-          </form>
-        </ModalOverlay>
-      )}
-
-      {/* Editar */}
-      {editando && (
-        <ModalOverlay onClose={() => setEditando(null)}>
-          <h3 className="text-lg font-bold mb-5" style={{ color: '#0F172A' }}>{tx('Editar territorio')}</h3>
-          <form onSubmit={guardarEdicion}>
-            <TerritorioForm form={formEdit} setForm={setFormEdit} congregaciones={congregaciones} pedirCongregacion={false} />
-            <div className="flex gap-3 mt-6">
-              <button type="button" className="btn btn-outline flex-1" onClick={() => setEditando(null)}>{tx('Cancelar')}</button>
-              <button type="submit" className="btn btn-primary flex-1">{tx('Guardar')}</button>
-            </div>
-          </form>
-        </ModalOverlay>
-      )}
-
-      {asignacionesDe && <AsignacionesModal territorio={asignacionesDe} onClose={() => setAsignacionesDe(null)} />}
+      <TerritorioModales admin={admin} />
       {manzanasDe && <ManzanasModal territorio={manzanasDe} onClose={() => setManzanasDe(null)} />}
-
-      {/* Compartir */}
-      {compartir && (
-        <ModalOverlay onClose={() => setCompartir(null)} size="small">
-          <div className="flex items-center gap-2 mb-4">
-            <Share2 size={18} style={{ color: '#7C3AED' }} />
-            <h3 className="text-lg font-bold" style={{ color: '#0F172A' }}>{tx('Compartir Territorio')}</h3>
-          </div>
-          <p className="text-sm mb-4" style={{ color: '#475569' }}>{compartir.nombre}</p>
-          <div className="form-group">
-            <label className="form-label">{tx('Enlace de acceso')}</label>
-            <div className="flex gap-2 items-center">
-              <input readOnly value={compartir.link} className="flex-1 text-xs" onFocus={e => e.target.select()} />
-              <button
-                className="btn btn-outline shrink-0"
-                onClick={() => { navigator.clipboard.writeText(compartir.link); toast.success(tx('Enlace copiado al portapapeles')); }}
-              >
-                <Copy size={13} /> {tx('Copiar')}
-              </button>
-            </div>
-          </div>
-          <p className="text-xs mt-2 mb-5" style={{ color: '#64748B' }}>{tx('Este enlace expira en 24 horas.')}</p>
-          <div className="flex gap-3">
-            <button className="btn btn-outline flex-1" onClick={() => setCompartir(null)}>{tx('Cerrar')}</button>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`${tx('Territorio compartido:')} ${compartir.link}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary flex-1"
-              style={{ textDecoration: 'none' }}
-            >
-              <Share2 size={14} /> WhatsApp
-            </a>
-          </div>
-        </ModalOverlay>
-      )}
-
-      {borrar && (
-        <ConfirmModal
-          message={tx('¿Eliminar el territorio "{nombre}"?', { nombre: borrar.nombre })}
-          detail={borrar.count > 0
-            ? tx('También se eliminarán las {n} casas registradas en este territorio.', { n: borrar.count })
-            : tx('Este territorio no tiene casas registradas.')}
-          confirmText={tx('Sí, eliminar')}
-          danger
-          onConfirm={eliminar}
-          onCancel={() => setBorrar(null)}
-        />
-      )}
     </div>
   );
 };
+
+// ── Elección de vista ──────────────────────────────────────────────────────────────────
+// Móvil (< md) con WebGL2 → mapa 3D a pantalla completa con dibujo (MapLibre + Terra Draw).
+// Escritorio, sin WebGL2, o si el 3D falla → clásica. Ver components/Vista3D.jsx.
+const TerritoriosAdmin3D = lazy(() => import('./TerritoriosAdmin3D'));
+
+const TerritoriosAdmin = () => (
+  <ElegirVista
+    Vista3DComp={TerritoriosAdmin3D}
+    render={(onVista3D) => <TerritoriosAdminClasica onVista3D={onVista3D} />}
+  />
+);
 
 export default TerritoriosAdmin;

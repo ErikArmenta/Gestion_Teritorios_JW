@@ -190,7 +190,8 @@ export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false
 
   capa({
     id: 'territorios-relleno', type: 'fill', source: 'territorios',
-    paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['coalesce', ['get', 'relleno'], satelite ? 0.18 : 0.12] },
+    // colorRelleno (opcional): relleno distinto al borde (p. ej. color del progreso en Territorios)
+    paint: { 'fill-color': ['coalesce', ['get', 'colorRelleno'], ['get', 'color']], 'fill-opacity': ['coalesce', ['get', 'relleno'], satelite ? 0.18 : 0.12] },
   });
   capa({
     id: 'territorios-borde', type: 'line', source: 'territorios',
