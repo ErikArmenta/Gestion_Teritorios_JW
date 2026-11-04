@@ -223,6 +223,16 @@ export const DataProvider = ({ children }) => {
               await offlineStore.removeFromPendingQueue(item.queueId);
               syncedCount++;
             }
+          } else if (item.type === 'registrarVisita') {
+            // Primero el estado (repetirlo no hace daño) y luego el historial: si algo falla a medias,
+            // el reintento no duplica el cambio de estado
+            const { casa_id, estado, historial } = item.data;
+            const { error: upErr } = await supabase.from('casas').update({ estado }).eq('id', casa_id);
+            if (upErr) throw upErr;
+            const { error: hErr } = await supabase.from('historial_visitas').insert([historial]);
+            if (hErr) throw hErr;
+            await offlineStore.removeFromPendingQueue(item.queueId);
+            syncedCount++;
           }
           // Se pueden agregar más tipos: updateCasa, deleteCasa, etc.
         } catch (err) {
@@ -476,6 +486,39 @@ export const DataProvider = ({ children }) => {
     return data;
   };
 
+  // Registrar visita = historial + nuevo estado (igual que "Registrar visita" en Lista de Casas).
+  // Sin conexión va a la cola de pendientes y se ve al momento; se sube al volver la red.
+  const registrarVisita = async ({ casa, estadoNuevo, notas = null }) => {
+    const historial = {
+      casa_id:         casa.id,
+      usuario_id:      user?.id || null,
+      usuario_nombre:  user?.nombre || 'Usuario',
+      estado_anterior: casa.estado,
+      estado_nuevo:    estadoNuevo,
+      notas,
+    };
+    if (navigator.onLine) {
+      await insertarHistorialVisita(historial);
+      await updateCasa(casa.id, { estado: estadoNuevo });
+      // Verlo ya (el UPDATE de tiempo real trae el mismo valor)
+      setCasas(prev => prev.map(c => (c.id === casa.id ? { ...c, estado: estadoNuevo } : c)));
+      return;
+    }
+    // Una casa creada sin conexión todavía no tiene id real: no se puede ligar su historial
+    if (Number(casa.id) < 0) throw new Error('Esta casa aún no se sincroniza; cambia su estado cuando vuelva la conexión.');
+    await offlineStore.addToPendingQueue({
+      type: 'registrarVisita',
+      data: { casa_id: casa.id, estado: estadoNuevo, historial: { ...historial, created_at: new Date().toISOString() } },
+      timestamp: Date.now(),
+    });
+    setCasas(prev => {
+      const next = prev.map(c => (c.id === casa.id ? { ...c, estado: estadoNuevo, _offline: true } : c));
+      offlineStore.cacheCasas(next).catch(() => {});
+      return next;
+    });
+    setPendingCount(prev => prev + 1);
+  };
+
   const fetchHistorialCasa = async (casaId) => {
     const { data, error } = await supabase
       .from('historial_visitas')
@@ -596,7 +639,7 @@ export const DataProvider = ({ children }) => {
       addTerritorio, updateTerritorio, deleteTerritorio,
       addCasa, updateCasa, deleteCasa,
       uploadPhoto,
-      insertarHistorialVisita, fetchHistorialCasa,
+      insertarHistorialVisita, fetchHistorialCasa, registrarVisita,
       asignarTerritorio, desasignarTerritorio, getAsignacionesTerritorio,
       addManzana, updateManzana, deleteManzana,
       addExhibidor, updateExhibidor, deleteExhibidor,

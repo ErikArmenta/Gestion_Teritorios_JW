@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-11-04 — Mapa principal en 3D (móvil) + registrar visita con un toque
+
+- `TerritoriesMap.jsx` (elige vista 3D en móvil / clásica en escritorio; lógica movida a `useMapaPrincipal`)
+- `TerritoriesMap3D.jsx` (nuevo: mapa a pantalla completa, panel de territorios / casa / ruta)
+- `hooks/useMapaPrincipal.js` (nuevo: filtros, progreso, búsqueda y ruta, compartidos por las dos vistas)
+- `hooks/useMapa3D.js` (nuevo: ciclo de vida del mapa MapLibre)
+- `components/Vista3D.jsx`, `components/BotonesMapa3D.jsx` (nuevos)
+- `DataContext.jsx` (`registrarVisita`: historial + estado, con cola sin conexión)
+- `RegisterHouse.jsx`, `RegisterHouse3D.jsx` (usan lo compartido; `?territorio=X`)
+- `utils/map3d.js`, `index.css` (clases `m3d-*`), `i18n/en.js`
+
+## 2026-11-04 — Registrar casa en mapa 3D (móvil, MapLibre)
+
+- `RegisterHouse.jsx` (elige vista 3D en móvil / clásica en escritorio o sin WebGL2)
+- `RegisterHouse3D.jsx` (nuevo)
+- `hooks/useGuardarCasa.js` (nuevo: guardado compartido por las dos vistas)
+- `utils/map3d.js` (nuevo: estilos y capas 3D de MapLibre)
+- `index.css`
+- `public/sw.js` (caché de OpenFreeMap y del worker `.mjs`; `CACHE_VERSION` v5)
+- `i18n/en.js`
+- `package.json` (+ `maplibre-gl`)
+
 ## 2026-08-03 — Mejora Urgente 2
 
 - `NotificationBell.jsx`

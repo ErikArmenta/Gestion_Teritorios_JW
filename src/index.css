@@ -759,3 +759,263 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ── Mapas 3D en móvil (MapLibre: TerritoriesMap3D, RegisterHouse3D) ────────────
+   Pantalla completa entre el borde superior y la BottomNav (h-14). Va con z-index 40:
+   la BottomNav (50), el botón de pánico (55), modales y toasts quedan siempre encima. */
+.m3d {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+.m3d--cargando { align-items: center; justify-content: center; gap: 12px; }
+
+.m3d-mapa { position: relative; flex: 1 1 auto; min-height: 0; }
+/* Doble clase: MapLibre pone .maplibregl-map { position: relative } al contenedor y, según el orden
+   en que carguen los CSS, ganaba y el mapa medía 0 de alto (canvas de 300px, mapa en blanco). */
+.m3d .m3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.m3d .maplibregl-ctrl-top-left { top: calc(62px + env(safe-area-inset-top)); }
+.m3d .maplibregl-ctrl-bottom-left { bottom: 18px; } /* el panel se encima 16px sobre el mapa */
+.m3d .maplibregl-ctrl-group button { width: 38px; height: 38px; }
+
+/* Pin fijo en el centro: no recibe toques (arrastrar encima mueve el mapa); se levanta al mover */
+.m3d-pin { pointer-events: none; }
+.m3d-pin__icono { transition: transform 0.18s ease; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
+.m3d-canvas.is-moving .m3d-pin__icono { transform: translateY(-10px); }
+
+.m3d-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top)) 10px 0;
+  pointer-events: none;
+}
+.m3d-top > * { pointer-events: auto; }
+.m3d-titulo {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 7px 14px 7px 7px; border-radius: 16px;
+  background: #0F172A; color: #fff;
+  box-shadow: 0 6px 20px rgba(15,23,42,0.25);
+}
+.m3d-titulo__icono {
+  width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #FACC15; color: #0F172A;
+}
+.m3d-titulo__texto { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.15; color: #FFFFFF; }
+.m3d-titulo__sub { margin: 0; font-size: 11px; color: #CBD5E1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m3d-campana { border-radius: 9999px; background: var(--bg-card); box-shadow: 0 4px 14px rgba(15,23,42,0.18); }
+
+.m3d-flotantes {
+  position: absolute; z-index: 2; right: 10px;
+  top: calc(62px + env(safe-area-inset-top));
+  display: flex; flex-direction: column; gap: 8px;
+}
+.m3d-fab {
+  width: 42px; height: 42px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-card); color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 14px rgba(15,23,42,0.18);
+  cursor: pointer;
+}
+.m3d-fab.is-active { background: #0F172A; color: #FACC15; border-color: #0F172A; }
+.m3d-fab__txt { font-size: 13px; font-weight: 800; }
+
+.m3d-aviso {
+  position: absolute; z-index: 2; left: 10px; right: 62px; bottom: 40px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;
+  background: rgba(245,158,11,0.95); color: #1F2937;
+}
+
+/* Popup de una casa registrada (fondo blanco de MapLibre en ambos temas) */
+.m3d-popup { display: flex; flex-direction: column; gap: 2px; color: #0F172A; font-size: 13px; }
+.m3d-popup span { font-size: 12px; font-weight: 700; }
+
+/* Panel inferior */
+.m3d-sheet {
+  position: relative; z-index: 3; flex: 0 0 auto;
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 72%;
+  margin-top: -16px;
+  padding: 4px 14px 10px;
+  border-radius: 20px 20px 0 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 -8px 30px rgba(15,23,42,0.18);
+}
+.m3d-sheet__asa {
+  align-self: center; padding: 6px 30px; background: none; border: 0; cursor: pointer;
+}
+.m3d-sheet__asa span { display: block; width: 40px; height: 5px; border-radius: 9999px; background: var(--border-color); }
+.m3d-fila { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+.m3d .m3d-input,
+.m3d .m3d-select {
+  width: 100%; min-width: 0; min-height: 44px;
+  font-size: 16px; /* iOS no hace zoom */
+  padding: 0.55rem 0.8rem;
+  border-radius: 12px;
+}
+.m3d .m3d-select { flex: 1 1 auto; font-weight: 700; }
+.m3d .m3d-select--sm { font-weight: 500; }
+.m3d .m3d-input[rows] { resize: none; }
+
+.m3d-chip {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;
+  padding: 4px 9px; border-radius: 9999px; font-size: 11px; font-weight: 700;
+}
+.m3d-chip--ok { background: rgba(16,185,129,0.14); color: #059669; }
+.m3d-chip--warn { background: rgba(245,158,11,0.16); color: #B45309; }
+
+.m3d-btn-icono {
+  flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-hover); color: var(--text-primary);
+  border: 1px solid var(--border-color); cursor: pointer;
+}
+.m3d-btn-icono:disabled { opacity: 0.6; }
+
+.m3d-extras {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 2px 0;
+}
+.m3d-adjunto {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 10px 4px; border-radius: 12px; cursor: pointer;
+  border: 2px dashed var(--border-color); background: none;
+  color: var(--text-secondary); font-size: 11px; font-weight: 600; text-align: center;
+}
+
+/* Estados y Guardar dejan libre la esquina inferior derecha (botón de pánico: 72px, right 20px) */
+.m3d-estados {
+  display: flex; gap: 6px; margin-right: 84px;
+  overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+  padding: 2px 0 4px;
+}
+.m3d-estados::-webkit-scrollbar { display: none; }
+.m3d-estado { flex-shrink: 0; }
+.m3d-estado {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 11px; border-radius: 9999px; cursor: pointer;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  background: var(--bg-hover); color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+}
+.m3d-estado.is-active { box-shadow: 0 3px 10px rgba(15,23,42,0.2); }
+.m3d-acciones { display: flex; align-items: center; gap: 8px; margin-right: 84px; }
+.m3d-acciones .btn { min-height: 46px; }
+
+/* ── Mapa principal 3D (TerritoriesMap3D): buscador, lista y fichas del panel ── */
+.m3d-buscador {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 8px;
+  height: 46px; padding: 0 12px; border-radius: 16px;
+  background: var(--bg-card); border: 1px solid var(--border-color);
+  box-shadow: 0 6px 20px rgba(15,23,42,0.18);
+}
+.m3d .m3d-buscador input {
+  flex: 1 1 auto; min-width: 0; min-height: 0; height: 100%;
+  padding: 0; border: 0; background: transparent; box-shadow: none;
+  font-size: 16px; color: var(--text-primary);
+}
+.m3d-buscador__x { display: flex; padding: 4px; border: 0; background: none; color: var(--text-muted); cursor: pointer; }
+.m3d-resultados {
+  position: absolute; z-index: 4; left: 10px; right: 62px;
+  top: calc(62px + env(safe-area-inset-top));
+  max-height: 50%; overflow-y: auto;
+  border-radius: 14px; background: var(--bg-card); border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(15,23,42,0.22);
+}
+.m3d-resultado {
+  display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left;
+  padding: 10px 12px; border: 0; border-bottom: 1px solid var(--border-color); background: none; cursor: pointer;
+}
+.m3d-resultado:last-child { border-bottom: 0; }
+.m3d-resultado__dir { font-size: 13px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m3d-resultado__meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); min-width: 0; }
+.m3d-resultados__vacio { margin: 0; padding: 12px; font-size: 12px; text-align: center; color: var(--text-muted); }
+
+.m3d-h2 { margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+.m3d-h2--dir { font-size: 17px; }
+.m3d-etiqueta { margin: 2px 0 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.m3d-pill {
+  display: inline-flex; align-items: center; flex-shrink: 0;
+  padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.m3d-pill--lg { padding: 4px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.m3d-progreso { padding: 10px 12px; border-radius: 14px; background: var(--bg-hover); border: 1px solid var(--border-color); }
+.m3d-barra { height: 6px; border-radius: 9999px; overflow: hidden; background: var(--border-color); }
+.m3d-barra > span { display: block; height: 100%; border-radius: 9999px; transition: width 0.4s ease; }
+
+/* Lista (territorios / ruta): deja libre la esquina del botón de pánico */
+.m3d-lista {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 150px; overflow-y: auto; overscroll-behavior: contain;
+  margin-right: 84px;
+}
+.m3d-lista.is-open { max-height: 52dvh; }
+.m3d-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 10px; border-radius: 14px; cursor: pointer;
+  background: var(--bg-hover); border: 1px solid var(--border-color);
+}
+.m3d-item__color { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 3px var(--border-color); }
+.m3d-item__titulo { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m3d-item__sub { display: block; font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m3d-item__pct { flex-shrink: 0; font-size: 13px; font-weight: 800; color: var(--text-primary); }
+.m3d-item__num {
+  width: 24px; height: 24px; border-radius: 9999px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #2563EB; color: #fff; font-size: 11px; font-weight: 800;
+}
+
+/* Fichas (territorio / casa): se desplazan dentro del panel */
+.m3d-scroll {
+  display: flex; flex-direction: column; gap: 8px;
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+}
+.m3d-foto { width: 100%; height: 130px; object-fit: cover; border-radius: 12px; }
+.m3d-datos { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--text-secondary); }
+.m3d-datos p { margin: 0; }
+.m3d-datos strong { color: var(--text-primary); }
+.m3d-alerta { padding: 8px 10px; border-radius: 10px; font-size: 12px; }
+.m3d-alerta--roja { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #DC2626; }
+.m3d-alerta--ambar { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); color: #B45309; font-weight: 600; }
+
+.m3d-acciones--wrap { flex-wrap: wrap; }
+.m3d-accion {
+  flex: 1 1 auto; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 14px; border-radius: 12px; cursor: pointer; text-decoration: none;
+  font-size: 13px; font-weight: 700; white-space: nowrap;
+  background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color);
+}
+.m3d-accion--azul { background: #2563EB; border-color: #2563EB; color: #fff; }
+.m3d-accion--verde { background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.4); color: #059669; }
+.m3d-link {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 0;
+  border: 0; background: none; cursor: pointer;
+  font-size: 12px; font-weight: 700; color: #2563EB;
+}
+.m3d-btn-icono--sm { width: 36px; height: 36px; border-radius: 10px; }
+
+/* Chips de filtro arriba del panel: sin margen para el pánico, en varias líneas si hace falta */
+.m3d-estados--libre { margin-right: 0; flex-wrap: wrap; overflow: visible; }
+.m3d-estado.is-sel { background: #2563EB; border-color: #2563EB; color: #fff; }
+.m3d-estado.is-sel.is-verde { background: #10B981; border-color: #10B981; }
+.m3d-estado:disabled { opacity: 0.6; }
+
+/* Controles de MapLibre (ubicación, brújula, crédito) en modo oscuro */
+[data-theme="dark"] .m3d .maplibregl-ctrl-group { background: var(--bg-card); box-shadow: 0 0 0 1px var(--border-color); }
+[data-theme="dark"] .m3d .maplibregl-ctrl-group button + button { border-top-color: var(--border-color); }
+[data-theme="dark"] .m3d .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(180deg); }
+[data-theme="dark"] .m3d .maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon,
+[data-theme="dark"] .m3d .maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon { filter: none; }

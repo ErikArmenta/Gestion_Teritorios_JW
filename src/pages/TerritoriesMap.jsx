@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, lazy } from 'react';
 import { MapContainer, Polygon, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import TerritoryProgressPanel from '../components/TerritoryProgressPanel';
-import { getTerritoryProgress, indexarHistorial, PROGRESO } from '../utils/territoryProgress';
-import { useGrupos } from '../context/GruposContext';
+import { PROGRESO } from '../utils/territoryProgress';
 import TerritorioTrabajo from '../components/TerritorioTrabajo';
 // "t" se usa para territorios en los .map, por eso la función de traducción es tx
 import { t as tx } from '../i18n';
 import { useData } from '../context/DataContext';
-import { useAuth } from '../context/AuthContext';
 import ZoomAwareLabel from '../components/ZoomAwareLabel';
 import { STATUS_COLORS, getStatusColor } from '../utils/constants';
-import { Search, Navigation, Settings2, X, Pencil } from 'lucide-react';
+import { Search, Navigation, Settings2, X, Pencil, Box } from 'lucide-react';
 import EditHouseModal from '../components/EditHouseModal';
+import ElegirVista from '../components/Vista3D';
+import useMapaPrincipal, { generarUrlGoogleMaps } from '../hooks/useMapaPrincipal';
 
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -173,8 +173,6 @@ const CasaHistorialSection = ({ casaId }) => {
   );
 };
 
-const ADMIN_ROLES = ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'];
-
 const ZoomProvider = ({ children }) => {
   const map = useMap();
   const [zoom, setZoom] = useState(map.getZoom());
@@ -322,95 +320,21 @@ const MapSearch = ({ busqueda, setBusqueda, busquedaDebounced, resultadosBusqued
   );
 };
 
-const distEuclidiana = (a, b) =>
-  Math.sqrt((a.latitud - b.latitud) ** 2 + (a.longitud - b.longitud) ** 2);
-
-const calcularRutaNN = (casasPendientes, startLat = null, startLng = null) => {
-  if (!casasPendientes.length) return [];
-  const pending = [...casasPendientes];
-  const ordered = [];
-
-  if (startLat !== null && startLng !== null) {
-    const startPoint = { latitud: startLat, longitud: startLng };
-    let minDist = Infinity, minIdx = 0;
-    pending.forEach((c, i) => {
-      const d = distEuclidiana(startPoint, c);
-      if (d < minDist) { minDist = d; minIdx = i; }
-    });
-    ordered.push(pending[minIdx]);
-    pending.splice(minIdx, 1);
-  } else {
-    ordered.push(pending.shift());
-  }
-
-  while (pending.length > 0) {
-    const current = ordered[ordered.length - 1];
-    let minDist = Infinity, minIdx = 0;
-    pending.forEach((c, i) => {
-      const d = distEuclidiana(current, c);
-      if (d < minDist) { minDist = d; minIdx = i; }
-    });
-    ordered.push(pending[minIdx]);
-    pending.splice(minIdx, 1);
-  }
-
-  return ordered;
-};
-
-const TerritoriesMap = () => {
-  const { territorios, casas, asignaciones, usuarios, loading, manzanas } = useData();
-  const { user } = useAuth();
+// Vista clásica (Leaflet): escritorio, o en móvil si se elige / si no hay WebGL2.
+// La lógica (filtros, progreso, búsqueda, ruta) está en hooks/useMapaPrincipal.js, compartida con la 3D.
+const TerritoriesMapClasica = ({ onVista3D }) => {
+  const {
+    territorios, casas, manzanas, asignaciones, usuarios, loading, esAdmin, miGrupo,
+    filtroMisTerr, setFiltroMisTerr, modoProgreso, setModoProgreso,
+    territoriosFiltrados, casasFiltradas, progresoPorTerritorio,
+    busqueda, setBusqueda, busquedaDebounced, resultadosBusqueda,
+    rutaActiva, setRutaActiva, iniciarRuta,
+  } = useMapaPrincipal();
   const navigate = useNavigate();
-  const esAdmin = ADMIN_ROLES.includes(user?.rol);
 
   const [editCasa, setEditCasa] = useState(null);
-  const [filtroMisTerr, setFiltroMisTerr] = useState(false);
-  const [modoProgreso, setModoProgreso] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
   const [fitCounter, setFitCounter] = useState(0);
-  const filtroInitialized = useRef(false);
-  const [rutaActiva, setRutaActiva] = useState(null); // { territorioId, casasOrdenadas, polylinePoints }
-
-  // Búsqueda en mapa
-  const [busqueda, setBusqueda] = useState('');
-  const [busquedaDebounced, setBusquedaDebounced] = useState('');
-  const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
-
-  useEffect(() => {
-    if (filtroInitialized.current) return;
-    if (asignaciones.length === 0) return;
-    filtroInitialized.current = true;
-    if (user?.rol === 'Publicador') {
-      const tieneAsignaciones = asignaciones.some(
-        a => String(a.usuario_id) === String(user.id) && a.activa
-      );
-      setFiltroMisTerr(tieneAsignaciones);
-    }
-  }, [asignaciones, user]);
-
-  const { disponible: gruposDisponibles, grupos, trabajos, historial, miGrupo } = useGrupos();
-
-  // "Mis territorios" = asignados a mí o que mi grupo está trabajando ahora.
-  // useMemo: un array nuevo en cada render disparaba efectos en bucle (la app se redibujaba sin
-  // parar en "Mis territorios" y los toques en el popup se perdían).
-  const territoriosFiltrados = useMemo(() => (filtroMisTerr
-    ? territorios.filter(t =>
-        asignaciones.some(
-          a => String(a.territorio_id) === String(t.id) && String(a.usuario_id) === String(user?.id) && a.activa
-        )
-        || (miGrupo && trabajos.some(
-          tr => String(tr.territorio_id) === String(t.id) && String(tr.grupo_id) === String(miGrupo.id) && tr.estado === 'en_progreso'
-        ))
-      )
-    : territorios), [filtroMisTerr, territorios, asignaciones, user?.id, miGrupo, trabajos]);
-
-  // Progreso de cada territorio (trabajo de grupos + % casas visitadas)
-  const progresoPorTerritorio = useMemo(() => {
-    const ctx = { disponible: !!gruposDisponibles, trabajos, grupos, historialIdx: indexarHistorial(historial) };
-    const map = {};
-    territorios.forEach(t => { map[t.id] = getTerritoryProgress(t, casas, ctx); });
-    return map;
-  }, [territorios, casas, gruposDisponibles, trabajos, grupos, historial]);
 
   const territoryPathOptions = (t) => {
     if (!modoProgreso) return { color: t.color, fillColor: t.color, fillOpacity: 0.25, weight: 2.5, dashArray: null };
@@ -430,77 +354,6 @@ const TerritoriesMap = () => {
     mapInstance.flyToBounds(L.polygon(t.coordenadas).getBounds(), { padding: [40, 40], maxZoom: 18, duration: 1 });
   };
 
-  const casasFiltradas = useMemo(() => (filtroMisTerr
-    ? casas.filter(c => territoriosFiltrados.some(t => String(t.id) === String(c.territorio_id)))
-    : casas), [filtroMisTerr, casas, territoriosFiltrados]);
-
-  // Debounce búsqueda
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setBusquedaDebounced(busqueda.trim());
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [busqueda]);
-
-  // Filtrar resultados según busquedaDebounced
-  useEffect(() => {
-    if (!busquedaDebounced) {
-      setResultadosBusqueda(prev => (prev.length ? [] : prev)); // no crear [] nuevo si ya está vacío
-      return;
-    }
-    const q = busquedaDebounced.toLowerCase();
-    const encontrados = casasFiltradas.filter(c =>
-      (c.direccion || '').toLowerCase().includes(q) ||
-      (c.nombre_contacto || '').toLowerCase().includes(q) ||
-      (c.territorio_nombre || '').toLowerCase().includes(q)
-    ).slice(0, 8);
-    setResultadosBusqueda(encontrados);
-  }, [busquedaDebounced, casasFiltradas]);
-
-  const iniciarRuta = (territorioId) => {
-    const pendientes = casas.filter(
-      c => String(c.territorio_id) === String(territorioId) && c.estado === 'Pendiente'
-        && c.latitud && c.longitud
-    );
-    if (!pendientes.length) return;
-
-    let startLat = null, startLng = null;
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const ordenadas = calcularRutaNN(pendientes, pos.coords.latitude, pos.coords.longitude);
-          setRutaActiva({
-            territorioId,
-            casasOrdenadas: ordenadas,
-            polylinePoints: ordenadas.map(c => [Number(c.latitud), Number(c.longitud)]),
-          });
-        },
-        () => {
-          const ordenadas = calcularRutaNN(pendientes);
-          setRutaActiva({
-            territorioId,
-            casasOrdenadas: ordenadas,
-            polylinePoints: ordenadas.map(c => [Number(c.latitud), Number(c.longitud)]),
-          });
-        },
-        { timeout: 3000 }
-      );
-    } else {
-      const ordenadas = calcularRutaNN(pendientes);
-      setRutaActiva({
-        territorioId,
-        casasOrdenadas: ordenadas,
-        polylinePoints: ordenadas.map(c => [Number(c.latitud), Number(c.longitud)]),
-      });
-    }
-  };
-
-  const generarUrlGoogleMaps = (casasOrdenadas) => {
-    if (!casasOrdenadas.length) return '#';
-    const waypoints = casasOrdenadas.map(c => `${Number(c.latitud).toFixed(6)},${Number(c.longitud).toFixed(6)}`);
-    return `https://www.google.com/maps/dir/${waypoints.join('/')}`;
-  };
-
   return (
     <div className="flex flex-col h-full min-h-[60vh]">
       {/* Header */}
@@ -512,6 +365,11 @@ const TerritoriesMap = () => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {onVista3D && (
+            <button type="button" onClick={onVista3D} className="btn btn-outline flex items-center gap-1.5 text-xs py-1.5 px-3">
+              <Box size={14} /> {tx('Mapa 3D')}
+            </button>
+          )}
           <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.2)' }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#3B82F6' }} />
             {tx('{n} territorios', { n: territorios.length })}
@@ -985,5 +843,17 @@ const TerritoriesMap = () => {
     </div>
   );
 };
+
+// ── Elección de vista ──────────────────────────────────────────────────────────────────
+// Móvil (< md) con WebGL2 → mapa 3D a pantalla completa (MapLibre, se carga aparte).
+// Escritorio, sin WebGL2, o si el 3D falla → clásica. Ver components/Vista3D.jsx.
+const TerritoriesMap3D = lazy(() => import('./TerritoriesMap3D'));
+
+const TerritoriesMap = () => (
+  <ElegirVista
+    Vista3DComp={TerritoriesMap3D}
+    render={(onVista3D) => <TerritoriesMapClasica onVista3D={onVista3D} />}
+  />
+);
 
 export default TerritoriesMap;

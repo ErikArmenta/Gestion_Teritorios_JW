@@ -1,12 +1,12 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, lazy } from 'react';
 import { useData } from '../context/DataContext';
-import { useToast } from '../components/Toast';
+import ElegirVista from '../components/Vista3D';
 import { MapContainer, Marker, useMapEvents, Polygon, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import * as turf from '@turf/turf';
-import { Locate, Upload, X, MapPin, Camera, Mic, Square, Trash2 } from 'lucide-react';
+import { Upload, X, MapPin, Camera, Mic, Square, Trash2, Box } from 'lucide-react';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 import useVoiceRecorder from '../hooks/useVoiceRecorder';
-import { supabase } from '../supabaseClient';
+import useGuardarCasa from '../hooks/useGuardarCasa';
 
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -56,15 +56,15 @@ const EMPTY_FORM = {
   tiene_caso_especial: false, tipo_caso: '', detalles_caso: '', notas: '',
 };
 
-const RegisterHouse = () => {
-  const { territorios, casas, addCasa, uploadPhoto, manzanas } = useData();
-  const toast = useToast();
+// Vista clásica (formulario + mapa Leaflet): escritorio, o en móvil si se elige / si no hay WebGL2
+const RegisterHouseClasica = ({ onVista3D }) => {
+  const { territorios, casas, manzanas } = useData();
+  const { guardarCasa, isUploading } = useGuardarCasa();
   const photoInputRef = useRef(null);
 
   const [position, setPosition]       = useState({ lat: 31.7619, lng: -106.4850 });
   const [photoFile, setPhotoFile]     = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData]       = useState(EMPTY_FORM);
   const [gpsPermission, setGpsPermission] = useState('prompt'); // 'granted' | 'denied' | 'prompt'
 
@@ -124,94 +124,32 @@ const RegisterHouse = () => {
     e.preventDefault();
 
     if (insideTerritory === false) {
-      const ok = window.confirm(t('La ubicación seleccionada NO está dentro del territorio. ¿Guardar de todos modos?'));
-      if (!ok) return;
+      const seguir = window.confirm(t('La ubicación seleccionada NO está dentro del territorio. ¿Guardar de todos modos?'));
+      if (!seguir) return;
     }
 
-    setIsUploading(true);
-    try {
-      const territorio = territorios.find(t => String(t.id) === String(formData.territorio_id));
-
-      let foto_url = null;
-      let photoBase64 = null;
-
-      if (photoFile) {
-        if (navigator.onLine) {
-          foto_url = await uploadPhoto(photoFile);
-        } else {
-          // Offline: convertir a base64 para guardar en cola
-          foto_url = await uploadPhoto(photoFile); // retorna data URL en modo offline
-          photoBase64 = foto_url; // Guardar base64 para sync posterior
-          foto_url = null; // No guardar data URL como foto_url real
-        }
-      }
-
-      // Subir nota de voz si existe
-      let audio_url = null;
-      if (audioBlob) {
-        const ext = audioBlob.type.includes('ogg') ? 'ogg' : 'webm';
-        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: audioError } = await supabase.storage
-          .from('notas_voz')
-          .upload(fileName, audioBlob, { contentType: audioBlob.type, upsert: false });
-        if (audioError) {
-          console.error('Error subiendo audio:', audioError);
-          const msg = audioError.message || JSON.stringify(audioError);
-          if (msg.includes('not found') || audioError.statusCode === 404) {
-            toast.error(t('El bucket de notas de voz no existe. Contacta al administrador.'));
-          } else if (msg.includes('row-level security') || msg.includes('policy')) {
-            toast.error(t('Sin permisos para subir audio. Contacta al administrador.'));
-          } else {
-            toast.error(t('Error al subir nota de voz: ') + msg);
-          }
-          // Continuar sin audio — no bloquear el guardado de la casa
-        } else {
-          const { data: urlData } = supabase.storage.from('notas_voz').getPublicUrl(fileName);
-          audio_url = urlData?.publicUrl || null;
-        }
-      }
-
-      const casaData = {
-        territorio_id:       parseInt(formData.territorio_id, 10),
-        ...(formData.manzana_id ? { manzana_id: parseInt(formData.manzana_id, 10) } : {}),
-        direccion:           formData.direccion,
-        estado:              formData.estado,
-        nombre_contacto:     formData.nombre_contacto,
-        telefono:            formData.telefono,
-        tiene_caso_especial: formData.tiene_caso_especial,
-        tipo_caso:           formData.tipo_caso,
-        detalles_caso:       formData.detalles_caso,
-        notas:               formData.notas,
-        territorio_nombre:   territorio?.nombre || '',
-        latitud:             position.lat,
-        longitud:            position.lng,
-        foto_url,
-        ...(audio_url ? { audio_url } : {}),
-      };
-
-      await addCasa(casaData, photoBase64);
-
-      if (navigator.onLine) {
-        toast.success(t('Casa registrada exitosamente'));
-      } else {
-        toast.success(t('Casa guardada offline — se sincronizará al conectarse'));
-      }
+    // Mismo guardado que la vista 3D (foto, nota de voz, cola offline): hooks/useGuardarCasa.js
+    const ok = await guardarCasa({ formData, position, photoFile, audioBlob });
+    if (ok) {
       setFormData(EMPTY_FORM);
       setPhotoFile(null);
       clearRecording();
       if (photoInputRef.current) photoInputRef.current.value = '';
-    } catch (err) {
-      toast.error(t('Error al guardar: ') + (err.message || JSON.stringify(err)));
-    } finally {
-      setIsUploading(false);
     }
   };
 
   return (
     <div className="animate-page-in">
-      <div className="mb-5 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{t('Registrar Nueva Casa')}</h1>
-        <p className="text-sm mt-0.5 text-secondary">{t('Ubica y documenta el punto en el territorio')}</p>
+      <div className="mb-5 sm:mb-6 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{t('Registrar Nueva Casa')}</h1>
+          <p className="text-sm mt-0.5 text-secondary">{t('Ubica y documenta el punto en el territorio')}</p>
+        </div>
+        {onVista3D && (
+          <button type="button" onClick={onVista3D} className="btn btn-outline shrink-0 flex items-center gap-1.5 text-sm">
+            <Box size={16} /> {t('Mapa 3D')}
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-7">
@@ -511,5 +449,17 @@ const RegisterHouse = () => {
     </div>
   );
 };
+
+// ── Elección de vista ──────────────────────────────────────────────────────────────────
+// Móvil (< md) con WebGL2 → mapa 3D a pantalla completa (MapLibre, se carga aparte).
+// Escritorio, sin WebGL2, o si el 3D falla → clásica. Ver components/Vista3D.jsx.
+const RegisterHouse3D = lazy(() => import('./RegisterHouse3D'));
+
+const RegisterHouse = () => (
+  <ElegirVista
+    Vista3DComp={RegisterHouse3D}
+    render={(onVista3D) => <RegisterHouseClasica onVista3D={onVista3D} />}
+  />
+);
 
 export default RegisterHouse;

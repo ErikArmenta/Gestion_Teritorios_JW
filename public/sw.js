@@ -5,7 +5,7 @@
 // /push/onesignal/ (scope separado). Si ambos usaran este archivo, el navegador los vería como
 // versiones distintas y se reemplazarían sin fin ("Nueva versión disponible" en bucle).
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 // Lo reemplaza vite.config.js (plugin sw-build-id) en cada build: cada despliegue = SW nuevo =
 // aviso "Nueva versión disponible". Shell y assets de builds viejos se borran al activar.
 const BUILD_ID = '__BUILD_ID__';
@@ -106,6 +106,23 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // Mapa 3D (MapLibre + OpenFreeMap). El estilo y el TileJSON (/planet) apuntan a la versión
+  // semanal de los mosaicos → network-first. Mosaicos vectoriales, fuentes y sprites no cambian
+  // en la misma URL → cache-first con el mismo límite que los tiles de Leaflet.
+  if (url.hostname === 'tiles.openfreemap.org') {
+    if (url.pathname.startsWith('/styles/') || url.pathname === '/planet') {
+      e.respondWith(networkFirst(request, TILE_CACHE));
+      return;
+    }
+    e.respondWith(
+      cacheFirst(request, TILE_CACHE).then((res) => {
+        trimCache(TILE_CACHE, MAX_TILES);
+        return res;
+      })
+    );
+    return;
+  }
+
   // Navegación (SPA): network-first, fallback a index.html cacheado
   if (request.mode === 'navigate') {
     e.respondWith(
@@ -121,7 +138,8 @@ self.addEventListener('fetch', (e) => {
 
   // Assets estáticos (los de Vite llevan hash en el nombre): cache-first
   // Solo assets propios (con hash de Vite) y fuentes; scripts de terceros (OneSignal) siempre de la red
-  const isStaticAsset = /\.(js|css|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|ico)$/.test(url.pathname);
+  // (.mjs = worker de MapLibre, que Vite copia a /assets)
+  const isStaticAsset = /\.(js|mjs|css|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|ico)$/.test(url.pathname);
   if ((isStaticAsset && url.origin === self.location.origin) || url.hostname.includes('fonts.g')) {
     e.respondWith(cacheFirst(request, ASSET_CACHE));
   }

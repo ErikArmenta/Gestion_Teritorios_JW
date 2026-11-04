@@ -10,6 +10,7 @@ Multi-congregación. Desarrollada por Master Engenering EA. Idioma de la UI: **e
 - Tailwind CSS v4 (`@tailwindcss/postcss`) + CSS propio en `src/index.css`
 - Supabase (`src/supabaseClient.js`) — solo base de datos/storage/realtime, **no** Supabase Auth
 - Leaflet / react-leaflet 5 / leaflet-draw / react-leaflet-cluster / Turf
+- MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — mapa principal y "Registrar casa" en móvil
 - Chart.js, jsPDF + autotable, xlsx, lucide-react (iconos)
 - Deploy en Vercel (`vercel.json`: rewrite SPA + headers de `sw.js` y `manifest.json`)
 
@@ -69,7 +70,7 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 ## Offline y PWA
 
 - `DataContext` guarda territorios/casas en IndexedDB y encola escrituras sin conexión (`pendingQueue`);
-  las operaciones nuevas de escritura sobre casas deben pasar por esa cola.
+  las operaciones nuevas de escritura sobre casas deben pasar por esa cola (tipos: `addCasa`, `registrarVisita`).
 - Sin conexión: `offlineStore` (IndexedDB) guarda territorios y casas, una cola de escrituras pendientes,
   y un almacén genérico `guardarDatos/leerDatos` (clave = `nombre:congregacion`) para manzanas,
   usuarios, asignaciones, exhibidores y grupos. Todo conjunto nuevo que deba verse sin internet se
@@ -82,8 +83,9 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   Envío automático: `supabase/functions/enviar-push` (webhooks de BD). Configuración paso a paso:
   `docs/NOTIFICACIONES_PUSH.md`.
 - Notificaciones locales: `showSystemNotification()` marca `data.local`; el SW solo maneja el clic de esas.
-- `public/sw.js`: shell precacheado, assets cache-first, Supabase GET network-first, tiles del mapa
-  cache-first (máx. 600). Auth/realtime y peticiones no-GET nunca se cachean.
+- `public/sw.js`: shell precacheado, assets cache-first (incluye `.mjs`: worker de MapLibre), Supabase
+  GET network-first, tiles del mapa cache-first (máx. 600). OpenFreeMap: estilos y `/planet` network-first
+  (cambian cada semana), mosaicos/fuentes/sprites cache-first. Auth/realtime y peticiones no-GET nunca se cachean.
 - Cada build marca `dist/sw.js` con un `BUILD_ID` (plugin `sw-build-id` en `vite.config.js`): cada
   despliegue es un SW nuevo y la app muestra "Nueva versión disponible". No quitar `__BUILD_ID__` de
   `public/sw.js`. Subir `CACHE_VERSION` solo si cambia la lógica de caché del SW.
@@ -103,7 +105,7 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - Mapas: usar `<DarkTileLayers />` (mapa oscuro con nombres de calles en blanco neón; clases
   `dark-tiles*` en `index.css`) o `<TileLayer {...LIGHT_MAP_TILES} />` para mapa claro. **No usar
   CARTO** (`basemaps.cartocdn.com`): exige API key y muestra "API KEY REQUIRED".
-- **Mapa principal (`TerritoriesMap`) = solo consulta**: casas, etiquetas, progreso y ruta de visitas.
+- **Mapa principal (`TerritoriesMap`, y `TerritoriesMap3D` en móvil) = solo consulta**: casas, etiquetas, progreso y ruta de visitas.
   Su popup de territorio es compacto (`TerritorioTrabajo soloLectura`) con botón "Gestionar" →
   `/territorios?id=X`. **No** agregar ahí editar/eliminar/dibujar/asignaciones/manzanas/compartir:
   todo eso vive en `TerritoriosAdmin` (`/territorios`, ancianos/ministeriales/admins), que tiene su
@@ -117,7 +119,37 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   `TerritoryProgressPanel` es un botón circular flotante dentro del mapa (panel sin modal).
 - Todo mapa lleva `<LocateButton />`: control de Leaflet arriba a la izquierda que sigue tu ubicación
   en tiempo real (`onLocate` recibe la 1ª posición) y además hace `invalidateSize` al cambiar el
-  tamaño del contenedor. No agregar botones "Usar mi ubicación" aparte.
+  tamaño del contenedor. No agregar botones "Usar mi ubicación" aparte. En mapas MapLibre el
+  equivalente es `GeolocateControl` (arriba a la izquierda, `trackUserLocation`).
+- **Mapas 3D en móvil (MapLibre)**: el mapa principal (`TerritoriesMap3D`) y "Registrar casa"
+  (`RegisterHouse3D`) se abren en 3D a pantalla completa si la pantalla es < `md` y hay WebGL2.
+  `components/Vista3D.jsx` (`ElegirVista`) decide: en escritorio, sin WebGL2, si el 3D truena (`Fallo3D`)
+  o si el usuario elige "Vista clásica" (`localStorage vista_mapas`, vale para todos los mapas) se usa la
+  vista clásica con Leaflet, que sigue igual. Las pantallas 3D se cargan con import dinámico.
+  - Lógica compartida clásica/3D — los cambios van ahí, no en cada vista:
+    `hooks/useMapaPrincipal.js` (filtro "Mis territorios", progreso, búsqueda, ruta de visitas) y
+    `hooks/useGuardarCasa.js` (guardar casa nueva: foto, nota de voz, cola offline).
+  - `hooks/useMapa3D.js`: crea el mapa (crédito, `GeolocateControl`, brújula), cambia estilo y 2D/3D y
+    actualiza las fuentes GeoJSON (cada una de un `useMemo`). Botones flotantes: `components/BotonesMapa3D.jsx`.
+  - Layout: `.m3d` es `fixed` entre el borde superior y la `BottomNav`, `z-index: 40` (pánico, nav,
+    modales y toasts quedan encima). Mapa arriba y panel abajo (no se enciman). Lo que queda en la parte
+    baja del panel (estados, listas, botones) lleva `margin-right: 84px` para no quedar bajo el botón de pánico.
+    El contenedor del mapa usa `.m3d .m3d-canvas` (doble clase): `.maplibregl-map { position: relative }`
+    le ganaba según el orden de los CSS y el mapa salía en blanco.
+  - Mapa principal 3D: también **solo consulta**. Panel con lista de territorios (progreso), ficha de
+    territorio (Ruta de visitas, Registrar casa → `/register?territorio=X`, Gestionar) y ficha de casa
+    (registrar visita con un toque = `registrarVisita` de `DataContext`, Editar → `EditHouseModal`,
+    llamar, cómo llegar, historial).
+  - Registrar casa 3D: pin fijo al centro; territorio y manzana se detectan con Turf según el pin (el
+    usuario puede cambiarlos). `?territorio=X` abre sobre ese territorio ya elegido.
+- `utils/map3d.js` (MapLibre): estilos OpenFreeMap (`positron` claro, `dark` oscuro) y satélite Esri
+  (lleva atribución), capas propias (`agregarCapas`, se vuelven a poner en cada `style.load`), worker con
+  `setWorkerUrl`. Las capas 3D van después de la última capa que no es texto del estilo (si no, el
+  estilo oscuro pinta encima de los techos). En muchas colonias OSM casi no tiene edificios: el 3D sale
+  de las casas de la app (bloques del color de su estado) y del bloque amarillo bajo el pin.
+  Texto de usuario en MapLibre: capas `symbol` o `textContent` en popups, nunca `innerHTML`.
+- "Sugerir dirección" usa Nominatim (OSM) **solo al tocar el botón** (su política: ≤ 1 petición/seg, sin
+  consultas automáticas).
 - Puntos de color de leyenda: clase `legend-dot` (anillo para que se vean en modo oscuro).
   Todo texto de usuario dentro de `L.divIcon` debe escaparse (ver `escapeHtml`).
 - Títulos de página: clase `heading-gradient` (tiene versión para modo oscuro).
