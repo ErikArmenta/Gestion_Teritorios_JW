@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { GripHorizontal, Sun, Moon, Languages, User, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { GripHorizontal, Sun, Moon, Languages, User, LogOut, PanelLeftClose, PanelLeftOpen, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useMapaFondo } from '../context/MapaFondoContext';
 import { menuDe } from '../utils/menu';
 import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
+import NotificacionesToggle from './NotificacionesToggle';
 import { t, useLanguage } from '../i18n';
 
-// Menú flotante de las pantallas con mapa 3D en escritorio (reemplaza a la barra lateral ahí).
+// Menú flotante de escritorio, en todas las pantallas (reemplaza a la barra lateral).
 // Izquierda: iconos de navegación (misma lista que la Sidebar: utils/menu.js), tema, idioma, perfil,
 // salir y ocultar. Derecha: el panel de la pantalla (cada pantalla lo manda con components/PanelMapa.jsx).
 // Se arrastra desde el encabezado, recuerda su posición y con CLIC DERECHO regresa a su lugar.
@@ -41,14 +42,28 @@ const NEON_ROL = {
 
 const esCampoDeTexto =(el) => !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
 
-const MenuFlotante = () => {
+// En las pantallas sin mapa el panel se puede colapsar (queda solo la columna de iconos) y se recuerda
+const OCULTO_KEY = 'menu_flotante_oculto';
+const leerOculto = () => { try { return localStorage.getItem(OCULTO_KEY) === '1'; } catch { return false; } };
+const guardarOculto = (v) => { try { localStorage.setItem(OCULTO_KEY, v ? '1' : '0'); } catch { /* sin storage */ } };
+
+// enMapa: pantalla con el mapa de fondo (el panel lo llena la pantalla con PanelMapa).
+// Sin mapa: el panel trae accesos con nombre, la congregación y las notificaciones.
+const MenuFlotante = ({ enMapa = true }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { lang, toggleLang } = useLanguage();
   const { setSlotPanel } = useMapaFondo();
 
   const [pos, setPos] = useState(() => limitar(leerPos()));
-  const [oculto, setOculto] = useState(false);
+  const [ocultoMapa, setOcultoMapa] = useState(false);
+  const [ocultoPagina, setOcultoPagina] = useState(leerOculto);
+  const oculto = enMapa ? ocultoMapa : ocultoPagina;
+  const setOculto = (v) => {
+    if (enMapa) { setOcultoMapa(v); return; }
+    setOcultoPagina(v);
+    guardarOculto(v);
+  };
   const [confirmarSalir, setConfirmarSalir] = useState(false); // "¿Cerrar sesión?"
   const arrastreRef = useRef(null);
 
@@ -137,7 +152,7 @@ const MenuFlotante = () => {
         <button
           type="button"
           className="m3d-menu__item m3d-menu__ocultar"
-          onClick={() => setOculto(v => !v)}
+          onClick={() => setOculto(!oculto)}
           title={oculto ? t('Mostrar panel') : t('Ocultar panel')}
           aria-label={oculto ? t('Mostrar panel') : t('Ocultar panel')}
         >
@@ -162,7 +177,32 @@ const MenuFlotante = () => {
           </div>
           {user.rol && <span className="m3d-menu__rol" style={{ '--neon': NEON_ROL[user.rol] || NEON_ROL.Publicador }}>{t(user.rol)}</span>}
         </div>
-        <div ref={slotRef} className="m3d-menu__slot" />
+        {!enMapa && (
+          <div className="m3d-menu__slot">
+            <nav className="m3d-menu__accesos" aria-label={t('Menú')}>
+              {menuDe(user.rol).map(({ path, name, Icon }) => (
+                <NavLink
+                  key={path}
+                  to={path}
+                  end={path === '/'}
+                  className={({ isActive }) => `m3d-menu__acceso${isActive ? ' is-active' : ''}`}
+                >
+                  <Icon size={18} />
+                  <span>{t(name)}</span>
+                </NavLink>
+              ))}
+            </nav>
+            {user.congregacion_nombre && (
+              <div className="m3d-menu__congre">
+                <Building2 size={15} className="shrink-0" />
+                <span className="truncate">{user.congregacion_nombre}</span>
+              </div>
+            )}
+            <NotificacionesToggle className="m3d-menu__notif" />
+          </div>
+        )}
+        {/* Pantallas con mapa: aquí mandan su panel (PanelMapa) */}
+        <div ref={slotRef} className="m3d-menu__slot" style={enMapa ? undefined : { display: 'none' }} />
       </div>
       {confirmarSalir && <ConfirmarCerrarSesion onCancel={() => setConfirmarSalir(false)} />}
     </div>

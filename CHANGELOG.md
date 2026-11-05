@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — Menú flotante en todas las pantallas de escritorio
+
+- `components/MenuFlotante.jsx` (`enMapa`; sin mapa: accesos con nombre, congregación, notificaciones; colapso recordado)
+- `App.jsx` (ya no usa `Sidebar`; `main` deja lugar a la columna de iconos), `index.css`
+
 ## 2026-11-05 — Menú: primero las pantallas con mapa
 
 - `utils/menu.js`, `components/BottomNav.jsx`: Mapa principal, Registrar casa, Territorios y Exhibidores arriba; lo demás abajo

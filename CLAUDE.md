@@ -29,7 +29,7 @@ Variables en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Nunca commit
 ## Estructura
 
 - `src/pages/` — una pantalla por ruta (rutas en `src/App.jsx`)
-- `src/components/` — modales, navegación (`Sidebar` desktop, `BottomNav` móvil), pánico, notificaciones, `PWAPrompts`
+- `src/components/` — modales, navegación (`MenuFlotante` escritorio, `BottomNav` móvil), pánico, notificaciones, `PWAPrompts`
 - `src/context/` — `AuthContext` (sesión), `DataContext` (territorios/casas + offline + realtime), `NotificationContext`, `ThemeContext`
 - `src/utils/` — `constants.js` (estados, colores, roles), `offlineStore.js` (IndexedDB), `pwa.js` (SW, instalación, notificaciones)
 - `public/` — `sw.js`, `manifest.json`, `favicon.svg`, `icons/` (logo de mapa), `JW.jpg` (logo de la barra lateral/login)
@@ -39,7 +39,8 @@ Variables en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Nunca commit
 `Super Admin` > `Admin Principal` > `Anciano` / `Ministerial` > `Publicador`.
 
 - El acceso por ruta se define con `ProtectedRoute allowedRoles={[...]}` en `App.jsx`.
-- Menús: la `Sidebar` y el menú flotante de los mapas usan la lista de `utils/menu.js` (`MENU_ITEMS` con `roles`);
+- Menús: el menú flotante (escritorio, todas las pantallas) usa la lista de `utils/menu.js` (`MENU_ITEMS` con `roles`,
+  primero las pantallas con mapa);
   la `BottomNav` (móvil) tiene su propia lista. Al agregar/cambiar una pantalla, actualizar `App.jsx`,
   `utils/menu.js` **y** `BottomNav.jsx`.
 - Datos filtrados por `user.congregacion_id` (Super Admin puede ver todas). Toda consulta nueva
@@ -110,7 +111,7 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 
 - Mobile-first. Cada pantalla debe verse bien desde **360px** hasta escritorio, sin scroll horizontal.
 - Breakpoint principal `md` (768px): debajo hay `BottomNav` (h-14) y botón de pánico abajo a la derecha;
-  arriba hay `Sidebar` de 256px (en las pantallas con mapa 3D la cambia el menú flotante). No tapar esas
+  arriba está el menú flotante (columna de iconos de 60px a la izquierda; `main` lleva `md:pl-[100px]`). No tapar esas
   zonas con elementos `fixed`.
 - Tablas: versión tabla `hidden md:block` + versión tarjetas para móvil (patrón de `HousesList`, `UsersList`).
 - Modales: usar `ModalOverlay` (tamaños `small|default|large|full`), no crear overlays nuevos a mano.
@@ -154,9 +155,10 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
     conexión los pone `MapaFondo` (una vez). El contexto se carga con la app: no importar MapLibre ahí.
   - Panel de cada pantalla: `components/PanelMapa.jsx` (`cabecera` + contenido). Móvil: cabecera arriba y
     panel abajo; reporta su alto para que el mapa termine encima. Escritorio: va por portal dentro del
-    **menú flotante** (`components/MenuFlotante.jsx`), que en esas pantallas reemplaza a la `Sidebar`:
-    iconos (misma lista que la Sidebar) + panel; se arrastra (posición en `localStorage menu_flotante_pos`),
-    se oculta, y con **clic derecho** regresa a su lugar. Las pantallas sin mapa siguen con su Sidebar.
+    **menú flotante** (`components/MenuFlotante.jsx`, `enMapa`): iconos (`utils/menu.js`) + panel; se arrastra (posición en `localStorage menu_flotante_pos`),
+    se oculta, y con **clic derecho** regresa a su lugar. En las pantallas sin mapa el mismo menú flota
+    sobre el contenido con accesos con nombre, congregación y notificaciones; se colapsa a la columna de
+    iconos y eso se recuerda (`localStorage menu_flotante_oculto`). `Sidebar.jsx` ya no se usa.
   - Clic derecho del navegador bloqueado en toda la app (`App.jsx`), salvo en cajas de texto.
   - Lógica compartida clásica/3D — los cambios van ahí, no en cada vista:
     `hooks/useMapaPrincipal.js` (filtro "Mis territorios", progreso, búsqueda, ruta de visitas) y
@@ -166,7 +168,7 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   - Layout: `.m3d` es `fixed`, `z-index: 40` (pánico, nav, modales y toasts quedan encima).
     Móvil: entre el borde superior y la `BottomNav`; mapa arriba y panel abajo (no se enciman); lo que
     queda en la parte baja del panel (estados, listas, botones, `.m3d-pie`) lleva `margin-right: 84px`
-    para no quedar bajo el botón de pánico. Escritorio (`md+`): a la derecha de la `Sidebar` (256px), mapa
+    para no quedar bajo el botón de pánico. Escritorio (`md+`): detrás del menú flotante, mapa
     a todo lo ancho y el panel flota a la izquierda (`min(400px, 46%)`); los controles del mapa se corren
     a la derecha del panel.
     El contenedor del mapa usa `.m3d .m3d-canvas` (doble clase): `.maplibregl-map { position: relative }`

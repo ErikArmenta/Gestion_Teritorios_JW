@@ -2,7 +2,6 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell } from 'lucide-react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
 import MenuFlotante from './components/MenuFlotante';
 import { Fallo3D } from './components/Vista3D';
 import { MapaFondoProvider, useMapaFondo } from './context/MapaFondoContext';
@@ -101,9 +100,9 @@ const AppLayout = () => {
 
   return (
     <div className="flex min-h-screen" style={{ overflowX: 'clip' }}>
-      {/* En las pantallas con mapa 3D la barra lateral se cambia por el menú flotante */}
-      {!modoMapa && <Sidebar />}
-      {modoMapa && !esMovil && <MenuFlotante />}
+      {/* Escritorio: menú flotante en todas las pantallas (en las de mapa lleva el panel de la pantalla;
+          en las demás, accesos con nombre y se colapsa a la columna de iconos). Celular: BottomNav. */}
+      {!esMovil && <MenuFlotante enMapa={modoMapa} />}
       {mapa3D && mapaMontado && (
         <Fallo3D onError={marcarFallo}>
           <Suspense fallback={null}>
@@ -113,7 +112,7 @@ const AppLayout = () => {
       )}
       <OfflineIndicator />
       <main
-        className="flex-1 p-4 pb-24 md:p-8 md:pb-8 overflow-y-auto flex flex-col"
+        className="flex-1 min-w-0 p-4 pb-24 md:p-8 md:pb-8 md:pl-[100px] overflow-y-auto flex flex-col"
       >
         {/* Top bar: NotificationBell */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>

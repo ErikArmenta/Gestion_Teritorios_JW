@@ -1131,6 +1131,23 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   border: 1px solid color-mix(in srgb, var(--neon) 55%, transparent);
 }
 [data-theme="dark"] .m3d-menu__rol { color: var(--neon); box-shadow: 0 0 10px color-mix(in srgb, var(--neon) 40%, transparent); }
+/* Pantallas sin mapa: accesos con nombre (2 columnas), congregación y notificaciones */
+.m3d-menu__accesos { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.m3d-menu__acceso {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  padding: 10px 12px; border-radius: 12px; text-decoration: none;
+  font-size: 13px; font-weight: 700; color: var(--text-secondary);
+  background: var(--bg-hover); border: 1px solid transparent;
+  transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+}
+.m3d-menu__acceso span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m3d-menu__acceso:hover { color: var(--text-primary); border-color: rgba(37,99,235,.45); box-shadow: 0 0 12px rgba(37,99,235,.25); }
+.m3d-menu__acceso.is-active { background: #2563EB; color: #fff; box-shadow: 0 0 16px rgba(37,99,235,.45); }
+.m3d-menu__congre { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; font-weight: 700; color: #3B82F6; padding: 0 4px; }
+.m3d-menu__notif {
+  width: 100%; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 9999px;
+  font-size: 13px; font-weight: 600; background: var(--bg-hover); border: none; cursor: pointer;
+}
 .m3d-menu__slot { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; }
 .m3d-menu__contenido { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .m3d-menu .m3d-sheet__asa { display: none; }
