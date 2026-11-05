@@ -779,6 +779,16 @@ const en = {
   'Toca el mapa en cada esquina. Para cerrar, toca el primer punto (amarillo).': 'Tap the map at each corner. To close it, tap the first (yellow) point.',
   'Toca una esquina y luego la esquina opuesta.': 'Tap one corner and then the opposite corner.',
   'Arrastra los puntos amarillos para mover las esquinas. Arrastra un punto blanco para agregar una esquina.': 'Drag the yellow points to move the corners. Drag a white point to add a corner.',
+  'No pudimos obtener tu ubicación. Revisa el permiso de ubicación del navegador.': "We couldn't get your location. Check the browser's location permission.",
+  'Distancia en línea recta (no se pudo trazar la ruta)': 'Straight-line distance (the route could not be traced)',
+  'En coche, hasta el centro del territorio': 'By car, to the center of the territory',
+  'Quitar ruta': 'Remove route',
+  'Abrir en Waze': 'Open in Waze',
+  'Traza la ruta desde donde estás hasta el territorio. Toca una casa para ver sus datos.': 'Trace the route from where you are to the territory. Tap a house to see its details.',
+  'Buscando ruta...': 'Finding route...',
+  'Ver ruta en el mapa': 'Show route on map',
+  'Google Maps': 'Google Maps',
+  'Casa': 'House',
 };
 
 export default en;

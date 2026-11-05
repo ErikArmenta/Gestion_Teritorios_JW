@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import { supabase } from '../supabaseClient';
@@ -10,6 +10,11 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import LocateButton from '../components/LocateButton';
 import { t as tx } from '../i18n';
+import { Fallo3D } from '../components/Vista3D';
+import { soportaWebGL2 } from '../utils/webgl';
+
+// Vista 3D (MapLibre, se carga aparte). Este mapa Leaflet queda como respaldo: sin WebGL2 o si el 3D falla.
+const SharedTerritory3D = lazy(() => import('./SharedTerritory3D'));
 
 const DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -52,6 +57,7 @@ export default function SharedTerritory() {
   const [status, setStatus] = useState('loading'); // 'loading' | 'invalid' | 'expired' | 'valid'
   const [territorio, setTerritorio] = useState(null);
   const [casas, setCasas] = useState([]);
+  const [usar3D, setUsar3D] = useState(soportaWebGL2);
 
   useEffect(() => {
     const load = async () => {
@@ -144,6 +150,20 @@ export default function SharedTerritory() {
   }
 
   const coordenadas = territorio?.coordenadas || [];
+
+  if (usar3D) {
+    return (
+      <Fallo3D onError={() => setUsar3D(false)}>
+        <Suspense fallback={(
+          <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface, #F8FAFC)' }}>
+            <p style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.95rem' }}>{tx('Cargando mapa...')}</p>
+          </div>
+        )}>
+          <SharedTerritory3D territorio={territorio} casas={casas} onFallo={() => setUsar3D(false)} />
+        </Suspense>
+      </Fallo3D>
+    );
+  }
 
   return (
     <div style={{

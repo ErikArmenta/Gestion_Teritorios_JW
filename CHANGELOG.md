@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-05 — Link compartido en 3D con "Cómo llegar"
+
+- `pages/SharedTerritory3D.jsx` (nuevo): mapa 3D, ficha de casa, ruta en el mapa (OSRM de FOSSGIS) y Google Maps / Waze
+- `pages/SharedTerritory.jsx` (Leaflet queda de respaldo), `components/PWAPrompts.jsx` (sin "Instalar" en `/shared`)
+- `index.css` (`.m3d-compartido*`, marcadores de la ruta), `i18n/en.js`
+
 ## 2026-11-05 — Menú flotante en todas las pantallas de escritorio
 
 - `components/MenuFlotante.jsx` (`enMapa`; sin mapa: accesos con nombre, congregación, notificaciones; colapso recordado)

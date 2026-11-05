@@ -10,7 +10,7 @@ Multi-congregación. Desarrollada por Master Engenering EA. Idioma de la UI: **e
 - Tailwind CSS v4 (`@tailwindcss/postcss`) + CSS propio en `src/index.css`
 - Supabase (`src/supabaseClient.js`) — solo base de datos/storage/realtime, **no** Supabase Auth
 - Leaflet / react-leaflet 5 / leaflet-draw / react-leaflet-cluster / Turf
-- MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — todos los mapas (móvil y escritorio) menos links compartidos y pánico; dibujo con Terra Draw
+- MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — todos los mapas (móvil y escritorio, también links compartidos) menos pánico; dibujo con Terra Draw
 - Chart.js, jsPDF + autotable, xlsx, lucide-react (iconos)
 - Deploy en Vercel (`vercel.json`: rewrite SPA + headers de `sw.js` y `manifest.json`)
 
@@ -117,8 +117,13 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - Modales: usar `ModalOverlay` (tamaños `small|default|large|full`), no crear overlays nuevos a mano.
   Todo contenedor con fondo blanco fijo debe llevar la clase `light-surface` (si no, en modo oscuro
   los textos y botones `btn-outline` salen blancos sobre blanco).
-- **Mapas 2D (Leaflet) solo en**: links compartidos (`/shared`), alertas de pánico (`PanicAlert`,
-  `PanicHistory`) y como **respaldo automático** de los mapas 3D (sin WebGL2 o si el 3D falla).
+- **Mapas 2D (Leaflet) solo en**: alertas de pánico (`PanicAlert`, `PanicHistory`) y como **respaldo
+  automático** de los mapas 3D (sin WebGL2 o si el 3D falla).
+- **Link compartido** (`/shared/:id`, público, sin sesión): `SharedTerritory.jsx` carga `SharedTerritory3D.jsx`
+  (import dinámico; su propio `useMapa3D`, no el mapa de fondo) y deja su Leaflet como respaldo. Solo consulta:
+  territorio, casas (ficha al tocar) y "Cómo llegar": ruta en coche de tu ubicación al centro del territorio
+  con el OSRM de FOSSGIS (`routing.openstreetmap.de`, el de openstreetmap.org; **solo al tocar el botón**,
+  si falla se dibuja línea recta) + botones a Google Maps / Waze. Ahí no se ofrece instalar la PWA.
   Para esos mapas: `<DarkTileLayers />` (mapa oscuro con nombres de calles en blanco neón; clases
   `dark-tiles*` en `index.css`) o `<TileLayer {...LIGHT_MAP_TILES} />` para mapa claro. **No usar
   CARTO** (`basemaps.cartocdn.com`): exige API key y muestra "API KEY REQUIRED".

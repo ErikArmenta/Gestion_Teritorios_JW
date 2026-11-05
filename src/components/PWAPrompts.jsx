@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Download, RefreshCw, Share, X } from 'lucide-react';
 import { t } from '../i18n';
 import { applyUpdate, getPwaState, isIOS, isStandalone, onPwaChange, promptInstall } from '../utils/pwa';
@@ -59,6 +60,8 @@ const PWAPrompts = () => {
   const [pwa, setPwa] = useState(getPwaState);
   const [dismissed, setDismissed] = useState(readDismissed);
   const [updateHidden, setUpdateHidden] = useState(false);
+  // En un link compartido (/shared) no se ofrece instalar: lo abre gente de paso y tapaba "Cómo llegar"
+  const enLinkCompartido = useLocation().pathname.startsWith('/shared');
 
   useEffect(() => onPwaChange(setPwa), []);
 
@@ -80,7 +83,7 @@ const PWAPrompts = () => {
     );
   }
 
-  if (dismissed || isStandalone()) return null;
+  if (dismissed || enLinkCompartido || isStandalone()) return null;
 
   if (pwa.installPrompt) {
     return (
