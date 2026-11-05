@@ -30,7 +30,16 @@ const limitar = (p) => ({
   y: Math.min(Math.max(MARGEN, p.y), Math.max(MARGEN, window.innerHeight - 80)),
 });
 
-const esCampoDeTexto = (el) => !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
+// Color neón del nombre según el rol
+const NEON_ROL = {
+  'Super Admin': '#F472B6',
+  'Admin Principal': '#A78BFA',
+  Anciano: '#22D3EE',
+  Ministerial: '#34D399',
+  Publicador: '#FACC15',
+};
+
+const esCampoDeTexto =(el) => !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
 
 const MenuFlotante = () => {
   const { user } = useAuth();
@@ -147,8 +156,11 @@ const MenuFlotante = () => {
           title={t('Arrastra para mover · clic derecho para regresar')}
         >
           <GripHorizontal size={16} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-          <span className="m3d-menu__titulo">{t('Gestión Territorial')}</span>
-          <span className="m3d-menu__usuario">{user.nombre}</span>
+          <div className="m3d-menu__quien" style={{ '--neon': NEON_ROL[user.rol] || NEON_ROL.Publicador }}>
+            <span className="m3d-menu__titulo">{t('Gestión Territorial')}</span>
+            <span className="m3d-menu__nombre" title={user.nombre}>{user.nombre}</span>
+          </div>
+          {user.rol && <span className="m3d-menu__rol" style={{ '--neon': NEON_ROL[user.rol] || NEON_ROL.Publicador }}>{t(user.rol)}</span>}
         </div>
         <div ref={slotRef} className="m3d-menu__slot" />
       </div>

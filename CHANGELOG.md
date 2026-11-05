@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-05 — Nombre del usuario en neón con su rol en el menú flotante
+
+- `components/MenuFlotante.jsx` (`NEON_ROL`: color por rol), `index.css` (`.m3d-menu__nombre`, `.m3d-menu__rol`)
+
 ## 2026-11-05 — Mapa neón, geocercas con brillo y hovers en casas y exhibidores
 
 - `utils/map3d.js`: `aplicarNeon` (negro + calles blancas brillantes), brillo en geocercas y manzanas,

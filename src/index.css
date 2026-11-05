@@ -1109,8 +1109,28 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   cursor: grab; user-select: none; touch-action: none;
 }
 .m3d-menu__barra:active, .m3d-menu__riel:active { cursor: grabbing; }
-.m3d-menu__titulo { font-size: 13px; font-weight: 800; white-space: nowrap; }
-.m3d-menu__usuario { margin-left: auto; max-width: 45%; font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Encabezado: app chiquita arriba, nombre del usuario grande en neón (color según el rol) y su rol */
+.m3d-menu__quien { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; line-height: 1.15; }
+.m3d-menu__titulo { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
+.m3d-menu__nombre {
+  font-size: clamp(15px, 1.5vw, 20px); font-weight: 900; letter-spacing: .01em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* modo claro: el color del rol oscurecido (blanco sobre blanco no se ve) con brillo suave */
+  color: color-mix(in srgb, var(--neon) 62%, #0F172A);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--neon) 45%, transparent);
+}
+[data-theme="dark"] .m3d-menu__nombre {
+  color: #fff;
+  text-shadow: 0 0 3px var(--neon), 0 0 10px var(--neon), 0 0 22px color-mix(in srgb, var(--neon) 70%, transparent);
+}
+.m3d-menu__rol {
+  flex-shrink: 0; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 9999px;
+  color: color-mix(in srgb, var(--neon) 60%, #0F172A);
+  background: color-mix(in srgb, var(--neon) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--neon) 55%, transparent);
+}
+[data-theme="dark"] .m3d-menu__rol { color: var(--neon); box-shadow: 0 0 10px color-mix(in srgb, var(--neon) 40%, transparent); }
 .m3d-menu__slot { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; }
 .m3d-menu__contenido { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .m3d-menu .m3d-sheet__asa { display: none; }
