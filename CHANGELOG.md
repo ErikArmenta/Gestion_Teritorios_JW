@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-05 — Menú: primero las pantallas con mapa
+
+- `utils/menu.js`, `components/BottomNav.jsx`: Mapa principal, Registrar casa, Territorios y Exhibidores arriba; lo demás abajo
+
 ## 2026-11-05 — Nombre del usuario en neón con su rol en el menú flotante
 
 - `components/MenuFlotante.jsx` (`NEON_ROL`: color por rol), `index.css` (`.m3d-menu__nombre`, `.m3d-menu__rol`)

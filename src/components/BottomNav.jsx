@@ -12,11 +12,11 @@ import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
 const menuItems = [
   { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/register', name: 'Registrar', icon: <Home size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+  { path: '/territorios', name: 'Territorios', icon: <LandPlot size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
+  { path: '/exhibidores', name: 'Exhibidores', icon: <ExhibidorIcon size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/informes', name: 'Informes', icon: <ClipboardList size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/stats', name: 'Stats', icon: <BarChart2 size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/list', name: 'Lista', icon: <List size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-  { path: '/territorios', name: 'Territorios', icon: <LandPlot size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-  { path: '/exhibidores', name: 'Exhibidores', icon: <ExhibidorIcon size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/users', name: 'Usuarios', icon: <Users size={20} />, roles: ['Super Admin', 'Admin Principal'] },
   { path: '/grupos', name: 'Grupos', icon: <UsersRound size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/alerts', name: 'Alertas', icon: <Bell size={20} />, roles: ['Super Admin', 'Admin Principal'] },
