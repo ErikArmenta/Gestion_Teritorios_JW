@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import ExhibidorIcon from './ExhibidorIcon';
 import { t, useLanguage } from '../i18n';
 import NotificacionesToggle from './NotificacionesToggle';
+import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
 
 const menuItems = [
   { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
@@ -60,12 +61,13 @@ const NavItem = ({ item }) => (
 );
 
 const BottomNav = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { lang, toggleLang } = useLanguage();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expandedPhoto, setExpandedPhoto] = useState(null);
+  const [confirmarSalir, setConfirmarSalir] = useState(false); // "¿Cerrar sesión?"
 
   useEffect(() => {
     if (!expandedPhoto) return;
@@ -88,8 +90,7 @@ const BottomNav = () => {
 
   const handleLogout = () => {
     setSheetOpen(false);
-    logout();
-    navigate('/login');
+    setConfirmarSalir(true);
   };
 
   return (
@@ -312,6 +313,7 @@ const BottomNav = () => {
         </div>,
         document.body
       )}
+      {confirmarSalir && <ConfirmarCerrarSesion onCancel={() => setConfirmarSalir(false)} />}
     </>
   );
 };

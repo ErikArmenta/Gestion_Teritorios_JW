@@ -5,15 +5,17 @@ import { LogOut, User, X, Pencil, Sun, Moon, Languages } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { menuDe } from '../utils/menu';
+import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
 import { t, useLanguage } from '../i18n';
 import NotificacionesToggle from './NotificacionesToggle';
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { lang, toggleLang } = useLanguage();
   const navigate = useNavigate();
   const [expandedPhoto, setExpandedPhoto] = useState(null);
+  const [confirmarSalir, setConfirmarSalir] = useState(false); // "¿Cerrar sesión?"
 
   useEffect(() => {
     if (!expandedPhoto) return;
@@ -30,10 +32,7 @@ const Sidebar = () => {
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = () => setConfirmarSalir(true);
 
   // Lista compartida con el menú flotante de las pantallas con mapa (utils/menu.js)
   const visibleMenu = menuDe(user.rol);
@@ -215,6 +214,7 @@ const Sidebar = () => {
         </div>,
         document.body
       )}
+      {confirmarSalir && <ConfirmarCerrarSesion onCancel={() => setConfirmarSalir(false)} />}
     </>
   );
 };

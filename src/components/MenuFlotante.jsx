@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { GripHorizontal, Sun, Moon, Languages, User, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useMapaFondo } from '../context/MapaFondoContext';
 import { menuDe } from '../utils/menu';
+import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
 import { t, useLanguage } from '../i18n';
 
 // Menú flotante de las pantallas con mapa 3D en escritorio (reemplaza a la barra lateral ahí).
@@ -32,14 +33,14 @@ const limitar = (p) => ({
 const esCampoDeTexto = (el) => !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
 
 const MenuFlotante = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { lang, toggleLang } = useLanguage();
-  const navigate = useNavigate();
   const { setSlotPanel } = useMapaFondo();
 
   const [pos, setPos] = useState(() => limitar(leerPos()));
   const [oculto, setOculto] = useState(false);
+  const [confirmarSalir, setConfirmarSalir] = useState(false); // "¿Cerrar sesión?"
   const arrastreRef = useRef(null);
 
   const slotRef = useCallback((el) => setSlotPanel(el), [setSlotPanel]);
@@ -79,7 +80,7 @@ const MenuFlotante = () => {
 
   if (!user) return null;
 
-  const salir = () => { logout(); navigate('/login'); };
+  const salir = () => setConfirmarSalir(true);
 
   return (
     <div
@@ -96,7 +97,7 @@ const MenuFlotante = () => {
         onPointerUp={terminarArrastre}
         onPointerCancel={terminarArrastre}
       >
-        <img src="/JW.jpg" alt="" className="m3d-menu__logo" draggable={false} />
+        <img src="/jw-logo.png" alt="" className="m3d-menu__logo" draggable={false} />
         {menuDe(user.rol).map(({ path, name, Icon }) => (
           <NavLink
             key={path}
@@ -151,6 +152,7 @@ const MenuFlotante = () => {
         </div>
         <div ref={slotRef} className="m3d-menu__slot" />
       </div>
+      {confirmarSalir && <ConfirmarCerrarSesion onCancel={() => setConfirmarSalir(false)} />}
     </div>
   );
 };

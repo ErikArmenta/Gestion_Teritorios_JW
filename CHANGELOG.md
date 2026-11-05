@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-04 — Confirmar cierre de sesión y logo nítido en el menú flotante
+
+- `components/ConfirmarCerrarSesion.jsx` (nuevo): "¿Cerrar sesión?" en Sidebar, menú flotante y BottomNav
+- `public/jw-logo.png` (nuevo): logo recortado de `JW.jpg`, 128px con esquinas transparentes
+- `MenuFlotante.jsx`, `Sidebar.jsx`, `BottomNav.jsx`, `index.css`, `i18n/en.js`
+
 ## 2026-11-04 — Un solo mapa de fondo y menú flotante (estilo Google Maps)
 
 - `context/MapaFondoContext.jsx`, `components/MapaFondo.jsx` (nuevos: un mapa 3D para todas las pantallas con mapa)

@@ -647,6 +647,11 @@ const en = {
   'Ver más': 'Show more',
   'Ver menos': 'Show less',
 
+  // ── Cerrar sesión ──
+  '¿Cerrar sesión?': 'Log out?',
+  'Tendrás que volver a iniciar sesión para usar la app.': 'You will need to log in again to use the app.',
+  'Sí, cerrar sesión': 'Yes, log out',
+
   // ── Menú flotante (pantallas con mapa, escritorio) ──
   'Menú': 'Menu',
   'Mostrar panel': 'Show panel',
