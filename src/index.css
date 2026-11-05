@@ -1116,3 +1116,13 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .m3d-menu .m3d-cabecera { z-index: 5; }
 .m3d-menu .m3d-titulo { box-shadow: none; }
 .m3d-menu .m3d-buscador { height: 44px; box-shadow: none; background: var(--bg-hover); }
+
+/* ── Exhibidores 3D: marcador con nombre (Exhibidores3D) ── */
+.m3d-exhibidor-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.m3d-exhibidor-wrap .m3d-exhibidor { cursor: pointer; transition: transform 0.15s; }
+.m3d-exhibidor-wrap.is-sel .m3d-exhibidor { transform: scale(1.2); box-shadow: 0 0 0 4px #FACC15, 0 4px 12px rgba(0,0,0,0.35); }
+.m3d-exhibidor__nombre {
+  max-width: 140px; padding: 2px 8px; border-radius: 9999px;
+  font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: var(--bg-card); color: var(--text-primary); box-shadow: 0 2px 8px rgba(15,23,42,0.2);
+}

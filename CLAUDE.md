@@ -127,11 +127,11 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   tamaño del contenedor. No agregar botones "Usar mi ubicación" aparte. En mapas MapLibre el
   equivalente es `GeolocateControl` (arriba a la izquierda, `trackUserLocation`).
 - **Mapas 3D (MapLibre), móvil y escritorio**: el mapa principal (`TerritoriesMap3D`), "Registrar casa"
-  (`RegisterHouse3D`) y Territorios (`TerritoriosAdmin3D`) se abren en 3D a pantalla completa si hay WebGL2.
+  (`RegisterHouse3D`), Territorios (`TerritoriosAdmin3D`) y Exhibidores (`Exhibidores3D`) se abren en 3D a pantalla completa si hay WebGL2.
   `components/Vista3D.jsx` (`ElegirVista`) pone la vista clásica (Leaflet) solo como respaldo: sin WebGL2
   o si el 3D truena (`Fallo3D`); ahí la clásica muestra "Mapa 3D" para reintentar. Ya no hay botón
   "Vista clásica" (la preferencia vieja `localStorage vista_mapas` se ignora). Las pantallas 3D se cargan
-  con import dinámico. Mapas pequeños dentro de páginas o modales (Exhibidores, Editar casa):
+  con import dinámico. Mapas pequeños dentro de modales (Editar casa):
   `components/MapaConRespaldo.jsx` → `Mapa3DEmbebido` (`modo="selector"` con pin al centro, o
   `modo="puntos"`); recibe el Leaflet de siempre en `clasico` como respaldo.
   - **Un solo mapa de fondo** para las pantallas con mapa (`RUTAS_MAPA` en `utils/menu.js`):
@@ -163,6 +163,9 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
     territorio (Ruta de visitas, Registrar casa → `/register?territorio=X`, Gestionar) y ficha de casa
     (registrar visita con un toque = `registrarVisita` de `DataContext`, Editar → `EditHouseModal`,
     llamar, cómo llegar, historial).
+  - Exhibidores 3D: marcadores DOM con nombre (`textContent`, color con `style`); nuevo exhibidor = pin al
+    centro del mapa de fondo + formulario en el panel. Lógica compartida con la clásica: `hooks/useExhibidores.js`
+    y `components/ExhibidorPiezas.jsx` (modal de asignar turno, eliminar, tarjeta de "Mis turnos").
   - Registrar casa 3D: pin fijo al centro; territorio y manzana se detectan con Turf según el pin (el
     usuario puede cambiarlos). `?territorio=X` abre sobre ese territorio ya elegido.
   - Territorios 3D (`TerritoriosAdmin3D`): lista → ficha (progreso y grupo con `TerritorioTrabajo`,

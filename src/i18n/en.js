@@ -647,6 +647,16 @@ const en = {
   'Ver más': 'Show more',
   'Ver menos': 'Show less',
 
+  // ── Exhibidores 3D ──
+  'Mueve el mapa hasta que el pin quede en el lugar del exhibidor.': 'Move the map until the pin sits on the cart location.',
+  'Crear Exhibidor': 'Create Cart',
+  'Turnos próximos': 'Upcoming shifts',
+  'Sin turnos próximos': 'No upcoming shifts',
+  '{n} exhibidores': '{n} carts',
+  '{n} turnos próximos': '{n} upcoming shifts',
+  'Mueve el mapa para ubicarlo': 'Move the map to place it',
+  'Toca un exhibidor en el mapa': 'Tap a cart on the map',
+
   // ── Cerrar sesión ──
   '¿Cerrar sesión?': 'Log out?',
   'Tendrás que volver a iniciar sesión para usar la app.': 'You will need to log in again to use the app.',

@@ -21,4 +21,4 @@ export const MENU_ITEMS = [
 export const menuDe = (rol) => MENU_ITEMS.filter(item => item.roles.includes(rol));
 
 // Pantallas que usan el mapa 3D de fondo (un solo mapa para todas; ver context/MapaFondoContext.jsx)
-export const RUTAS_MAPA = ['/', '/register', '/territorios'];
+export const RUTAS_MAPA = ['/', '/register', '/territorios', '/exhibidores'];
