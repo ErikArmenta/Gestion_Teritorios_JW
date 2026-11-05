@@ -760,27 +760,43 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   to { transform: rotate(360deg); }
 }
 
-/* ── Mapas 3D en móvil (MapLibre: TerritoriesMap3D, RegisterHouse3D) ────────────
-   Pantalla completa entre el borde superior y la BottomNav (h-14). Va con z-index 40:
-   la BottomNav (50), el botón de pánico (55), modales y toasts quedan siempre encima. */
+/* ── Mapas 3D (MapLibre): mapa de fondo compartido + panel de cada pantalla ────────
+   .m3d-fondo (components/MapaFondo.jsx): el ÚNICO mapa de las pantallas con mapa, z-index 40.
+     Móvil: del borde superior hasta encima del panel inferior (--alto-panel) y la BottomNav.
+     Escritorio: pantalla completa (la barra lateral se cambia por el menú flotante).
+   .m3d (components/PanelMapa.jsx, solo móvil): cabecera arriba y panel abajo, z-index 41; deja pasar
+     los toques al mapa. BottomNav (50), pánico (55), modales y toasts quedan siempre encima. */
+.m3d-fondo {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  bottom: calc(3.5rem + env(safe-area-inset-bottom) + var(--alto-panel, 0px));
+  z-index: 40;
+  background: var(--bg-primary);
+}
+.m3d-fondo.is-oculto { visibility: hidden; pointer-events: none; }
+.m3d-fondo__derecha { display: contents; }
+/* Doble clase: MapLibre pone .maplibregl-map { position: relative } al contenedor y, según el orden
+   en que carguen los CSS, ganaba y el mapa medía 0 de alto (canvas de 300px, mapa en blanco). */
+.m3d-fondo .m3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.m3d-fondo .maplibregl-ctrl-top-left { top: calc(62px + env(safe-area-inset-top)); }
+.m3d-fondo .maplibregl-ctrl-bottom-left { bottom: 22px; } /* el panel se encima 16px sobre el mapa */
+.m3d-fondo .maplibregl-ctrl-group button { width: 38px; height: 38px; }
+.m3d-fondo .m3d-campana { position: absolute; z-index: 2; top: calc(10px + env(safe-area-inset-top)); right: 10px; }
+
 .m3d {
   position: fixed;
   top: 0; left: 0; right: 0;
   bottom: calc(3.5rem + env(safe-area-inset-bottom));
-  z-index: 40;
+  z-index: 41;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  justify-content: flex-end;
+  pointer-events: none; /* el mapa de fondo recibe los toques */
 }
-.m3d--cargando { align-items: center; justify-content: center; gap: 12px; }
-
-.m3d-mapa { position: relative; flex: 1 1 auto; min-height: 0; }
-/* Doble clase: MapLibre pone .maplibregl-map { position: relative } al contenedor y, según el orden
-   en que carguen los CSS, ganaba y el mapa medía 0 de alto (canvas de 300px, mapa en blanco). */
-.m3d .m3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.m3d .maplibregl-ctrl-top-left { top: calc(62px + env(safe-area-inset-top)); }
-.m3d .maplibregl-ctrl-bottom-left { bottom: 18px; } /* el panel se encima 16px sobre el mapa */
-.m3d .maplibregl-ctrl-group button { width: 38px; height: 38px; }
+.m3d > .m3d-sheet { pointer-events: auto; }
+.m3d.m3d--cargando { align-items: center; justify-content: center; gap: 12px; background: var(--bg-primary); pointer-events: auto; }
+.m3d-cabecera { position: relative; display: flex; min-width: 0; }
+.m3d-cabecera__busqueda { position: relative; flex: 1 1 auto; min-width: 0; }
 
 /* Pin fijo en el centro: no recibe toques (arrastrar encima mueve el mapa); se levanta al mover */
 .m3d-pin { pointer-events: none; }
@@ -790,10 +806,11 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .m3d-top {
   position: absolute; top: 0; left: 0; right: 0; z-index: 2;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: calc(10px + env(safe-area-inset-top)) 10px 0;
+  padding: calc(10px + env(safe-area-inset-top)) 62px 0 10px; /* a la derecha: campana del mapa */
   pointer-events: none;
 }
 .m3d-top > * { pointer-events: auto; }
+.m3d-top .m3d-cabecera { flex: 1 1 auto; }
 .m3d-titulo {
   display: flex; align-items: center; gap: 10px; min-width: 0;
   padding: 7px 14px 7px 7px; border-radius: 16px;
@@ -826,7 +843,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .m3d-fab__txt { font-size: 13px; font-weight: 800; }
 
 .m3d-aviso {
-  position: absolute; z-index: 2; left: 10px; right: 62px; bottom: 40px;
+  position: absolute; z-index: 2; left: 10px; right: 62px; bottom: 30px;
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;
   background: rgba(245,158,11,0.95); color: #1F2937;
@@ -841,7 +858,6 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   position: relative; z-index: 3; flex: 0 0 auto;
   display: flex; flex-direction: column; gap: 8px;
   max-height: 72%;
-  margin-top: -16px;
   padding: 4px 14px 10px;
   border-radius: 20px 20px 0 0;
   background: var(--bg-card);
@@ -927,9 +943,9 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 }
 .m3d-buscador__x { display: flex; padding: 4px; border: 0; background: none; color: var(--text-muted); cursor: pointer; }
 .m3d-resultados {
-  position: absolute; z-index: 4; left: 10px; right: 62px;
-  top: calc(62px + env(safe-area-inset-top));
-  max-height: 50%; overflow-y: auto;
+  position: absolute; z-index: 6; left: 0; right: 0;
+  top: calc(100% + 6px);
+  max-height: 50dvh; overflow-y: auto;
   border-radius: 14px; background: var(--bg-card); border: 1px solid var(--border-color);
   box-shadow: 0 10px 30px rgba(15,23,42,0.22);
 }
@@ -1014,11 +1030,11 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .m3d-estado:disabled { opacity: 0.6; }
 
 /* Controles de MapLibre (ubicación, brújula, crédito) en modo oscuro */
-[data-theme="dark"] .m3d .maplibregl-ctrl-group { background: var(--bg-card); box-shadow: 0 0 0 1px var(--border-color); }
-[data-theme="dark"] .m3d .maplibregl-ctrl-group button + button { border-top-color: var(--border-color); }
-[data-theme="dark"] .m3d .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(180deg); }
-[data-theme="dark"] .m3d .maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon,
-[data-theme="dark"] .m3d .maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon { filter: none; }
+[data-theme="dark"] .m3d-fondo .maplibregl-ctrl-group { background: var(--bg-card); box-shadow: 0 0 0 1px var(--border-color); }
+[data-theme="dark"] .m3d-fondo .maplibregl-ctrl-group button + button { border-top-color: var(--border-color); }
+[data-theme="dark"] .m3d-fondo .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(180deg); }
+[data-theme="dark"] .m3d-fondo .maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon,
+[data-theme="dark"] .m3d-fondo .maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon { filter: none; }
 
 /* ── Territorios 3D (TerritoriosAdmin3D): dibujo con Terra Draw ── */
 .m3d-accion--roja { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.3); color: #DC2626; }
@@ -1039,29 +1055,64 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: default;
 }
 
-/* ── Mapas 3D en escritorio (md+): mapa a todo lo ancho a la derecha de la barra lateral (256px)
-   y el panel flota a la izquierda, como Google Maps. Sin BottomNav; el pánico queda abajo a la derecha. */
+/* ── Mapas 3D en escritorio (md+): mapa a pantalla completa y el panel de la pantalla dentro del menú
+   flotante (components/MenuFlotante.jsx). Controles del mapa a la derecha (debajo de la campana y de
+   los botones 3D/satélite) para que el menú no los tape; el pánico queda abajo a la derecha. */
 @media (min-width: 768px) {
-  .m3d { left: 256px; bottom: 0; }
-  .m3d-mapa { position: absolute; inset: 0; }
-  .m3d-sheet {
-    position: absolute; z-index: 3;
-    top: calc(76px + env(safe-area-inset-top)); left: 16px;
-    width: min(400px, 46%); max-height: calc(100% - 92px);
-    margin-top: 0; padding: 14px 16px;
-    border-radius: 20px; border: 1px solid var(--border-color);
-    box-shadow: 0 12px 40px rgba(15,23,42,0.25);
-  }
-  .m3d-sheet__asa { display: none; }
-  /* El botón de pánico queda lejos del panel: sin el margen de móvil */
+  .m3d-fondo { inset: 0; }
+  .m3d-fondo .maplibregl-ctrl-top-left { left: auto; right: 10px; top: 168px; }
+  .m3d-fondo .maplibregl-ctrl-bottom-left { left: auto; right: 108px; bottom: 8px; }
+  .m3d-fondo .m3d-aviso { left: 50%; right: auto; transform: translateX(-50%); bottom: 24px; }
+  /* Dentro del menú: sin el margen del botón de pánico (queda lejos) y estados en varias filas */
   .m3d-estados, .m3d-acciones, .m3d-lista, .m3d-pie { margin-right: 0; }
+  .m3d-estados { flex-wrap: wrap; overflow: visible; }
   .m3d-lista { max-height: 44vh; }
   .m3d-lista.is-open { max-height: 62vh; }
-  /* Controles del mapa a la derecha del panel */
-  .m3d .maplibregl-ctrl-top-left { left: calc(min(400px, 46%) + 24px); }
-  .m3d .maplibregl-ctrl-bottom-left { left: calc(min(400px, 46%) + 24px); bottom: 8px; }
-  .m3d-aviso { left: calc(min(400px, 46%) + 32px); right: 90px; bottom: 24px; }
-  .m3d-top { padding-left: 16px; padding-right: 16px; }
-  .m3d-buscador { flex: 0 1 min(400px, 46%); }
-  .m3d-resultados { left: 16px; right: auto; width: min(400px, 46%); }
 }
+
+/* ── Menú flotante de las pantallas con mapa (escritorio): iconos a la izquierda + panel de la pantalla.
+   Se arrastra desde el encabezado o la columna de iconos; clic derecho lo regresa a su lugar. */
+.m3d-menu {
+  position: fixed; z-index: 45;
+  display: flex; align-items: stretch;
+  border-radius: 20px; overflow: hidden;
+  background: var(--bg-card); color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 18px 50px rgba(15,23,42,0.28);
+}
+.m3d-menu__riel {
+  width: 60px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 6px; overflow-y: auto; scrollbar-width: none;
+  background: #0F172A; cursor: grab; touch-action: none; user-select: none;
+}
+.m3d-menu__riel::-webkit-scrollbar { display: none; }
+.m3d-menu__logo { width: 40px; height: 40px; border-radius: 12px; object-fit: cover; margin-bottom: 6px; pointer-events: none; flex-shrink: 0; }
+.m3d-menu__item {
+  width: 46px; min-height: 42px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 0; border-radius: 12px; background: none; cursor: pointer; text-decoration: none;
+  color: #94A3B8; transition: background 0.15s, color 0.15s;
+}
+.m3d-menu__item:hover { background: rgba(255,255,255,0.08); color: #FFFFFF; }
+.m3d-menu__item.is-active { background: #2563EB; color: #FFFFFF; }
+.m3d-menu__item--salir { color: #F87171; }
+.m3d-menu__etq { display: none; }
+.m3d-menu__item--txt .m3d-menu__etq { display: block; font-size: 9px; font-weight: 800; line-height: 1; }
+.m3d-menu__avatar { width: 28px; height: 28px; border-radius: 9999px; object-fit: cover; }
+.m3d-menu__panel { width: min(400px, calc(100vw - 110px)); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.m3d-menu.is-oculto .m3d-menu__panel { display: none; }
+.m3d-menu__barra {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 10px 14px; border-bottom: 1px solid var(--border-color);
+  cursor: grab; user-select: none; touch-action: none;
+}
+.m3d-menu__barra:active, .m3d-menu__riel:active { cursor: grabbing; }
+.m3d-menu__titulo { font-size: 13px; font-weight: 800; white-space: nowrap; }
+.m3d-menu__usuario { margin-left: auto; max-width: 45%; font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m3d-menu__slot { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; }
+.m3d-menu__contenido { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.m3d-menu .m3d-sheet__asa { display: none; }
+.m3d-menu .m3d-cabecera { z-index: 5; }
+.m3d-menu .m3d-titulo { box-shadow: none; }
+.m3d-menu .m3d-buscador { height: 44px; box-shadow: none; background: var(--bg-hover); }

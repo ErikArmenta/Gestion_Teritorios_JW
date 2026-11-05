@@ -13,14 +13,8 @@ import { maplibregl, estiloPara, agregarCapas, actualizarFuente } from '../utils
 // useMemo: solo se manda al mapa la fuente cuyo objeto cambió.
 export const PITCH_3D = 55;
 
-// Preferencias del mapa 3D (2D/3D, satélite), compartidas por todas las pantallas 3D
-const PREFS_KEY = 'mapa3d_prefs';
-export const leerPrefs3D = () => {
-  try {
-    return { tresD: true, satelite: false, ...(JSON.parse(localStorage.getItem(PREFS_KEY) || localStorage.getItem('registro3d_prefs')) || {}) };
-  } catch { return { tresD: true, satelite: false }; }
-};
-export const guardarPrefs3D = (p) => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* sin storage */ } };
+// Preferencias (2D/3D, satélite): utils/prefs3d.js
+export { leerPrefs3D, guardarPrefs3D } from '../utils/prefs3d';
 
 const CENTRO_DEFAULT = [-106.4850, 31.7619];
 

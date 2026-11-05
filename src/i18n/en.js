@@ -647,6 +647,12 @@ const en = {
   'Ver más': 'Show more',
   'Ver menos': 'Show less',
 
+  // ── Menú flotante (pantallas con mapa, escritorio) ──
+  'Menú': 'Menu',
+  'Mostrar panel': 'Show panel',
+  'Ocultar panel': 'Hide panel',
+  'Arrastra para mover · clic derecho para regresar': 'Drag to move · right-click to reset',
+
   // ── Selectores de ubicación 3D (Exhibidores, Editar casa) ──
   '(mueve el mapa o toca el punto)': '(move the map or tap the spot)',
   'Mueve el mapa o toca el punto para reubicar la casa (o usa el botón de ubicación).': 'Move the map or tap the spot to relocate the house (or use the location button).',

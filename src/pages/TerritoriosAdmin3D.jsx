@@ -3,24 +3,24 @@ import { useSearchParams } from 'react-router-dom';
 import * as turf from '@turf/turf';
 import {
   Plus, Search, X, Pencil, Trash2, Users, Grid2x2, Share2, Shapes, Square, Pentagon, RotateCcw, Check, ArrowLeft,
-  AlertTriangle, Loader2,
+  Loader2,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
-import NotificationBell from '../components/NotificationBell';
-import BotonesMapa3D from '../components/BotonesMapa3D';
+import PanelMapa from '../components/PanelMapa';
+import { useMapaPagina } from '../context/MapaFondoContext';
 import TerritorioTrabajo from '../components/TerritorioTrabajo';
 import TerritorioModales from '../components/TerritorioModales';
-import useMapa3D, { leerPrefs3D, guardarPrefs3D, PITCH_3D } from '../hooks/useMapa3D';
+import { PITCH_3D } from '../hooks/useMapa3D';
 import useTerritoriosAdmin from '../hooks/useTerritoriosAdmin';
 import { PROGRESO } from '../utils/territoryProgress';
 import { poligonosGeoJSON, casasBloquesGeoJSON, casasPuntosGeoJSON, limitesDe, anilloGeoJSON } from '../utils/map3d';
 import { crearDibujo, editarForma, coordsDesdeFeature } from '../utils/dibujo3d';
 import { t } from '../i18n';
 
-// Gestión de Territorios en móvil: mapa 3D a pantalla completa + panel inferior.
+// Gestión de Territorios en 3D: usa el mapa de fondo compartido (context/MapaFondoContext.jsx); el panel va
+// abajo en móvil y dentro del menú flotante en escritorio (components/PanelMapa.jsx).
 // Lista de territorios → ficha (progreso y grupo, editar datos, editar forma, manzanas, asignaciones,
 // compartir, eliminar) → manzanas en el mismo mapa (dibujar, editar forma, eliminar).
 // Al dibujar o editar una forma el mapa se pone plano (vista desde arriba) y al terminar regresa.
@@ -48,7 +48,7 @@ const INSTRUCCIONES = {
   forma: 'Arrastra los puntos amarillos para mover las esquinas. Arrastra un punto blanco para agregar una esquina.',
 };
 
-const TerritoriosAdmin3D = ({ onVistaClasica }) => {
+const TerritoriosAdmin3D = () => {
   const admin = useTerritoriosAdmin();
   const {
     territorios, casas, asignaciones, manzanas, loading, progreso, lista,
@@ -56,11 +56,9 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
     abrirEdicion, guardarForma, setBorrar, setAsignacionesDe, compartiendo, generarEnlace, nombreUsuario,
   } = admin;
   const { addManzana, updateManzana, deleteManzana } = useData();
-  const { theme } = useTheme();
   const toast = useToast();
   const [searchParams] = useSearchParams();
 
-  const mapDivRef = useRef(null);
   const drawRef = useRef(null);
   const sesionRef = useRef(null);
   const encuadradoRef = useRef(false);
@@ -68,8 +66,6 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
   const alTerminarRef = useRef(null);
   const cancelarRef = useRef(null);
 
-  const [prefs, setPrefs] = useState(leerPrefs3D);
-  const oscuro = theme === 'dark';
 
   const [panel, setPanel] = useState('lista'); // lista | territorio | manzanas
   const [expandido, setExpandido] = useState(false);
@@ -121,8 +117,9 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
   }), [territoriosGJ, manzanasGJ, casasBloques, casasPuntos]);
 
   // ── Mapa ──
+  // (mapa compartido: devuelve cómo quitar los eventos al salir de la pantalla)
   const alCrear = (map) => {
-    map.on('click', (e) => {
+    const alTocar = (e) => {
       if (sesionRef.current) return; // dibujando: los toques son para Terra Draw
       const terr = map.getLayer('territorios-relleno')
         ? map.queryRenderedFeatures(e.point, { layers: ['territorios-relleno'] })[0]
@@ -131,12 +128,25 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
         setSeleccionadoId(terr.properties.id);
         setPanel(p => (p === 'manzanas' ? 'manzanas' : 'territorio'));
       }
-    });
+    };
     // Un cambio de estilo borra las capas de Terra Draw: se cancela la sesión en curso
-    map.on('style.load', () => { if (sesionRef.current) cancelarRef.current?.(); });
+    const alCambiarEstilo = () => { if (sesionRef.current) cancelarRef.current?.(); };
+    map.on('click', alTocar);
+    map.on('style.load', alCambiarEstilo);
+    return () => { map.off('click', alTocar); map.off('style.load', alCambiarEstilo); };
   };
 
-  const { mapRef, listo, sinConexion } = useMapa3D(mapDivRef, { prefs, oscuro, datos, alCrear, onFallo: onVistaClasica });
+  const { mapRef, listo, prefs, setBloquearEstilo } = useMapaPagina({ datos, alCrear });
+
+  // Dibujando: sin botones de estilo (un cambio de estilo borra el dibujo) y cursor de cruz
+  useEffect(() => {
+    setBloquearEstilo(!!sesion);
+    mapRef.current?.getContainer().classList.toggle('is-drawing', !!sesion);
+  }, [sesion, setBloquearEstilo, mapRef]);
+  useEffect(() => () => {
+    setBloquearEstilo(false);
+    mapRef.current?.getContainer().classList.remove('is-drawing');
+  }, [setBloquearEstilo, mapRef]);
 
   const volarA = (coordenadas) => {
     const anillo = anilloGeoJSON(coordenadas);
@@ -328,7 +338,6 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
     }
   };
 
-  const cambiarPrefs = (cambio) => setPrefs(p => { const n = { ...p, ...cambio }; guardarPrefs3D(n); return n; });
 
   const numCasasDe = (id) => casas.filter(c => String(c.territorio_id) === String(id)).length;
 
@@ -522,12 +531,10 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
   else contenido = renderLista();
 
   return (
-    <div className="m3d">
-      {/* ── Mapa ── */}
-      <div className="m3d-mapa">
-        <div ref={mapDivRef} className={`m3d-canvas${sesion ? ' is-drawing' : ''}`} />
-
-        <div className="m3d-top">
+    <>
+      <PanelMapa
+        abierto={expandido}
+        cabecera={(
           <div className="m3d-titulo">
             <span className="m3d-titulo__icono"><Shapes size={16} /></span>
             <div className="min-w-0">
@@ -535,27 +542,13 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
               <p className="m3d-titulo__sub">{sesion ? t('Dibujando…') : t('Toca un territorio para gestionarlo')}</p>
             </div>
           </div>
-          <div className="m3d-campana"><NotificationBell /></div>
-        </div>
-
-        {/* Mientras se dibuja no se cambia de estilo (borraría el dibujo) */}
-        {!sesion && <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} />}
-
-        {sinConexion && (
-          <div className="m3d-aviso">
-            <AlertTriangle size={14} />
-            <span>{t('El mapa no cargó (sin conexión). Tus datos siguen disponibles.')}</span>
-          </div>
         )}
-      </div>
-
-      {/* ── Panel inferior ── */}
-      <div className={`m3d-sheet${expandido ? ' is-open' : ''}`}>
+      >
         <button type="button" className="m3d-sheet__asa" onClick={() => setExpandido(v => !v)} aria-label={expandido ? t('Ver menos') : t('Ver más')}>
           <span />
         </button>
         {contenido}
-      </div>
+      </PanelMapa>
 
       <TerritorioModales admin={admin} />
 
@@ -578,7 +571,7 @@ const TerritoriosAdmin3D = ({ onVistaClasica }) => {
           onCancel={() => setBorrarManzana(null)}
         />
       )}
-    </div>
+    </>
   );
 };
 

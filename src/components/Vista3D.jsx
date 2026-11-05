@@ -1,5 +1,6 @@
 import React, { Component, Suspense, useState } from 'react';
 import { soportaWebGL2 } from '../utils/webgl';
+import { useMapaFondo } from '../context/MapaFondoContext';
 import { t } from '../i18n';
 
 // Elección entre mapa 3D (MapLibre) y vista clásica (Leaflet) en las pantallas con mapa: mapa principal,
@@ -34,19 +35,21 @@ const CargandoMapa3D = () => (
  *  - render(onVista3D): la vista clásica; onVista3D (reintentar el 3D) es null si no hay WebGL2
  */
 const ElegirVista = ({ Vista3DComp, render, props3D }) => {
+  // Disponibilidad compartida con el mapa de fondo: si el mapa no se pudo crear, todas las pantallas
+  // con mapa usan su vista clásica (y la barra lateral normal) hasta que se reintente.
+  const { disponible, marcarFallo, reintentar } = useMapaFondo();
   const [webgl] = useState(soportaWebGL2);
-  const [fallo, setFallo] = useState(false); // solo esta vez; la próxima visita lo vuelve a intentar
 
-  if (webgl && !fallo) {
+  if (disponible) {
     return (
-      <Fallo3D onError={() => setFallo(true)}>
+      <Fallo3D onError={marcarFallo}>
         <Suspense fallback={<CargandoMapa3D />}>
-          <Vista3DComp {...props3D} onVistaClasica={() => setFallo(true)} />
+          <Vista3DComp {...props3D} onVistaClasica={marcarFallo} />
         </Suspense>
       </Fallo3D>
     );
   }
-  return render(webgl ? () => setFallo(false) : null);
+  return render(webgl ? reintentar : null);
 };
 
 export default ElegirVista;

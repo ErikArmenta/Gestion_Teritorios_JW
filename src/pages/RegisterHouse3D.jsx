@@ -5,14 +5,12 @@ import {
   ChevronUp, ChevronDown, MapPin, Camera, Upload, Mic, Square, Trash2, X, Loader2, Check, AlertTriangle,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
-import NotificationBell from '../components/NotificationBell';
-import BotonesMapa3D from '../components/BotonesMapa3D';
+import PanelMapa from '../components/PanelMapa';
+import { useMapaPagina } from '../context/MapaFondoContext';
 import useVoiceRecorder from '../hooks/useVoiceRecorder';
 import useGuardarCasa from '../hooks/useGuardarCasa';
-import useMapa3D, { leerPrefs3D, guardarPrefs3D } from '../hooks/useMapa3D';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 import {
   maplibregl, actualizarFuente, poligonosGeoJSON, casasBloquesGeoJSON, casasPuntosGeoJSON,
@@ -20,7 +18,8 @@ import {
 } from '../utils/map3d';
 import { t } from '../i18n';
 
-// "Registrar casa" en móvil: mapa 3D a pantalla completa (MapLibre) + panel inferior.
+// "Registrar casa" en 3D: usa el mapa de fondo compartido (context/MapaFondoContext.jsx); el panel va abajo
+// en móvil y dentro del menú flotante en escritorio (components/PanelMapa.jsx).
 // El pin se queda en el centro del mapa: mueves el mapa (o tocas un edificio / un punto) y la casa
 // queda ahí. Territorio y manzana se detectan solos según el pin. El guardado es el mismo que la
 // vista clásica (useGuardarCasa → addCasa, con cola offline).
@@ -36,25 +35,19 @@ const puntoEn = (feature, pt) => {
   try { return turf.booleanPointInPolygon(pt, feature); } catch { return false; }
 };
 
-const RegisterHouse3D = ({ onVistaClasica }) => {
+const RegisterHouse3D = () => {
   const { territorios, casas, manzanas } = useData();
-  const { theme } = useTheme();
   const toast = useToast();
   const [searchParams] = useSearchParams();
   const { guardarCasa, isUploading } = useGuardarCasa();
   const { isRecording, audioBlob, audioUrl, recordingTimeFormatted, startRecording, stopRecording, clearRecording } = useVoiceRecorder();
 
   const territorioParam = searchParams.get('territorio');
-  const mapDivRef = useRef(null);
   const dirRef = useRef(null);
   const ubicadoRef = useRef(false);   // ya llegó la 1ª posición GPS
   const encuadradoRef = useRef(false); // ya se encuadró sobre los territorios
 
-  const [prefs, setPrefs] = useState(leerPrefs3D);
-  const oscuro = theme === 'dark';
-
   const [position, setPosition] = useState(CENTRO_DEFAULT);
-  const [moviendo, setMoviendo] = useState(false);
 
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [territorioElegido, setTerritorioElegido] = useState(territorioParam); // null = automático (según el pin)
@@ -107,10 +100,12 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
     territorios: territoriosGJ, manzanas: manzanasGJ, 'casas-bloques': casasBloques, 'casas-puntos': casasPuntos,
   }), [territoriosGJ, manzanasGJ, casasBloques, casasPuntos]);
 
-  // ── Eventos propios de esta pantalla (se registran una vez al crear el mapa) ──
+  // ── Eventos propios de esta pantalla sobre el mapa compartido; devuelve cómo quitarlos ──
+  const popupRef = useRef(null);
   const alCrear = (map, geo) => {
     // Pin fijo en el centro (no recibe toques: arrastrar sobre él mueve el mapa)
-    crearPinCentro(map);
+    const quitarPin = crearPinCentro(map);
+    const contenedor = map.getContainer();
 
     // Bloque amarillo bajo el pin: el edificio de OSM si hay, si no un cuadrado del tamaño de una casa
     const resaltar = () => {
@@ -126,18 +121,17 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
         : seleccionGeoJSON({ type: 'Polygon', coordinates: cuadrado(c.lng, c.lat) }, 5));
     };
 
-    map.on('style.load', resaltar);
-    geo.on('geolocate', () => { ubicadoRef.current = true; });
-    map.on('movestart', () => { setMoviendo(true); actualizarFuente(map, 'seleccion', VACIO); });
-    map.on('moveend', () => {
+    const alGeolocalizar = () => { ubicadoRef.current = true; };
+    const alEmpezar = () => { contenedor.classList.add('is-moving'); actualizarFuente(map, 'seleccion', VACIO); };
+    const alTerminar = () => {
+      contenedor.classList.remove('is-moving');
       const c = map.getCenter();
-      setMoviendo(false);
       setPosition({ lat: c.lat, lng: c.lng });
       resaltar();
-    });
+    };
 
     // Toque: en una casa registrada → su ficha; en un edificio → el pin va a su centro; si no, al punto tocado
-    map.on('click', (e) => {
+    const alTocar = (e) => {
       const capasCasa = ['casas-3d', 'casas-punto'].filter(id => map.getLayer(id));
       const casa = capasCasa.length ? map.queryRenderedFeatures(e.point, { layers: capasCasa })[0] : null;
       if (casa) {
@@ -149,7 +143,8 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
         estado.textContent = t(casa.properties.estado);
         estado.style.color = casa.properties.color;
         div.append(dir, estado);
-        new maplibregl.Popup({ offset: 12, closeButton: false, maxWidth: '240px' })
+        popupRef.current?.remove();
+        popupRef.current = new maplibregl.Popup({ offset: 12, closeButton: false, maxWidth: '240px' })
           .setLngLat(e.lngLat).setDOMContent(div).addTo(map);
         return;
       }
@@ -164,30 +159,48 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
         } catch { /* se queda el punto tocado */ }
       }
       map.easeTo({ center: destino, zoom: Math.max(map.getZoom(), 17.5), duration: 600 });
-    });
+    };
+
+    map.on('style.load', resaltar);
+    geo?.on('geolocate', alGeolocalizar);
+    map.on('movestart', alEmpezar);
+    map.on('moveend', alTerminar);
+    map.on('click', alTocar);
+    alTerminar(); // posición y bloque amarillo de donde ya está el mapa
+
+    return () => {
+      quitarPin();
+      map.off('style.load', resaltar);
+      geo?.off('geolocate', alGeolocalizar);
+      map.off('movestart', alEmpezar);
+      map.off('moveend', alTerminar);
+      map.off('click', alTocar);
+      contenedor.classList.remove('is-moving');
+      popupRef.current?.remove();
+      actualizarFuente(map, 'seleccion', VACIO);
+    };
   };
 
-  const { mapRef, sinConexion } = useMapa3D(mapDivRef, {
-    prefs, oscuro, datos, alCrear, onFallo: onVistaClasica,
-    autoUbicar: !territorioParam, // desde un territorio: abrir sobre él, no sobre el GPS
-  });
+  const { mapRef, listo, ubicar } = useMapaPagina({ datos, alCrear });
+
+  // Al entrar: seguir el GPS (como la vista clásica), salvo si viene desde un territorio
+  useEffect(() => { if (listo && !territorioParam) ubicar(); }, [listo, territorioParam, ubicar]);
 
   // Sin GPS todavía: abrir sobre el territorio pedido o sobre todos, en cuanto lleguen
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || ubicadoRef.current || encuadradoRef.current) return;
+    if (!map || !listo || ubicadoRef.current || encuadradoRef.current) return;
     const pedido = territorioParam && territoriosGJ.features.find(f => f.properties.id === String(territorioParam));
     const limites = limitesDe(pedido || territoriosGJ);
     if (!limites) return;
     encuadradoRef.current = true;
     map.fitBounds(limites, { padding: 40, maxZoom: pedido ? 18 : 16, duration: 0 });
-  }, [territoriosGJ, territorioParam, mapRef]);
+  }, [listo, territoriosGJ, territorioParam, mapRef]);
 
   // Vista previa de la foto
   const photoPreview = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
   useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
 
-  const cambiarPrefs = (cambio) => setPrefs(p => { const n = { ...p, ...cambio }; guardarPrefs3D(n); return n; });
   const campo = (k) => (e) => setFormData(f => ({ ...f, [k]: e.target.value }));
 
   // Dirección sugerida (OpenStreetMap Nominatim). Solo al tocar el botón: su uso justo es ≤ 1 petición/seg.
@@ -252,13 +265,10 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
   const colorTerr = territorioObj?.color || '#2563EB';
 
   return (
-    <div className="m3d">
-      {/* ── Mapa ── */}
-      <div className="m3d-mapa">
-        <div ref={mapDivRef} className={`m3d-canvas${moviendo ? ' is-moving' : ''}`} />
-
-        {/* Barra superior */}
-        <div className="m3d-top">
+    <>
+      <PanelMapa
+        abierto={expandido}
+        cabecera={(
           <div className="m3d-titulo">
             <span className="m3d-titulo__icono"><MapPin size={16} /></span>
             <div className="min-w-0">
@@ -266,21 +276,8 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
               <p className="m3d-titulo__sub">{t('Mueve el mapa o toca la casa')}</p>
             </div>
           </div>
-          <div className="m3d-campana"><NotificationBell /></div>
-        </div>
-
-        <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} />
-
-        {sinConexion && (
-          <div className="m3d-aviso">
-            <AlertTriangle size={14} />
-            <span>{t('El mapa no cargó (sin conexión). Tu GPS sigue funcionando.')}</span>
-          </div>
         )}
-      </div>
-
-      {/* ── Panel inferior ── */}
-      <div className={`m3d-sheet${expandido ? ' is-open' : ''}`}>
+      >
         <button
           type="button"
           className="m3d-sheet__asa"
@@ -468,7 +465,7 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
             ) : t('Guardar Casa')}
           </button>
         </div>
-      </div>
+      </PanelMapa>
 
       {confirmarFuera && (
         <ConfirmModal
@@ -479,7 +476,7 @@ const RegisterHouse3D = ({ onVistaClasica }) => {
           onCancel={() => setConfirmarFuera(false)}
         />
       )}
-    </div>
+    </>
   );
 };
 

@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell } from 'lucide-react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import MenuFlotante from './components/MenuFlotante';
+import { Fallo3D } from './components/Vista3D';
+import { MapaFondoProvider, useMapaFondo } from './context/MapaFondoContext';
+import { RUTAS_MAPA } from './utils/menu';
+import useEsMovil from './hooks/useEsMovil';
 import TerritoriesMap from './pages/TerritoriesMap';
 import RegisterHouse from './pages/RegisterHouse';
 import DashboardStats from './pages/DashboardStats';
@@ -47,9 +52,31 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+// Mapa 3D de fondo, compartido por las pantallas con mapa (se carga aparte con MapLibre)
+const MapaFondo = lazy(() => import('./components/MapaFondo'));
+
+// El menú contextual del navegador no aparece en la app (el clic derecho regresa el menú flotante
+// a su lugar y en el mapa gira/inclina). En cajas de texto sí, para copiar y pegar.
+const esCampoDeTexto = (el) => !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
+
 const AppLayout = () => {
   const { user } = useAuth();
   const { miGrupo } = useGrupos();
+  const { disponible: mapa3D, marcarFallo } = useMapaFondo();
+  const { pathname } = useLocation();
+  const esMovil = useEsMovil();
+
+  // Pantalla con mapa 3D: un solo mapa de fondo; en escritorio el menú flota sobre él
+  const modoMapa = mapa3D && RUTAS_MAPA.includes(pathname);
+  // El mapa se monta la primera vez que se necesita y luego solo se oculta (vuelve al instante)
+  const [mapaMontado, setMapaMontado] = useState(false);
+  if (modoMapa && !mapaMontado) setMapaMontado(true);
+
+  useEffect(() => {
+    const bloquear = (e) => { if (!esCampoDeTexto(e.target)) e.preventDefault(); };
+    document.addEventListener('contextmenu', bloquear);
+    return () => document.removeEventListener('contextmenu', bloquear);
+  }, []);
 
   // Push (OneSignal): vincular este dispositivo con el usuario, su congregación, rol y grupo
   useEffect(() => {
@@ -73,7 +100,16 @@ const AppLayout = () => {
 
   return (
     <div className="flex min-h-screen" style={{ overflowX: 'clip' }}>
-      <Sidebar />
+      {/* En las pantallas con mapa 3D la barra lateral se cambia por el menú flotante */}
+      {!modoMapa && <Sidebar />}
+      {modoMapa && !esMovil && <MenuFlotante />}
+      {mapa3D && mapaMontado && (
+        <Fallo3D onError={marcarFallo}>
+          <Suspense fallback={null}>
+            <MapaFondo visible={modoMapa} />
+          </Suspense>
+        </Fallo3D>
+      )}
       <OfflineIndicator />
       <main
         className="flex-1 p-4 pb-24 md:p-8 md:pb-8 overflow-y-auto flex flex-col"
@@ -208,7 +244,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/shared/:id" element={<SharedTerritory />} />
-              <Route path="/*" element={<AppLayout />} />
+              <Route path="/*" element={<MapaFondoProvider><AppLayout /></MapaFondoProvider>} />
             </Routes>
             <PWAPrompts />
             </LangKeyed>

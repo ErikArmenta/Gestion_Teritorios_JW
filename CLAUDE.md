@@ -39,8 +39,9 @@ Variables en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Nunca commit
 `Super Admin` > `Admin Principal` > `Anciano` / `Ministerial` > `Publicador`.
 
 - El acceso por ruta se define con `ProtectedRoute allowedRoles={[...]}` en `App.jsx`.
-- Los menús (`Sidebar.jsx` y `BottomNav.jsx`) tienen **cada uno** su lista `menuItems` con `roles`.
-  Al agregar/cambiar una pantalla, actualizar `App.jsx`, `Sidebar.jsx` **y** `BottomNav.jsx`.
+- Menús: la `Sidebar` y el menú flotante de los mapas usan la lista de `utils/menu.js` (`MENU_ITEMS` con `roles`);
+  la `BottomNav` (móvil) tiene su propia lista. Al agregar/cambiar una pantalla, actualizar `App.jsx`,
+  `utils/menu.js` **y** `BottomNav.jsx`.
 - Datos filtrados por `user.congregacion_id` (Super Admin puede ver todas). Toda consulta nueva
   a tablas por congregación debe respetar ese filtro.
 - Exhibidores y sus turnos son **por congregación**: se leen con `queryExhibidores()` /
@@ -97,7 +98,8 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 
 - Mobile-first. Cada pantalla debe verse bien desde **360px** hasta escritorio, sin scroll horizontal.
 - Breakpoint principal `md` (768px): debajo hay `BottomNav` (h-14) y botón de pánico abajo a la derecha;
-  arriba hay `Sidebar` de 256px. No tapar esas zonas con elementos `fixed`.
+  arriba hay `Sidebar` de 256px (en las pantallas con mapa 3D la cambia el menú flotante). No tapar esas
+  zonas con elementos `fixed`.
 - Tablas: versión tabla `hidden md:block` + versión tarjetas para móvil (patrón de `HousesList`, `UsersList`).
 - Modales: usar `ModalOverlay` (tamaños `small|default|large|full`), no crear overlays nuevos a mano.
   Todo contenedor con fondo blanco fijo debe llevar la clase `light-surface` (si no, en modo oscuro
@@ -132,6 +134,18 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   con import dinámico. Mapas pequeños dentro de páginas o modales (Exhibidores, Editar casa):
   `components/MapaConRespaldo.jsx` → `Mapa3DEmbebido` (`modo="selector"` con pin al centro, o
   `modo="puntos"`); recibe el Leaflet de siempre en `clasico` como respaldo.
+  - **Un solo mapa de fondo** para las pantallas con mapa (`RUTAS_MAPA` en `utils/menu.js`):
+    `context/MapaFondoContext.jsx` + `components/MapaFondo.jsx` (se monta una vez, al salir solo se oculta;
+    al volver aparece al instante). Cada pantalla usa `useMapaPagina({ datos, alCrear })`: `datos` = fuentes
+    GeoJSON (de `useMemo`; lo que no mande queda vacío) y `alCrear(map, geo)` registra sus eventos y **debe
+    devolver la función que los quita** (el mapa sigue vivo). Campana, botones 3D/satélite y aviso de sin
+    conexión los pone `MapaFondo` (una vez). El contexto se carga con la app: no importar MapLibre ahí.
+  - Panel de cada pantalla: `components/PanelMapa.jsx` (`cabecera` + contenido). Móvil: cabecera arriba y
+    panel abajo; reporta su alto para que el mapa termine encima. Escritorio: va por portal dentro del
+    **menú flotante** (`components/MenuFlotante.jsx`), que en esas pantallas reemplaza a la `Sidebar`:
+    iconos (misma lista que la Sidebar) + panel; se arrastra (posición en `localStorage menu_flotante_pos`),
+    se oculta, y con **clic derecho** regresa a su lugar. Las pantallas sin mapa siguen con su Sidebar.
+  - Clic derecho del navegador bloqueado en toda la app (`App.jsx`), salvo en cajas de texto.
   - Lógica compartida clásica/3D — los cambios van ahí, no en cada vista:
     `hooks/useMapaPrincipal.js` (filtro "Mis territorios", progreso, búsqueda, ruta de visitas) y
     `hooks/useGuardarCasa.js` (guardar casa nueva: foto, nota de voz, cola offline).

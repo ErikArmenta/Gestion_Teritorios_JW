@@ -56,14 +56,16 @@ export const PIN_CASA_HTML = `
     </svg>
   </div>`;
 
-// Pin fijo en el centro del mapa (no recibe toques: arrastrar encima mueve el mapa). Devuelve el Marker.
+// Pin fijo en el centro del mapa (no recibe toques: arrastrar encima mueve el mapa).
+// Devuelve una función para quitarlo (el mapa de fondo es compartido: cada pantalla limpia lo suyo).
 export const crearPinCentro = (map) => {
   const el = document.createElement('div');
   el.className = 'm3d-pin';
   el.innerHTML = PIN_CASA_HTML;
   const pin = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, 4] }).setLngLat(map.getCenter()).addTo(map);
-  map.on('move', () => pin.setLngLat(map.getCenter()));
-  return pin;
+  const seguir = () => pin.setLngLat(map.getCenter());
+  map.on('move', seguir);
+  return () => { map.off('move', seguir); pin.remove(); };
 };
 
 export const FUENTE_ETIQUETAS = ['Noto Sans Bold'];

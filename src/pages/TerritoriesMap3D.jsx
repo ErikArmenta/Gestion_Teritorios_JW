@@ -2,15 +2,13 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, X, Navigation, Settings2, Pencil, Plus, ChevronUp, ChevronDown, Phone, MapPinned, Loader2,
-  AlertTriangle, History,
+  History,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../components/Toast';
-import NotificationBell from '../components/NotificationBell';
-import BotonesMapa3D from '../components/BotonesMapa3D';
+import PanelMapa from '../components/PanelMapa';
+import { useMapaPagina } from '../context/MapaFondoContext';
 import EditHouseModal from '../components/EditHouseModal';
-import useMapa3D, { leerPrefs3D, guardarPrefs3D } from '../hooks/useMapa3D';
 import useMapaPrincipal, { generarUrlGoogleMaps } from '../hooks/useMapaPrincipal';
 import { STATUS_COLORS, STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 import { PROGRESO } from '../utils/territoryProgress';
@@ -20,7 +18,8 @@ import {
 } from '../utils/map3d';
 import { t, getLocale } from '../i18n';
 
-// Mapa principal en móvil: 3D a pantalla completa (MapLibre) + panel inferior.
+// Mapa principal en 3D: usa el mapa de fondo compartido (context/MapaFondoContext.jsx); el panel va abajo
+// en móvil y dentro del menú flotante en escritorio (components/PanelMapa.jsx).
 // SOLO CONSULTA (regla del proyecto): casas, progreso, ruta de visitas y registrar visita de una casa.
 // Editar/dibujar territorios, asignaciones, manzanas y compartir viven en /territorios.
 // La lógica (filtros, progreso, búsqueda, ruta) es la misma que la vista clásica: hooks/useMapaPrincipal.js
@@ -103,7 +102,7 @@ const HistorialCasa = ({ casaId }) => {
 
 // ── Pantalla ──────────────────────────────────────────────────────────────────────────
 
-const TerritoriesMap3D = ({ onVistaClasica }) => {
+const TerritoriesMap3D = () => {
   const {
     casas, manzanas, loading, esAdmin, miGrupo,
     filtroMisTerr, setFiltroMisTerr, modoProgreso, setModoProgreso,
@@ -112,14 +111,10 @@ const TerritoriesMap3D = ({ onVistaClasica }) => {
     rutaActiva, setRutaActiva, iniciarRuta, asignadosDe,
   } = useMapaPrincipal();
   const { registrarVisita } = useData();
-  const { theme } = useTheme();
   const toast = useToast();
   const navigate = useNavigate();
 
-  const mapDivRef = useRef(null);
   const ultimoFitRef = useRef(null);
-  const [prefs, setPrefs] = useState(leerPrefs3D);
-  const oscuro = theme === 'dark';
 
   const [panel, setPanel] = useState({ tipo: 'resumen' }); // resumen | territorio {id} | casa {id}
   const [expandido, setExpandido] = useState(false);
@@ -173,8 +168,9 @@ const TerritoriesMap3D = ({ onVistaClasica }) => {
   }), [territoriosGJ, manzanasGJ, casasBloques, casasPuntos, seleccion, ruta, rutaPuntos]);
 
   // ── Toques en el mapa ──
+  // (mapa compartido: devuelve cómo quitar el evento al salir de la pantalla)
   const alCrear = (map) => {
-    map.on('click', (e) => {
+    const alTocar = (e) => {
       const caja = [[e.point.x - 10, e.point.y - 10], [e.point.x + 10, e.point.y + 10]];
       const capasCasa = ['casas-3d', 'casas-punto'].filter(id => map.getLayer(id));
       const casa = capasCasa.length ? map.queryRenderedFeatures(caja, { layers: capasCasa })[0] : null;
@@ -186,10 +182,12 @@ const TerritoriesMap3D = ({ onVistaClasica }) => {
         ? map.queryRenderedFeatures(e.point, { layers: ['territorios-relleno'] })[0]
         : null;
       setPanel(terr ? { tipo: 'territorio', id: terr.properties.id } : { tipo: 'resumen' });
-    });
+    };
+    map.on('click', alTocar);
+    return () => map.off('click', alTocar);
   };
 
-  const { mapRef, listo, sinConexion } = useMapa3D(mapDivRef, { prefs, oscuro, datos, alCrear, onFallo: onVistaClasica });
+  const { mapRef, listo } = useMapaPagina({ datos, alCrear });
 
   // Encuadrar los territorios visibles: al abrir, al cambiar el conjunto o al tocar un filtro
   // (no en cada render: antes saltaba el mapa sin parar)
@@ -233,7 +231,6 @@ const TerritoriesMap3D = ({ onVistaClasica }) => {
   const cerrarPanel = () => setPanel({ tipo: 'resumen' });
   const cancelarRuta = () => { setRutaActiva(null); setPanel({ tipo: 'resumen' }); };
 
-  const cambiarPrefs = (cambio) => setPrefs(p => { const n = { ...p, ...cambio }; guardarPrefs3D(n); return n; });
   const elegirFiltro = (mis) => { setFiltroMisTerr(mis); setFitKey(k => k + 1); setPanel({ tipo: 'resumen' }); };
 
   const visitar = async (estado) => {
@@ -257,67 +254,52 @@ const TerritoriesMap3D = ({ onVistaClasica }) => {
   const mostrarResultados = buscando && !!busquedaDebounced;
 
   return (
-    <div className="m3d">
-      {/* ── Mapa ── */}
-      <div className="m3d-mapa">
-        <div ref={mapDivRef} className="m3d-canvas" />
-
-        {/* Barra superior: buscador + campana */}
-        <div className="m3d-top">
-          <div className="m3d-buscador">
-            <Search size={16} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-            <input
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-              onFocus={() => setBuscando(true)}
-              onBlur={() => setTimeout(() => setBuscando(false), 200)}
-              placeholder={t('Buscar dirección, contacto...')}
-              enterKeyHint="search"
-              aria-label={t('Buscar dirección, contacto...')}
-            />
-            {busqueda && (
-              <button type="button" onClick={() => setBusqueda('')} aria-label={t('Limpiar')} className="m3d-buscador__x">
-                <X size={14} />
-              </button>
+    <>
+      <PanelMapa
+        abierto={expandido}
+        cabecera={(
+          <div className="m3d-cabecera__busqueda">
+            <div className="m3d-buscador">
+              <Search size={16} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
+              <input
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
+                onFocus={() => setBuscando(true)}
+                onBlur={() => setTimeout(() => setBuscando(false), 200)}
+                placeholder={t('Buscar dirección, contacto...')}
+                enterKeyHint="search"
+                aria-label={t('Buscar dirección, contacto...')}
+              />
+              {busqueda && (
+                <button type="button" onClick={() => setBusqueda('')} aria-label={t('Limpiar')} className="m3d-buscador__x">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {mostrarResultados && (
+              <div className="m3d-resultados">
+                {resultadosBusqueda.length === 0 ? (
+                  <p className="m3d-resultados__vacio">{t('Sin resultados para "{q}"', { q: busquedaDebounced })}</p>
+                ) : resultadosBusqueda.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="m3d-resultado"
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => { setBusqueda(''); setBuscando(false); abrirCasa(c); }}
+                  >
+                    <span className="m3d-resultado__dir">{c.direccion}</span>
+                    <span className="m3d-resultado__meta">
+                      <span className="truncate">{c.territorio_nombre}</span>
+                      <span className="m3d-pill" style={{ background: `${getStatusColor(c.estado)}22`, color: getStatusColor(c.estado) }}>{t(c.estado)}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-          <div className="m3d-campana"><NotificationBell /></div>
-        </div>
-
-        {mostrarResultados && (
-          <div className="m3d-resultados">
-            {resultadosBusqueda.length === 0 ? (
-              <p className="m3d-resultados__vacio">{t('Sin resultados para "{q}"', { q: busquedaDebounced })}</p>
-            ) : resultadosBusqueda.map(c => (
-              <button
-                key={c.id}
-                type="button"
-                className="m3d-resultado"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => { setBusqueda(''); setBuscando(false); abrirCasa(c); }}
-              >
-                <span className="m3d-resultado__dir">{c.direccion}</span>
-                <span className="m3d-resultado__meta">
-                  <span className="truncate">{c.territorio_nombre}</span>
-                  <span className="m3d-pill" style={{ background: `${getStatusColor(c.estado)}22`, color: getStatusColor(c.estado) }}>{t(c.estado)}</span>
-                </span>
-              </button>
-            ))}
-          </div>
         )}
-
-        <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} />
-
-        {sinConexion && (
-          <div className="m3d-aviso">
-            <AlertTriangle size={14} />
-            <span>{t('El mapa no cargó (sin conexión). Tus datos siguen disponibles.')}</span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Panel inferior ── */}
-      <div className={`m3d-sheet${expandido ? ' is-open' : ''}`}>
+      >
         <button
           type="button"
           className="m3d-sheet__asa"
@@ -556,12 +538,12 @@ const TerritoriesMap3D = ({ onVistaClasica }) => {
             {expandido ? t('Ver menos') : t('Ver más')}
           </button>
         )}
-      </div>
+      </PanelMapa>
 
       {editCasa && (
         <EditHouseModal casa={editCasa} onClose={() => setEditCasa(null)} onSaved={() => setEditCasa(null)} />
       )}
-    </div>
+    </>
   );
 };
 

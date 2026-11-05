@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, LogOut, User, Building2, X, Pencil, Sun, Moon, Database, UsersRound, Languages, LandPlot } from 'lucide-react';
+import { LogOut, User, X, Pencil, Sun, Moon, Languages } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import ExhibidorIcon from './ExhibidorIcon';
+import { menuDe } from '../utils/menu';
 import { t, useLanguage } from '../i18n';
 import NotificacionesToggle from './NotificacionesToggle';
 
@@ -35,21 +35,8 @@ const Sidebar = () => {
     navigate('/login');
   };
 
-  const menuItems = [
-    { path: '/', name: 'Mapa Principal', icon: <Map size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-    { path: '/register', name: 'Registrar Casa', icon: <Home size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-    { path: '/stats', name: 'Estadísticas', icon: <BarChart2 size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/list', name: 'Lista de Casas', icon: <List size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/territorios', name: 'Territorios', icon: <LandPlot size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/exhibidores', name: 'Exhibidores', icon: <ExhibidorIcon size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
-    { path: '/users', name: 'Usuarios', icon: <Users size={18} />, roles: ['Super Admin', 'Admin Principal'] },
-    { path: '/grupos', name: 'Grupos', icon: <UsersRound size={18} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
-    { path: '/alerts', name: 'Alertas', icon: <Bell size={18} />, roles: ['Super Admin', 'Admin Principal'] },
-    { path: '/congregaciones', name: 'Congregaciones', icon: <Building2 size={18} />, roles: ['Super Admin'] },
-    { path: '/backup', name: 'Backup', icon: <Database size={18} />, roles: ['Super Admin'] },
-  ];
-
-  const visibleMenu = menuItems.filter(item => item.roles.includes(user.rol));
+  // Lista compartida con el menú flotante de las pantallas con mapa (utils/menu.js)
+  const visibleMenu = menuDe(user.rol);
 
   const SidebarContent = ({ onNavClick }) => (
     <div className="flex flex-col h-full">
@@ -82,7 +69,7 @@ const Sidebar = () => {
               `sidebar-nav-item${isActive ? ' active' : ''}`
             }
           >
-            {item.icon}
+            <item.Icon size={18} />
             {t(item.name)}
           </NavLink>
         ))}

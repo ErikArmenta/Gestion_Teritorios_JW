@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-04 — Un solo mapa de fondo y menú flotante (estilo Google Maps)
+
+- `context/MapaFondoContext.jsx`, `components/MapaFondo.jsx` (nuevos: un mapa 3D para todas las pantallas con mapa)
+- `components/PanelMapa.jsx` (nuevo: panel abajo en móvil / dentro del menú flotante en escritorio)
+- `components/MenuFlotante.jsx` (nuevo: menú arrastrable, ocultable; clic derecho lo regresa)
+- `utils/menu.js` (nuevo: lista del menú compartida con la Sidebar), `utils/prefs3d.js`, `hooks/useEsMovil.js`
+- `App.jsx` (mapa de fondo, menú flotante en pantallas con mapa, clic derecho bloqueado salvo en cajas de texto)
+- `Sidebar.jsx`, `Vista3D.jsx`, `TerritoriesMap3D.jsx`, `RegisterHouse3D.jsx`, `TerritoriosAdmin3D.jsx`, `utils/map3d.js`
+- `index.css` (capas del mapa de fondo y del menú; estados en varias filas en escritorio), `i18n/en.js`
+
 ## 2026-11-04 — 3D en escritorio y en todos los mapas (menos links compartidos y pánico)
 
 - `components/Vista3D.jsx` (3D para todos; la clásica solo como respaldo; sin botón "Vista clásica")
