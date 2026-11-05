@@ -58,6 +58,7 @@ export default function SharedTerritory() {
   const [territorio, setTerritorio] = useState(null);
   const [casas, setCasas] = useState([]);
   const [usar3D, setUsar3D] = useState(soportaWebGL2);
+  const [reunion, setReunion] = useState(null); // punto de reunión (Migración 8), opcional
 
   useEffect(() => {
     const load = async () => {
@@ -78,6 +79,10 @@ export default function SharedTerritory() {
       }
 
       setTerritorio(data.territorios);
+      const rLat = Number(data.punto_reunion_lat); const rLng = Number(data.punto_reunion_lng);
+      if (data.punto_reunion_lat != null && Number.isFinite(rLat) && Number.isFinite(rLng)) {
+        setReunion({ lat: rLat, lng: rLng, nota: data.punto_reunion_nota || '' });
+      }
 
       const { data: casasData } = await supabase
         .from('casas')
@@ -159,7 +164,7 @@ export default function SharedTerritory() {
             <p style={{ color: 'var(--text-secondary, #475569)', fontSize: '0.95rem' }}>{tx('Cargando mapa...')}</p>
           </div>
         )}>
-          <SharedTerritory3D territorio={territorio} casas={casas} onFallo={() => setUsar3D(false)} />
+          <SharedTerritory3D compartidoId={id} territorio={territorio} casas={casas} reunion={reunion} onFallo={() => setUsar3D(false)} />
         </Suspense>
       </Fallo3D>
     );
@@ -292,6 +297,16 @@ export default function SharedTerritory() {
               </Marker>
             );
           })}
+          {reunion && (
+            <Marker position={[reunion.lat, reunion.lng]}>
+              <Popup>
+                <div style={{ fontSize: '13px' }}>
+                  <p style={{ fontWeight: 700, margin: 0, color: '#0F172A' }}>{tx('Punto de reunión')}</p>
+                  {reunion.nota && <p style={{ margin: '4px 0 0', color: '#475569' }}>{reunion.nota}</p>}
+                </div>
+              </Popup>
+            </Marker>
+          )}
           <LocateButton />
         </MapContainer>
       </div>

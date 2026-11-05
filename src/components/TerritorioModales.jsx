@@ -3,6 +3,7 @@ import { Share2, Copy } from 'lucide-react';
 import ModalOverlay from './ModalOverlay';
 import ConfirmModal from './ConfirmModal';
 import AsignacionesModal from './AsignacionesModal';
+import PuntoReunionCompartido from './PuntoReunionCompartido';
 import { useToast } from './Toast';
 import { t as tx } from '../i18n';
 
@@ -107,7 +108,8 @@ const TerritorioModales = ({ admin }) => {
               </button>
             </div>
           </div>
-          <p className="text-xs mt-2 mb-5" style={{ color: '#64748B' }}>{tx('Este enlace expira en 24 horas.')}</p>
+          <p className="text-xs mt-2 mb-4" style={{ color: '#64748B' }}>{tx('Este enlace expira en 24 horas.')}</p>
+          {compartir.id && <PuntoReunionCompartido compartidoId={compartir.id} coordenadas={compartir.coordenadas} />}
           <div className="flex gap-3">
             <button className="btn btn-outline flex-1" onClick={() => setCompartir(null)}>{tx('Cerrar')}</button>
             <a

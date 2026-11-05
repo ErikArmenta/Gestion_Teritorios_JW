@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-05 — Link compartido: punto de reunión y ubicación en vivo del grupo — requiere Migración 8
+
+- `MIGRACION_8_PUNTO_REUNION.sql` (nuevo) + `SQL_MIGRATIONS.md`: punto de reunión en `territorio_compartidos`
+- `components/PuntoReunionCompartido.jsx` (nuevo): poner el punto en el modal Compartir
+- `hooks/usePresenciaCompartido.js` (nuevo): ubicaciones en vivo con Supabase Realtime (presencia, sin tablas)
+- `pages/SharedTerritory3D.jsx` (bandera del punto de reunión, ruta hasta ahí, personas en vivo), `pages/SharedTerritory.jsx`
+- `hooks/useTerritoriosAdmin.js`, `components/TerritorioModales.jsx`, `index.css`, `i18n/en.js`
+
 ## 2026-11-05 — Link compartido en 3D con "Cómo llegar"
 
 - `pages/SharedTerritory3D.jsx` (nuevo): mapa 3D, ficha de casa, ruta en el mapa (OSRM de FOSSGIS) y Google Maps / Waze

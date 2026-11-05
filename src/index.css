@@ -1258,3 +1258,50 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   .m3d-compartido .maplibregl-ctrl-top-left { top: 80px; }
   .m3d-compartido .maplibregl-ctrl-bottom-left { left: auto; right: 10px; bottom: 8px; }
 }
+
+/* Link compartido: punto de reunión, personas en vivo y su lista en el panel */
+.m3d-reunion { display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+.m3d-reunion__etq {
+  padding: 3px 9px; border-radius: 9999px; font-size: 11px; font-weight: 800; white-space: nowrap;
+  background: #0F172A; color: #FDE68A; box-shadow: 0 0 12px rgba(245,158,11,0.55);
+}
+.m3d-reunion__pin {
+  width: 32px; height: 32px; border-radius: 9999px; display: flex; align-items: center; justify-content: center;
+  background: #F59E0B; color: #0F172A; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(245,158,11,0.25), 0 0 18px rgba(245,158,11,0.7);
+}
+.m3d-persona { display: flex; flex-direction: column; align-items: center; gap: 3px; pointer-events: none; transition: opacity .3s; }
+.m3d-persona__etq {
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 800;
+  background: rgba(15,23,42,0.88); color: #fff; border: 1px solid var(--c, #22D3EE);
+  box-shadow: 0 0 10px var(--c, #22D3EE);
+}
+.m3d-persona__punto {
+  width: 16px; height: 16px; border-radius: 9999px; background: var(--c, #22D3EE); border: 3px solid #fff;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--c, #22D3EE) 30%, transparent), 0 0 14px var(--c, #22D3EE);
+  animation: m3d-latido 2s ease-out infinite;
+}
+.m3d-persona.is-viejo { opacity: 0.45; }
+.m3d-persona.is-viejo .m3d-persona__punto { animation: none; }
+@keyframes m3d-latido {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c, #22D3EE) 55%, transparent), 0 0 14px var(--c, #22D3EE); }
+  100% { box-shadow: 0 0 0 14px transparent, 0 0 14px var(--c, #22D3EE); }
+}
+@media (prefers-reduced-motion: reduce) { .m3d-persona__punto { animation: none; } }
+
+.m3d-compartido__reunion {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border-radius: 14px; cursor: pointer;
+  background: rgba(245,158,11,0.12); color: var(--text-primary); border: 1px solid rgba(245,158,11,0.45); font-size: 13px;
+}
+.m3d-compartido__reunion > svg { color: #F59E0B; }
+.m3d-compartido__vivo { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--border-color); }
+.m3d-compartido__vivo-btn { justify-content: center; }
+.m3d-compartido__vivo-btn.is-activo { background: #10B981; border-color: #10B981; color: #fff; box-shadow: 0 0 14px rgba(16,185,129,0.45); }
+.m3d-compartido__personas { display: flex; flex-wrap: wrap; gap: 6px; }
+.m3d-compartido__persona {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0;
+  padding: 5px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; cursor: pointer;
+  background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color);
+}
+.m3d-compartido__persona.is-viejo { opacity: 0.55; }
+.m3d-compartido__persona-punto { width: 9px; height: 9px; border-radius: 9999px; flex-shrink: 0; }

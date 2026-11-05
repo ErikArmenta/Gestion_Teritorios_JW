@@ -119,7 +119,7 @@ export default function useTerritoriosAdmin() {
         .select('id')
         .single();
       if (error) throw error;
-      setCompartir({ nombre: t.nombre, link: `${window.location.origin}/shared/${data.id}` });
+      setCompartir({ id: data.id, nombre: t.nombre, coordenadas: t.coordenadas, link: `${window.location.origin}/shared/${data.id}` });
     } catch (err) {
       toast.error(tx('Error al compartir: ') + (err.message || err));
     } finally {

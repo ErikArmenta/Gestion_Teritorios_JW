@@ -124,6 +124,15 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   territorio, casas (ficha al tocar) y "Cómo llegar": ruta en coche de tu ubicación al centro del territorio
   con el OSRM de FOSSGIS (`routing.openstreetmap.de`, el de openstreetmap.org; **solo al tocar el botón**,
   si falla se dibuja línea recta) + botones a Google Maps / Waze. Ahí no se ofrece instalar la PWA.
+  - **Punto de reunión** (Migración 8, `MIGRACION_8_PUNTO_REUNION.sql`): columnas `punto_reunion_lat/lng/nota`
+    en `territorio_compartidos`. Se pone (opcional) en el modal Compartir (`components/PuntoReunionCompartido.jsx`,
+    UPDATE después de crear el link; sin la migración avisa). Si existe, "Cómo llegar" lleva ahí.
+  - **En vivo** (`hooks/usePresenciaCompartido.js`): Supabase Realtime **presencia**, canal `compartido:<id>`,
+    sin tablas (nada se guarda). Solo aparece quien toca "Compartir mi ubicación"; nombre = el de su sesión
+    o el que escribe (`localStorage compartido_nombre`); llave fija por dispositivo (`compartido_dispositivo`).
+    Máx. una posición cada 8 s (quieto, una por minuto); Wake Lock mientras comparte. Nombres de otros =
+    texto de usuario → `textContent`. En desarrollo las pruebas pueden inyectar `window.__canalPresenciaFalso`.
+    La vista 2D de respaldo muestra el punto de reunión pero no el "en vivo".
   Para esos mapas: `<DarkTileLayers />` (mapa oscuro con nombres de calles en blanco neón; clases
   `dark-tiles*` en `index.css`) o `<TileLayer {...LIGHT_MAP_TILES} />` para mapa claro. **No usar
   CARTO** (`basemaps.cartocdn.com`): exige API key y muestra "API KEY REQUIRED".

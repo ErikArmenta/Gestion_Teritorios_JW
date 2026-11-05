@@ -272,3 +272,22 @@ año de servicio, septiembre–agosto). Los publicadores solo marcan "Prediqué 
 - Al enviar, el informe guarda los totales del mes; si después se agregan salidas, se vuelve a enviar.
 - **Quién ve qué (en la app):** cada usuario su informe; Super Admin, Admin Principal, Anciano y
   Ministerial ven el resumen de su congregación (y exportan a Excel/PDF).
+
+---
+
+## Migración 8 — Punto de reunión en los links compartidos
+
+Archivo listo para pegar: `MIGRACION_8_PUNTO_REUNION.sql` (re-ejecutable).
+
+```sql
+ALTER TABLE territorio_compartidos
+  ADD COLUMN IF NOT EXISTS punto_reunion_lat  DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS punto_reunion_lng  DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS punto_reunion_nota TEXT;
+-- + CHECK chk_punto_reunion_coords (los dos nulos o coordenadas válidas)
+```
+
+- Se llena desde el modal "Compartir Territorio" (opcional). Sin la migración la app sigue igual
+  y al guardar el punto avisa que falta correr este archivo.
+- Las ubicaciones en vivo del link compartido no usan tablas: Supabase Realtime (presencia),
+  canal `compartido:<id del link>`; nada se guarda.
