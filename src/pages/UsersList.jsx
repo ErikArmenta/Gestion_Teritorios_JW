@@ -6,6 +6,7 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { ROLES } from '../utils/constants';
+import { TIPOS_PUBLICADOR, METAS_SUGERIDAS, esPrecursor } from '../utils/informes';
 import { createPortal } from 'react-dom';
 import { Eye, EyeOff, Pencil, Trash2, UserPlus, X, Search } from 'lucide-react';
 import Pagination from '../components/Pagination';
@@ -39,6 +40,7 @@ const UsersList = () => {
   const [formData, setFormData] = useState({
     id: null, nombre: '', usuario: '', password: '',
     rol: 'Publicador', activo: true, foto_url: null, congregacion_id: '',
+    tipo_publicador: 'Publicador', meta_horas_mensual: '', meta_horas_anual: '',
   });
 
   const fetchUsuarios = async () => {
@@ -64,7 +66,10 @@ const UsersList = () => {
   }, [user]);
 
   const openNew = () => {
-    setFormData({ id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null, congregacion_id: '' });
+    setFormData({
+      id: null, nombre: '', usuario: '', password: '', rol: 'Publicador', activo: true, foto_url: null, congregacion_id: '',
+      tipo_publicador: 'Publicador', meta_horas_mensual: '', meta_horas_anual: '',
+    });
     setPhotoFile(null);
     setShowModal(true);
   };
@@ -73,6 +78,19 @@ const UsersList = () => {
     setFormData(u);
     setPhotoFile(null);
     setShowModal(true);
+  };
+
+  // ¿Ya se corrió la Migración 7 (informes)? Las filas traen tipo_publicador
+  const informesDisponible = usuarios.some(u => Object.prototype.hasOwnProperty.call(u, 'tipo_publicador'));
+  const camposInforme = () => {
+    if (!informesDisponible) return {};
+    const tipo = formData.tipo_publicador || 'Publicador';
+    const num = (v) => (v === '' || v == null ? null : Number(v));
+    return {
+      tipo_publicador: tipo,
+      meta_horas_mensual: esPrecursor(tipo) ? num(formData.meta_horas_mensual) : null,
+      meta_horas_anual: tipo === 'Precursor regular' ? num(formData.meta_horas_anual) : null,
+    };
   };
 
   const handleSubmit = async (e) => {
@@ -87,6 +105,7 @@ const UsersList = () => {
           nombre: formData.nombre, usuario: formData.usuario,
           password: formData.password, rol: formData.rol,
           activo: formData.activo, foto_url,
+          ...camposInforme(),
         }).eq('id', formData.id);
         if (error) throw error;
         toast.success(tx('Usuario actualizado correctamente'));
@@ -99,6 +118,7 @@ const UsersList = () => {
           password: formData.password, rol: formData.rol,
           activo: true, foto_url,
           congregacion_id: congId,
+          ...camposInforme(),
         }]);
         if (error) throw error;
         toast.success(tx('Usuario creado correctamente'));
@@ -317,6 +337,11 @@ const UsersList = () => {
                         : { background: 'rgba(100,116,139,0.1)', color: '#64748B' }}>
                         {u.rol}
                       </span>
+                      {esPrecursor(u.tipo_publicador) && (
+                        <span className="badge text-xs ml-1" style={{ background: u.tipo_publicador === 'Precursor regular' ? 'rgba(124,58,237,0.12)' : 'rgba(8,145,178,0.12)', color: u.tipo_publicador === 'Precursor regular' ? '#7C3AED' : '#0891B2' }}>
+                          {tx(u.tipo_publicador)}
+                        </span>
+                      )}
                     </td>
                     {user?.rol === 'Super Admin' && (
                       <td className="px-4 py-3">
@@ -369,6 +394,11 @@ const UsersList = () => {
                       : { background: 'rgba(100,116,139,0.12)', color: '#94A3B8' }}>
                       {u.rol}
                     </span>
+                    {esPrecursor(u.tipo_publicador) && (
+                      <span className="badge text-xs ml-1" style={{ background: u.tipo_publicador === 'Precursor regular' ? 'rgba(124,58,237,0.12)' : 'rgba(8,145,178,0.12)', color: u.tipo_publicador === 'Precursor regular' ? '#7C3AED' : '#0891B2' }}>
+                        {tx(u.tipo_publicador)}
+                      </span>
+                    )}
                     {user?.rol === 'Super Admin' && (
                       <span className="badge text-xs" style={{ background: 'rgba(59,130,246,0.1)', color: '#2563EB' }}>
                         {u.congregaciones?.nombre || '-'}
@@ -450,6 +480,44 @@ const UsersList = () => {
                 {ROLES.map(r => <option key={r.value} value={r.value}>{tx(r.label)}</option>)}
               </select>
             </div>
+            {informesDisponible && (
+              <div className="form-group">
+                <label className="form-label">{tx('¿Es precursor? *')}</label>
+                <select
+                  value={formData.tipo_publicador || 'Publicador'}
+                  onChange={e => setFormData(f => ({ ...f, tipo_publicador: e.target.value }))}
+                >
+                  {TIPOS_PUBLICADOR.map(tp => <option key={tp} value={tp}>{tx(tp === 'Publicador' ? 'No, es publicador' : tp)}</option>)}
+                </select>
+                {esPrecursor(formData.tipo_publicador) && (
+                  <div className="flex gap-3 mt-3">
+                    <div className="flex-1">
+                      <label className="form-label">{tx('Meta de horas al mes')}</label>
+                      <input
+                        type="number" min="0" step="1" inputMode="numeric"
+                        value={formData.meta_horas_mensual ?? ''}
+                        onChange={e => setFormData(f => ({ ...f, meta_horas_mensual: e.target.value }))}
+                        placeholder={String(METAS_SUGERIDAS[formData.tipo_publicador]?.mensual ?? '')}
+                      />
+                    </div>
+                    {formData.tipo_publicador === 'Precursor regular' && (
+                      <div className="flex-1">
+                        <label className="form-label">{tx('Meta al año')}</label>
+                        <input
+                          type="number" min="0" step="1" inputMode="numeric"
+                          value={formData.meta_horas_anual ?? ''}
+                          onChange={e => setFormData(f => ({ ...f, meta_horas_anual: e.target.value }))}
+                          placeholder={String(METAS_SUGERIDAS['Precursor regular'].anual)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {esPrecursor(formData.tipo_publicador) && (
+                  <p className="text-xs text-muted mt-1.5 mb-0">{tx('Si se deja vacía se usa la sugerida. El precursor también puede cambiarla en Informes.')}</p>
+                )}
+              </div>
+            )}
             {user?.rol === 'Super Admin' && (
               <div className="form-group">
                 <label className="form-label">{tx('Congregación *')}</label>

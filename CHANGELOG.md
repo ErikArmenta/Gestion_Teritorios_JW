@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-05 — Informes de servicio (precursores y publicadores) — requiere Migración 7
+
+- `MIGRACION_7_INFORMES.sql` (nuevo) + `SQL_MIGRATIONS.md`: `tipo_publicador` y metas en `app_usuarios`,
+  tablas `registros_servicio` e `informes_servicio`
+- `pages/Informes.jsx` (nuevo): Mi informe (meta, salidas, enviar) y Congregación (resumen, Excel/PDF)
+- `hooks/useMiInforme.js`, `hooks/useInformesCongregacion.js`, `utils/informes.js` (nuevos)
+- `UsersList.jsx` ("¿Es precursor?" y metas al dar de alta), `App.jsx`, `utils/menu.js`, `BottomNav.jsx`
+- `DataContext.jsx` (cola sin conexión: `addRegistroServicio`, `guardarInformeServicio`, `recontarPendientes`)
+- `i18n/en.js`
+
+## 2026-11-05 — Exhibidores en 3D sobre el mapa de fondo compartido
+
+- `pages/Exhibidores3D.jsx` (nuevo), `pages/Exhibidores.jsx` (respaldo clásico), `hooks/useExhibidores.js`,
+  `components/ExhibidorPiezas.jsx`, `utils/menu.js` (`RUTAS_MAPA`), `index.css`, `i18n/en.js`
+
 ## 2026-11-04 — Confirmar cierre de sesión y logo nítido en el menú flotante
 
 - `components/ConfirmarCerrarSesion.jsx` (nuevo): "¿Cerrar sesión?" en Sidebar, menú flotante y BottomNav

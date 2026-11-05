@@ -22,6 +22,7 @@ import Backup from './pages/Backup';
 import Exhibidores from './pages/Exhibidores';
 import Grupos from './pages/Grupos';
 import TerritoriosAdmin from './pages/TerritoriosAdmin';
+import Informes from './pages/Informes';
 import OfflineIndicator from './components/OfflineIndicator';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
@@ -121,6 +122,7 @@ const AppLayout = () => {
         <Routes>
           <Route path="/" element={<TerritoriesMap />} />
           <Route path="/register" element={<RegisterHouse />} />
+          <Route path="/informes" element={<Informes />} />
           <Route path="/stats" element={
             <ProtectedRoute allowedRoles={['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial']}>
               <DashboardStats />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2, Sun, Moon, Database, UsersRound, Languages, LandPlot } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, MoreHorizontal, LogOut, User, X, Building2, Sun, Moon, Database, UsersRound, Languages, LandPlot, ClipboardList } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ExhibidorIcon from './ExhibidorIcon';
@@ -12,6 +12,7 @@ import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
 const menuItems = [
   { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/register', name: 'Registrar', icon: <Home size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+  { path: '/informes', name: 'Informes', icon: <ClipboardList size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/stats', name: 'Stats', icon: <BarChart2 size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/list', name: 'Lista', icon: <List size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/territorios', name: 'Territorios', icon: <LandPlot size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },

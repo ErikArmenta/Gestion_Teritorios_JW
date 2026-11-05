@@ -236,3 +236,39 @@ ALTER PUBLICATION supabase_realtime ADD TABLE historial_visitas;
   ya no se usan para el progreso.
 - **Quién puede qué (en la app):** crear grupos y asignar territorios a grupos → Super Admin,
   Admin Principal, Anciano, Ministerial. Marcar terminado → esos roles o el encargado del grupo.
+
+---
+
+## Migración 7 — Informes de servicio (precursores y publicadores)
+
+Cada usuario (de cualquier rol) es **Publicador**, **Precursor auxiliar** o **Precursor regular**.
+Los precursores anotan cada salida (horas de predicación por tipo, revisitas, o servicio sagrado) y la
+app arma el informe del mes y les muestra su avance contra su meta (mensual y, el regular, también del
+año de servicio, septiembre–agosto). Los publicadores solo marcan "Prediqué este mes" y sus estudios.
+
+> **Para ejecutarla:** copiar el archivo **`MIGRACION_7_INFORMES.sql`** completo en Supabase → SQL Editor.
+> Se puede correr más de una vez sin errores. Mientras no se corra, la app sigue funcionando y la
+> pantalla Informes avisa que falta.
+
+```sql
+-- (ver MIGRACION_7_INFORMES.sql)
+-- 7a. app_usuarios: tipo_publicador ('Publicador' | 'Precursor auxiliar' | 'Precursor regular'),
+--     meta_horas_mensual, meta_horas_anual
+-- 7b. registros_servicio: una fila por salida
+--     (usuario_id, congregacion_id, fecha, categoria 'predicacion'|'servicio_sagrado',
+--      tipo 'casa_en_casa'|'cartas'|'telefono'|'exhibidor'|'informal'|'otro', horas, revisitas, notas)
+-- 7c. informes_servicio: uno por usuario por mes (UNIQUE usuario_id, mes; mes = día 1)
+--     (tipo_publicador del mes, predico, estudios, horas, revisitas, horas_servicio_sagrado,
+--      comentarios, enviado_en)
+```
+
+**Notas:**
+- RLS: igual que el resto (login propio), **sin RLS**; la app filtra por usuario y congregación.
+- **Horas de predicación** = casa en casa + cartas + teléfono + exhibidor + informal. El **servicio
+  sagrado** (aseo, mantenimiento, etc.) se guarda aparte y **no** suma a las horas de predicación.
+- **Estudios bíblicos**: se escriben en el informe del mes (es cuántos estudios distintos se condujeron).
+- `informes_servicio.tipo_publicador` guarda lo que la persona era ese mes (un auxiliar puede serlo solo
+  algunos meses).
+- Al enviar, el informe guarda los totales del mes; si después se agregan salidas, se vuelve a enviar.
+- **Quién ve qué (en la app):** cada usuario su informe; Super Admin, Admin Principal, Anciano y
+  Ministerial ven el resumen de su congregación (y exportan a Excel/PDF).

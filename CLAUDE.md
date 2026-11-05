@@ -52,6 +52,15 @@ Variables en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Nunca commit
   es `false` y la app sigue funcionando (progreso solo por casas). Pantalla: `/grupos`.
   Los grupos **no se mezclan entre congregaciones**: la BD lo impide con triggers (Migración 5e en
   `MIGRACION_5_GRUPOS.sql`) y la app solo ofrece grupos de la congregación del territorio/usuario.
+- **Informes de servicio** (Migración 7, `MIGRACION_7_INFORMES.sql`): pantalla `/informes` (todos los roles).
+  Cada usuario es `tipo_publicador` = Publicador / Precursor auxiliar / Precursor regular (se elige al dar de
+  alta en Usuarios, para cualquier rol). Precursores: anotan cada salida en `registros_servicio` (predicación
+  por tipo + revisitas, o servicio sagrado aparte, que **no** suma a las horas), ven su avance contra su meta
+  (`meta_horas_mensual`; el regular también `meta_horas_anual` del año de servicio sept–ago) y envían el
+  informe del mes (`informes_servicio`, uno por usuario y mes, upsert). Publicadores: casilla "Prediqué" +
+  estudios. Ancianos/ministeriales/admins ven "Congregación" (resumen por tipo, quién falta, Excel/PDF en
+  español). Lógica: `hooks/useMiInforme.js`, `hooks/useInformesCongregacion.js`, `utils/informes.js`.
+  Si la migración no existe la pantalla avisa y Usuarios no manda esos campos (detecta la columna).
 - Migraciones nuevas: además de documentarlas en `SQL_MIGRATIONS.md`, dejar un `.sql` puro y
   re-ejecutable (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP TRIGGER IF EXISTS`) para pegar en Supabase.
 
@@ -59,7 +68,8 @@ Variables en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Nunca commit
 
 Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio_manzanas`,
 `territorio_asignaciones`, `territorio_compartidos`, `casas`, `historial_visitas`, `fotos_casas`,
-`notas_voz`, `exhibidores`, `exhibidor_turnos`, `alertas_panico`, `notificaciones`.
+`notas_voz`, `exhibidores`, `exhibidor_turnos`, `alertas_panico`, `notificaciones`,
+`registros_servicio`, `informes_servicio` (Migración 7).
 
 - Cambios de esquema: documentarlos en `SQL_MIGRATIONS.md` (y storage en `STORAGE_SETUP.sql`).
 - Antes de usar una columna, confirmar que existe (ya hubo bugs por columnas inexistentes, p. ej. `telefono`).
@@ -71,7 +81,9 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 ## Offline y PWA
 
 - `DataContext` guarda territorios/casas en IndexedDB y encola escrituras sin conexión (`pendingQueue`);
-  las operaciones nuevas de escritura sobre casas deben pasar por esa cola (tipos: `addCasa`, `registrarVisita`).
+  las operaciones nuevas de escritura sobre casas deben pasar por esa cola (tipos: `addCasa`, `registrarVisita`,
+  `addRegistroServicio`, `guardarInformeServicio`). Quien escriba en la cola sin pasar por `DataContext` debe
+  llamar `recontarPendientes()`: la sincronización solo arranca con `pendingCount > 0`.
 - Sin conexión: `offlineStore` (IndexedDB) guarda territorios y casas, una cola de escrituras pendientes,
   y un almacén genérico `guardarDatos/leerDatos` (clave = `nombre:congregacion`) para manzanas,
   usuarios, asignaciones, exhibidores y grupos. Todo conjunto nuevo que deba verse sin internet se

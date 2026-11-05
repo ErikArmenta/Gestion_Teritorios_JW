@@ -233,6 +233,18 @@ export const DataProvider = ({ children }) => {
             if (hErr) throw hErr;
             await offlineStore.removeFromPendingQueue(item.queueId);
             syncedCount++;
+          } else if (item.type === 'addRegistroServicio') {
+            // Informes (Migración 7): salida anotada sin conexión
+            const { error } = await supabase.from('registros_servicio').insert([item.data]);
+            if (error) throw error;
+            await offlineStore.removeFromPendingQueue(item.queueId);
+            syncedCount++;
+          } else if (item.type === 'guardarInformeServicio') {
+            // Informe del mes enviado sin conexión (uno por usuario y mes: se reemplaza)
+            const { error } = await supabase.from('informes_servicio').upsert([item.data], { onConflict: 'usuario_id,mes' });
+            if (error) throw error;
+            await offlineStore.removeFromPendingQueue(item.queueId);
+            syncedCount++;
           }
           // Se pueden agregar más tipos: updateCasa, deleteCasa, etc.
         } catch (err) {
@@ -252,6 +264,13 @@ export const DataProvider = ({ children }) => {
       setSyncing(false);
       syncingRef.current = false;
     }
+  }, []);
+
+  // Para quien escribe en la cola sin pasar por aquí (p. ej. informes): volver a contar los pendientes.
+  // La sincronización solo arranca cuando pendingCount > 0 al haber conexión.
+  const recontarPendientes = useCallback(async () => {
+    const q = await offlineStore.getPendingQueue().catch(() => []);
+    setPendingCount(q.length);
   }, []);
 
   // ── Init: fetch + check pending ──
@@ -647,7 +666,7 @@ export const DataProvider = ({ children }) => {
       addManzana, updateManzana, deleteManzana,
       addExhibidor, updateExhibidor, deleteExhibidor,
       addExhibidorTurno, updateExhibidorTurno, deleteExhibidorTurno,
-      isOnline, pendingCount, syncing, syncPendingQueue,
+      isOnline, pendingCount, syncing, syncPendingQueue, recontarPendientes,
     }}>
       {children}
     </DataContext.Provider>

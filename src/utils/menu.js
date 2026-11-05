@@ -1,4 +1,4 @@
-import { Map, Home, BarChart2, List, Users, Bell, Building2, Database, UsersRound, LandPlot } from 'lucide-react';
+import { Map, Home, BarChart2, List, Users, Bell, Building2, Database, UsersRound, LandPlot, ClipboardList } from 'lucide-react';
 import ExhibidorIcon from '../components/ExhibidorIcon';
 
 // Menú de escritorio: lo usan la barra lateral (components/Sidebar.jsx) y el menú flotante de las
@@ -7,6 +7,7 @@ import ExhibidorIcon from '../components/ExhibidorIcon';
 export const MENU_ITEMS = [
   { path: '/', name: 'Mapa Principal', Icon: Map, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/register', name: 'Registrar Casa', Icon: Home, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
+  { path: '/informes', name: 'Informes', Icon: ClipboardList, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
   { path: '/stats', name: 'Estadísticas', Icon: BarChart2, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/list', name: 'Lista de Casas', Icon: List, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
   { path: '/territorios', name: 'Territorios', Icon: LandPlot, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial'] },
