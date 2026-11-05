@@ -730,6 +730,7 @@ const en = {
   'Sin turnos próximos': 'No upcoming shifts',
   '{n} exhibidores': '{n} carts',
   '{n} turnos próximos': '{n} upcoming shifts',
+  'Ver turnos': 'View shifts',
   'Mueve el mapa para ubicarlo': 'Move the map to place it',
   'Toca un exhibidor en el mapa': 'Tap a cart on the map',
 

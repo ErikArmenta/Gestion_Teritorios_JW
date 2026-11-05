@@ -62,6 +62,8 @@ export default function useMapa3D(contenedorRef, {
     }
     mapRef.current = map;
     estiloRef.current = estiloInicial;
+    // Solo en desarrollo: el último mapa creado queda en window.__mapas3d (para depurar en la consola)
+    if (import.meta.env.DEV) window.__mapas3d = [...(window.__mapas3d || []), map];
 
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
     const geo = new maplibregl.GeolocateControl({

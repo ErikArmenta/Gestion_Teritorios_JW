@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapPin, Plus, Clock, Calendar, Trash2, X, Check, MapPinned, Loader2, ArrowLeft } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useMapaPagina } from '../context/MapaFondoContext';
@@ -6,30 +7,13 @@ import PanelMapa from '../components/PanelMapa';
 import ExhibidorIcon from '../components/ExhibidorIcon';
 import { BadgeTurno, TarjetaMiTurno, ModalesExhibidor } from '../components/ExhibidorPiezas';
 import useExhibidores, { formatDate, formatTime } from '../hooks/useExhibidores';
-import { maplibregl, poligonosGeoJSON, crearPinCentro, limitesDe } from '../utils/map3d';
-import { EXHIBIDOR_ICON_SVG_PATHS } from '../utils/constants';
+import { maplibregl, poligonosGeoJSON, crearPinCentro, limitesDe, crearMarcadorExhibidor } from '../utils/map3d';
 import { t as tx } from '../i18n';
 
 // Exhibidores en 3D: usa el mapa de fondo compartido (context/MapaFondoContext.jsx). Los exhibidores
 // son marcadores en el mapa; el panel (abajo en móvil, en el menú flotante en escritorio) tiene las
 // pestañas Ubicaciones (admins) y Mis Turnos. Nuevo exhibidor: pin al centro del mapa + formulario.
 // Lógica compartida con la vista clásica: hooks/useExhibidores.js y components/ExhibidorPiezas.jsx
-
-// Marcador: color de la BD con style (nunca dentro de HTML); el nombre con textContent
-const crearMarcador = (exh, seleccionado, onClick) => {
-  const el = document.createElement('div');
-  el.className = `m3d-exhibidor-wrap${seleccionado ? ' is-sel' : ''}`;
-  const icono = document.createElement('div');
-  icono.className = 'm3d-exhibidor';
-  icono.style.background = exh.color || '#F59E0B';
-  icono.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${EXHIBIDOR_ICON_SVG_PATHS}</svg>`;
-  const nombre = document.createElement('span');
-  nombre.className = 'm3d-exhibidor__nombre';
-  nombre.textContent = exh.nombre || '';
-  el.append(icono, nombre);
-  el.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
-  return el;
-};
 
 const Exhibidores3D = () => {
   const ex = useExhibidores();
@@ -45,6 +29,9 @@ const Exhibidores3D = () => {
   const [expandido, setExpandido] = useState(false);
   const marcadoresRef = useRef([]);
   const encuadradoRef = useRef(false);
+  const [searchParams] = useSearchParams();
+  const idParam = searchParams.get('id');
+  const idUsadoRef = useRef(false);
 
   const sel = exhibidores.find(e => String(e.id) === String(selId)) || null;
   const activos = useMemo(() => exhibidores.filter(e => e.activo !== false), [exhibidores]);
@@ -74,13 +61,25 @@ const Exhibidores3D = () => {
     marcadoresRef.current = activos.flatMap(exh => {
       const lat = Number(exh.latitud); const lng = Number(exh.longitud);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
-      const el = crearMarcador(exh, String(exh.id) === String(selId), () => abrir(exh));
-      return [new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, -16] }).setLngLat([lng, lat]).addTo(map)];
+      const el = crearMarcadorExhibidor(exh, String(exh.id) === String(selId), () => abrir(exh));
+      return [new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([lng, lat]).addTo(map)];
     });
     return () => { marcadoresRef.current.forEach(m => m.remove()); marcadoresRef.current = []; };
     // abrir cambia en cada render; los marcadores solo se rehacen cuando cambian los datos o la selección
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listo, activos, selId, mapRef]);
+
+  // ?id=X desde el mapa principal ("Ver turnos"): abrir ese exhibidor
+  useEffect(() => {
+    if (!idParam || !listo || idUsadoRef.current) return undefined;
+    const exh = exhibidores.find(e => String(e.id) === String(idParam));
+    if (!exh) return undefined;
+    idUsadoRef.current = true;
+    encuadradoRef.current = true; // no encuadrar todos: se vuela a este
+    const timer = setTimeout(() => abrir(exh), 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idParam, listo, exhibidores]);
 
   // Encuadre inicial: los exhibidores (o los territorios si no hay)
   useEffect(() => {

@@ -14,7 +14,7 @@ import useGuardarCasa from '../hooks/useGuardarCasa';
 import { STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 import {
   maplibregl, actualizarFuente, poligonosGeoJSON, casasBloquesGeoJSON, casasPuntosGeoJSON,
-  seleccionGeoJSON, cuadrado, limitesDe, VACIO, crearPinCentro,
+  seleccionGeoJSON, seleccionCasaGeoJSON, limitesDe, VACIO, crearPinCentro,
 } from '../utils/map3d';
 import { t } from '../i18n';
 
@@ -107,7 +107,7 @@ const RegisterHouse3D = () => {
     const quitarPin = crearPinCentro(map);
     const contenedor = map.getContainer();
 
-    // Bloque amarillo bajo el pin: el edificio de OSM si hay, si no un cuadrado del tamaño de una casa
+    // Bloque amarillo bajo el pin: el edificio de OSM si hay, si no una casita amarilla
     const resaltar = () => {
       if (!map.getSource('seleccion')) return;
       if (map.getZoom() < 15) { actualizarFuente(map, 'seleccion', VACIO); return; }
@@ -118,7 +118,7 @@ const RegisterHouse3D = () => {
         : null;
       actualizarFuente(map, 'seleccion', edificio
         ? seleccionGeoJSON(edificio.geometry, Number(edificio.properties?.render_height) || 4)
-        : seleccionGeoJSON({ type: 'Polygon', coordinates: cuadrado(c.lng, c.lat) }, 5));
+        : seleccionCasaGeoJSON(c.lng, c.lat)); // sin edificio en OSM: casita amarilla
     };
 
     const alGeolocalizar = () => { ubicadoRef.current = true; };

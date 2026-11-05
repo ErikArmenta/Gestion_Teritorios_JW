@@ -195,7 +195,13 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   (lleva atribución), capas propias (`agregarCapas`, se vuelven a poner en cada `style.load`), worker con
   `setWorkerUrl`. Las capas 3D van después de la última capa que no es texto del estilo (si no, el
   estilo oscuro pinta encima de los techos). En muchas colonias OSM casi no tiene edificios: el 3D sale
-  de las casas de la app (bloques del color de su estado) y del bloque amarillo bajo el pin.
+  de las casas de la app y de lo seleccionado. Casas: de lejos ícono de casita del color del estado (capa
+  `casas-punto`, tipo symbol, hasta zoom 17.5) y de cerca casita 3D (`casaPartes`: paredes + techo de dos
+  aguas escalonado, desde zoom 16.5); lo seleccionado = casita amarilla (`seleccionCasaGeoJSON`). Los íconos
+  se dibujan en canvas con `map.setMissingStyleImageResolver` (MapLibre 6; el evento `styleimagemissing`
+  solo llega si el resolver no da la imagen). Exhibidores: `crearMarcadorExhibidor` (pin con el anaquel),
+  también en el mapa principal (solo consulta: ficha con "Ver turnos" → `/exhibidores?id=X`).
+  El punto azul y el círculo de "mi ubicación" llevan `pointer-events: none` (si no, no dejaban dibujar encima).
   Texto de usuario en MapLibre: capas `symbol` o `textContent` en popups, nunca `innerHTML`.
 - "Sugerir dirección" usa Nominatim (OSM) **solo al tocar el botón** (su política: ≤ 1 petición/seg, sin
   consultas automáticas).

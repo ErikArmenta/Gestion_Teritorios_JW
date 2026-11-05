@@ -13,8 +13,8 @@ import useMapaPrincipal, { generarUrlGoogleMaps } from '../hooks/useMapaPrincipa
 import { STATUS_COLORS, STATUS_OPTIONS, getStatusColor } from '../utils/constants';
 import { PROGRESO } from '../utils/territoryProgress';
 import {
-  poligonosGeoJSON, casasBloquesGeoJSON, casasPuntosGeoJSON, seleccionGeoJSON, cuadrado, coordsCasa,
-  rutaGeoJSON, rutaPuntosGeoJSON, limitesDe, VACIO,
+  poligonosGeoJSON, casasBloquesGeoJSON, casasPuntosGeoJSON, seleccionCasaGeoJSON, coordsCasa,
+  rutaGeoJSON, rutaPuntosGeoJSON, limitesDe, VACIO, maplibregl, crearMarcadorExhibidor,
 } from '../utils/map3d';
 import { t, getLocale } from '../i18n';
 
@@ -110,7 +110,7 @@ const TerritoriesMap3D = () => {
     busqueda, setBusqueda, busquedaDebounced, resultadosBusqueda,
     rutaActiva, setRutaActiva, iniciarRuta, asignadosDe,
   } = useMapaPrincipal();
-  const { registrarVisita } = useData();
+  const { registrarVisita, exhibidores, exhibidorTurnos } = useData();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -126,9 +126,11 @@ const TerritoriesMap3D = () => {
   const territoriosOrdenados = useMemo(() => [...territoriosFiltrados].sort(ordenNatural), [territoriosFiltrados]);
 
   const casaSel = panel.tipo === 'casa' ? casas.find(c => String(c.id) === panel.id) : null;
+  const exhSel = panel.tipo === 'exhibidor' ? exhibidores.find(e => String(e.id) === panel.id) : null;
+  const exhibidoresActivos = useMemo(() => exhibidores.filter(e => e.activo !== false), [exhibidores]);
   const terrSel = panel.tipo === 'territorio' ? territoriosFiltrados.find(te => String(te.id) === panel.id) : null;
   // La ruta se muestra mientras exista, salvo que se esté viendo una casa
-  const vista = casaSel ? 'casa' : rutaActiva ? 'ruta' : terrSel ? 'territorio' : 'resumen';
+  const vista = casaSel ? 'casa' : exhSel ? 'exhibidor' : rutaActiva ? 'ruta' : terrSel ? 'territorio' : 'resumen';
 
   // ── Datos del mapa (GeoJSON memorizado: solo se manda al mapa lo que cambió) ──
   const territoriosGJ = useMemo(() => poligonosGeoJSON(territoriosFiltrados, '#2563EB', (te) => {
@@ -154,7 +156,7 @@ const TerritoriesMap3D = () => {
 
   const coordSel = casaSel ? coordsCasa(casaSel) : null;
   const seleccion = useMemo(
-    () => (coordSel ? seleccionGeoJSON({ type: 'Polygon', coordinates: cuadrado(coordSel[0], coordSel[1], 9) }, 6) : VACIO),
+    () => (coordSel ? seleccionCasaGeoJSON(coordSel[0], coordSel[1]) : VACIO),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [coordSel?.[0], coordSel?.[1]]
   );
@@ -201,6 +203,23 @@ const TerritoriesMap3D = () => {
     ultimoFitRef.current = claveFit;
     map.fitBounds(limites, { padding: 40, maxZoom: 17, duration: primera ? 0 : 800 });
   }, [listo, claveFit, territoriosGJ, mapRef]);
+
+  // Exhibidores en el mapa (marcadores DOM con el anaquel); el seleccionado se resalta
+  const exhSelId = exhSel ? String(exhSel.id) : null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !listo) return undefined;
+    const marcadores = exhibidoresActivos.flatMap(exh => {
+      const lat = Number(exh.latitud); const lng = Number(exh.longitud);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+      const el = crearMarcadorExhibidor(exh, String(exh.id) === exhSelId, () => {
+        setPanel({ tipo: 'exhibidor', id: String(exh.id) });
+        map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 16.5), duration: 700 });
+      });
+      return [new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([lng, lat]).addTo(map)];
+    });
+    return () => marcadores.forEach(m => m.remove());
+  }, [listo, exhibidoresActivos, exhSelId, mapRef]);
 
   // Ruta nueva → encuadrarla
   useEffect(() => {
@@ -405,6 +424,43 @@ const TerritoriesMap3D = () => {
                   <button type="button" className="m3d-accion" onClick={() => navigate(`/territorios?id=${terrSel.id}`)}>
                     <Settings2 size={15} /> {t('Gestionar')}
                   </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Exhibidor (consulta; se gestiona en Exhibidores) ── */}
+        {vista === 'exhibidor' && exhSel && (() => {
+          const hoy = new Date().toISOString().slice(0, 10);
+          const proximos = exhibidorTurnos.filter(tu => String(tu.exhibidor_id) === String(exhSel.id) && tu.fecha >= hoy).length;
+          const lat = Number(exhSel.latitud); const lng = Number(exhSel.longitud);
+          return (
+            <div className="m3d-scroll">
+              <div className="m3d-fila justify-between">
+                <h2 className="m3d-h2 flex items-center gap-2 min-w-0">
+                  <span className="m3d-item__color" style={{ background: exhSel.color || '#F59E0B', borderRadius: 9999 }} />
+                  <span className="truncate">{exhSel.nombre}</span>
+                </h2>
+                <button type="button" className="m3d-btn-icono m3d-btn-icono--sm" onClick={cerrarPanel} aria-label={t('Cerrar')}><X size={16} /></button>
+              </div>
+              <span className="m3d-pill self-start" style={{ background: 'rgba(245,158,11,0.16)', color: '#B45309' }}>{t('Exhibidor')}</span>
+              {exhSel.direccion && <p className="text-sm text-secondary m-0">{exhSel.direccion}</p>}
+              {exhSel.descripcion && <p className="text-xs text-muted m-0">{exhSel.descripcion}</p>}
+              <p className="text-xs text-secondary m-0">{t('{n} turnos próximos', { n: proximos })}</p>
+              <div className="m3d-acciones m3d-acciones--wrap">
+                <button type="button" className="m3d-accion m3d-accion--azul" onClick={() => navigate(`/exhibidores?id=${exhSel.id}`)}>
+                  <Navigation size={15} /> {t('Ver turnos')}
+                </button>
+                {Number.isFinite(lat) && Number.isFinite(lng) && (
+                  <a
+                    className="m3d-accion"
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${lat.toFixed(6)},${lng.toFixed(6)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MapPinned size={15} /> {t('Cómo llegar')}
+                  </a>
                 )}
               </div>
             </div>

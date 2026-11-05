@@ -11,7 +11,7 @@ import * as maplibregl from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as turf from '@turf/turf';
-import { STATUS_COLORS } from './constants';
+import { STATUS_COLORS, EXHIBIDOR_ICON_SVG_PATHS } from './constants';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -140,12 +140,41 @@ const propsCasa = (c) => ({
   offline: !!c._offline,
 });
 
+// Color más oscuro (techo de las casitas)
+const oscurecer = (hex, f = 0.68) => {
+  const n = parseInt(String(hex).replace('#', ''), 16);
+  if (!Number.isFinite(n)) return hex;
+  return `rgb(${Math.round(((n >> 16) & 255) * f)}, ${Math.round(((n >> 8) & 255) * f)}, ${Math.round((n & 255) * f)})`;
+};
+
+// Casita 3D: paredes + techo de dos aguas (franjas que se angostan hacia la cumbrera).
+// Cada parte lleva base/tope (metros) y colorParte; `props` = datos de la casa (para los toques).
+export const casaPartes = (lng, lat, { lado = 8, pared = 3.2, techo = 2.6, colorPared, colorTecho, props = {} } = {}) => {
+  const dLat = (lado / 2) / 111320;
+  const dLng = (lado / 2) / (111320 * Math.cos(lat * Math.PI / 180));
+  const rect = (fx, fy) => [[
+    [lng - dLng * fx, lat - dLat * fy], [lng + dLng * fx, lat - dLat * fy],
+    [lng + dLng * fx, lat + dLat * fy], [lng - dLng * fx, lat + dLat * fy],
+    [lng - dLng * fx, lat - dLat * fy],
+  ]];
+  const parte = (coords, base, tope, colorParte) => ({
+    type: 'Feature', geometry: { type: 'Polygon', coordinates: coords }, properties: { ...props, base, tope, colorParte },
+  });
+  const ANCHOS = [1.12, 0.84, 0.56, 0.28]; // alero → cumbrera
+  const paso = techo / ANCHOS.length;
+  return [
+    parte(rect(1, 1), 0, pared, colorPared),
+    ...ANCHOS.map((fx, i) => parte(rect(fx, 1.12), pared + i * paso, pared + (i + 1) * paso, colorTecho)),
+  ];
+};
+
 export const casasBloquesGeoJSON = (casas) => ({
   type: 'FeatureCollection',
   features: (casas || []).flatMap(c => {
     const p = coordsCasa(c);
     if (!p) return [];
-    return [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: cuadrado(p[0], p[1]) }, properties: propsCasa(c) }];
+    const props = propsCasa(c);
+    return casaPartes(p[0], p[1], { colorPared: props.color, colorTecho: oscurecer(props.color), props });
   }),
 });
 
@@ -158,12 +187,73 @@ export const casasPuntosGeoJSON = (casas) => ({
   }),
 });
 
-// Bloque amarillo de lo seleccionado: el edificio de OSM bajo el pin, una casa, o un cuadrado
+// Bloque amarillo de lo seleccionado: el edificio de OSM bajo el pin
 export const seleccionGeoJSON = (geometria, altura = 5) => (
   geometria
     ? { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: geometria, properties: { altura } }] }
     : VACIO
 );
+
+// Casita amarilla (un poco más grande) para una casa seleccionada o el punto del pin
+export const seleccionCasaGeoJSON = (lng, lat) => ({
+  type: 'FeatureCollection',
+  features: casaPartes(lng, lat, { lado: 9, pared: 3.6, techo: 3, colorPared: AMARILLO, colorTecho: '#CA8A04' }),
+});
+
+// ── Íconos de casita (de lejos) ──
+// Se dibujan en un canvas por color cuando el mapa los pide (styleimagemissing), así también se
+// vuelven a poner solos después de cambiar de estilo. Id: casa-<color>[-off] (off = sin sincronizar).
+const PATH_CASA = 'M16 2 L3 14 L6 14 L6 30 L26 30 L26 14 L29 14 Z';
+const dibujarIconoCasa = (color, offline) => {
+  const escala = 2;
+  const c = document.createElement('canvas');
+  c.width = 32 * escala; c.height = 36 * escala;
+  const ctx = c.getContext('2d');
+  ctx.scale(escala, escala);
+  ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1.5;
+  const casa = new Path2D(PATH_CASA);
+  ctx.fillStyle = color; ctx.fill(casa);
+  ctx.shadowColor = 'transparent';
+  ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.strokeStyle = '#FFFFFF';
+  if (offline) ctx.setLineDash([4, 2]);
+  ctx.stroke(casa);
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillRect(12.5, 19, 7, 11);
+  if (offline) {
+    ctx.beginPath(); ctx.arc(25, 7, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#F59E0B'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#FFFFFF'; ctx.stroke();
+  }
+  return ctx.getImageData(0, 0, c.width, c.height);
+};
+const prepararIconosCasa = (map) => {
+  if (map.__iconosCasa) return;
+  map.__iconosCasa = true;
+  const resolver = (id) => {
+    const m = /^casa-(.+?)(-off)?$/.exec(id || '');
+    if (!m || map.hasImage(id)) return;
+    map.addImage(id, dibujarIconoCasa(m[1], !!m[2]), { pixelRatio: 2 });
+  };
+  // MapLibre 6: el mapa pide las imágenes que faltan al "resolver" (el evento solo llega si este no la da)
+  if (typeof map.setMissingStyleImageResolver === 'function') map.setMissingStyleImageResolver(resolver);
+  else map.on('styleimagemissing', (e) => resolver(e.id));
+};
+
+// Marcador DOM de un exhibidor (anaquel en un pin). Color de la BD con style, nombre con textContent.
+export const crearMarcadorExhibidor = (exh, seleccionado, onClick) => {
+  const el = document.createElement('div');
+  el.className = `m3d-exhibidor-wrap${seleccionado ? ' is-sel' : ''}`;
+  const icono = document.createElement('div');
+  icono.className = 'm3d-exhibidor';
+  icono.style.background = exh.color || '#F59E0B';
+  icono.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${EXHIBIDOR_ICON_SVG_PATHS}</svg>`;
+  const nombre = document.createElement('span');
+  nombre.className = 'm3d-exhibidor__nombre';
+  nombre.textContent = exh.nombre || '';
+  el.append(nombre, icono); // nombre arriba, pin abajo (anchor bottom = punta en el lugar)
+  el.addEventListener('click', (e) => { e.stopPropagation(); onClick?.(); });
+  return el;
+};
 
 // Ruta de visitas: línea + puntos numerados (casas ya ordenadas)
 export const rutaGeoJSON = (casasOrdenadas) => {
@@ -204,6 +294,7 @@ const ponerFuente = (map, id, data) => {
 // Agrega (o vuelve a agregar tras cambiar de estilo) todas las capas propias.
 // `datos` = { [idFuente]: GeoJSON } (ver FUENTES); lo que falte queda vacío.
 export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false } = {}) => {
+  prepararIconosCasa(map);
   FUENTES.forEach(id => ponerFuente(map, id, datos[id] || VACIO));
   ponerFuente(map, 'territorios-etq', etiquetasGeoJSON(datos.territorios || VACIO));
 
@@ -245,30 +336,36 @@ export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false
     paint: { 'line-color': AZUL_RUTA, 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 3, 18, 6], 'line-dasharray': [2, 1.5], 'line-opacity': 0.9 },
   });
 
-  // Casas registradas: puntos de lejos, bloques 3D de cerca. Anillo naranja = sin sincronizar.
+  // Casas registradas: de cerca, casitas 3D (paredes del color del estado, techo más oscuro)
   capa({
-    id: 'casas-punto', type: 'circle', source: 'casas-puntos', maxzoom: 16,
+    id: 'casas-3d', type: 'fill-extrusion', source: 'casas-bloques', minzoom: 16.5,
     paint: {
-      'circle-color': ['get', 'color'],
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 2.5, 16, 6],
-      'circle-stroke-color': ['case', ['get', 'offline'], '#F59E0B', '#FFFFFF'],
-      'circle-stroke-width': ['case', ['get', 'offline'], 2.5, 1.5],
+      'fill-extrusion-color': ['coalesce', ['get', 'colorParte'], ['get', 'color']],
+      'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 16.5, 0, 17.5, ['get', 'tope']],
+      'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 16.5, 0, 17.5, ['get', 'base']],
+      'fill-extrusion-opacity': 0.95,
     },
   });
-  capa({
-    id: 'casas-3d', type: 'fill-extrusion', source: 'casas-bloques', minzoom: 15,
-    paint: {
-      'fill-extrusion-color': ['get', 'color'],
-      'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 16.5, 5],
-      'fill-extrusion-opacity': 0.92,
-    },
-  });
+  // Lo seleccionado: edificio de OSM (altura) o casita amarilla (base/tope/colorParte)
   capa({
     id: 'seleccion-3d', type: 'fill-extrusion', source: 'seleccion',
     paint: {
-      'fill-extrusion-color': AMARILLO,
-      'fill-extrusion-height': ['+', ['get', 'altura'], 0.6],
+      'fill-extrusion-color': ['coalesce', ['get', 'colorParte'], AMARILLO],
+      'fill-extrusion-height': ['coalesce', ['get', 'tope'], ['+', ['get', 'altura'], 0.6]],
+      'fill-extrusion-base': ['coalesce', ['get', 'base'], 0],
       'fill-extrusion-opacity': 0.95,
+    },
+  });
+  // De lejos: ícono de casita del color del estado (borde punteado + punto naranja = sin sincronizar).
+  // Se llama "casas-punto" para que los toques de las pantallas sigan igual.
+  capa({
+    id: 'casas-punto', type: 'symbol', source: 'casas-puntos', maxzoom: 17.5,
+    layout: {
+      'icon-image': ['concat', 'casa-', ['get', 'color'], ['case', ['get', 'offline'], '-off', '']],
+      'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.45, 14, 0.7, 16.5, 1],
+      'icon-anchor': 'bottom',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
     },
   });
 

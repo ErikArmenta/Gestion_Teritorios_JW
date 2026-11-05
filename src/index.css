@@ -1126,3 +1126,18 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   background: var(--bg-card); color: var(--text-primary); box-shadow: 0 2px 8px rgba(15,23,42,0.2);
 }
+
+/* Exhibidor como pin con el anaquel, más grande (mapa principal y Exhibidores). La punta va en el lugar. */
+.m3d-exhibidor-wrap .m3d-exhibidor {
+  position: relative; width: 40px; height: 40px; border-radius: 12px; border: 3px solid #fff; margin-bottom: 8px;
+}
+.m3d-exhibidor-wrap .m3d-exhibidor::after {
+  content: ''; position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
+  border: 6px solid transparent; border-top: 8px solid #fff;
+}
+.m3d-exhibidor-wrap.is-sel .m3d-exhibidor { transform: scale(1.15); transform-origin: bottom center; }
+
+/* "Mi ubicación" (punto azul y círculo de precisión de MapLibre): que no se queden con el toque.
+   Antes no dejaban dibujar territorios/manzanas ni mover el mapa encima de ellos. */
+.maplibregl-user-location-dot,
+.maplibregl-user-location-accuracy-circle { pointer-events: none; }
