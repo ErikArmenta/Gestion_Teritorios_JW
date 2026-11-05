@@ -5,7 +5,7 @@ import { useMapaFondo } from '../context/MapaFondoContext';
 import useMapa3D from '../hooks/useMapa3D';
 import NotificationBell from './NotificationBell';
 import BotonesMapa3D from './BotonesMapa3D';
-import { FUENTES, VACIO } from '../utils/map3d';
+import { FUENTES, VACIO, activarHoverCasas } from '../utils/map3d';
 import { t } from '../i18n';
 
 // El mapa 3D de fondo, compartido por las pantallas con mapa (ver context/MapaFondoContext.jsx).
@@ -25,6 +25,7 @@ const MapaFondo = ({ visible }) => {
   const datos = useMemo(() => ({ ...VACIOS, ...(datosPagina || {}) }), [datosPagina]);
 
   const alCrear = (map, geo) => {
+    activarHoverCasas(map); // con mouse: brillo + tarjeta al pasar sobre una casa (todas las pantallas)
     geo.on('trackuserlocationstart', () => { geoActivoRef.current = true; });
     geo.on('trackuserlocationend', () => { geoActivoRef.current = false; });
     geo.on('error', () => { geoActivoRef.current = false; });
@@ -45,9 +46,12 @@ const MapaFondo = ({ visible }) => {
   // Al volver a mostrarse, el contenedor pudo cambiar de tamaño
   useEffect(() => { if (visible) mapRef.current?.resize(); }, [visible, mapRef]);
 
+  // En modo claro (sin satélite) hay un tercer botón (Neón): en escritorio los controles bajan uno
+  const conNeon = !bloquearEstilo && theme !== 'dark' && !prefs.satelite;
+
   return (
     <div
-      className={`m3d-fondo${visible ? '' : ' is-oculto'}`}
+      className={`m3d-fondo${visible ? '' : ' is-oculto'}${conNeon ? ' con-neon' : ''}`}
       style={{ '--alto-panel': `${Math.max(0, altoPanel - 16)}px` }}
       aria-hidden={!visible}
     >
@@ -55,7 +59,7 @@ const MapaFondo = ({ visible }) => {
       <div className="m3d-fondo__derecha">
         <div className="m3d-campana"><NotificationBell /></div>
         {/* Mientras se dibuja no se cambia de estilo (borraría el dibujo) */}
-        {!bloquearEstilo && <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} />}
+        {!bloquearEstilo && <BotonesMapa3D prefs={prefs} onCambiar={cambiarPrefs} oscuro={theme === 'dark'} />}
       </div>
       {sinConexion && (
         <div className="m3d-aviso">

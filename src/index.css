@@ -1061,6 +1061,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 @media (min-width: 768px) {
   .m3d-fondo { inset: 0; }
   .m3d-fondo .maplibregl-ctrl-top-left { left: auto; right: 10px; top: 168px; }
+  .m3d-fondo.con-neon .maplibregl-ctrl-top-left { top: 218px; } /* + botón Neón (42px + 8px) */
   .m3d-fondo .maplibregl-ctrl-bottom-left { left: auto; right: 108px; bottom: 8px; }
   .m3d-fondo .m3d-aviso { left: 50%; right: auto; transform: translateX(-50%); bottom: 24px; }
   /* Dentro del menú: sin el margen del botón de pánico (queda lejos) y estados en varias filas */
@@ -1141,3 +1142,36 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
    Antes no dejaban dibujar territorios/manzanas ni mover el mapa encima de ellos. */
 .maplibregl-user-location-dot,
 .maplibregl-user-location-accuracy-circle { pointer-events: none; }
+
+/* ── Hover en los mapas 3D (con mouse) ── */
+/* Tarjeta de la casa: vidrio oscuro con borde y brillo del color de su estado (--c) */
+.m3d-tooltip { pointer-events: none; }
+.m3d-tooltip .maplibregl-popup-content {
+  padding: 8px 12px; border-radius: 12px;
+  background: rgba(2, 6, 23, 0.9); color: #F8FAFC;
+  border: 1.5px solid var(--c, #2563EB);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 18px -2px var(--c, #2563EB), 0 10px 24px rgba(0,0,0,0.35);
+  backdrop-filter: blur(6px);
+  animation: m3d-aparecer 0.14s ease-out;
+}
+.m3d-tooltip .maplibregl-popup-tip { border-top-color: var(--c, #2563EB) !important; }
+.m3d-tooltip__cuerpo { display: flex; flex-direction: column; gap: 5px; }
+.m3d-tooltip__cuerpo strong { font-size: 13px; font-weight: 800; line-height: 1.25; }
+.m3d-tooltip__estado {
+  align-self: flex-start; padding: 2px 9px; border-radius: 9999px;
+  font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+@keyframes m3d-aparecer { from { opacity: 0; transform: translateY(4px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+/* Exhibidor: se levanta y brilla con su color (--c) */
+.m3d-exhibidor-wrap .m3d-exhibidor { transition: transform 0.18s ease, box-shadow 0.18s ease; transform-origin: bottom center; }
+@media (hover: hover) {
+  .m3d-exhibidor-wrap:hover .m3d-exhibidor {
+    transform: translateY(-5px) scale(1.14);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.9), 0 0 22px 6px var(--c, #F59E0B), 0 10px 18px rgba(0,0,0,0.35);
+  }
+  .m3d-exhibidor-wrap:hover .m3d-exhibidor__nombre {
+    color: #fff; background: rgba(2, 6, 23, 0.92);
+    box-shadow: 0 0 0 1.5px var(--c, #F59E0B), 0 0 14px -2px var(--c, #F59E0B);
+  }
+}

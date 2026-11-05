@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-05 — Mapa neón, geocercas con brillo y hovers en casas y exhibidores
+
+- `utils/map3d.js`: `aplicarNeon` (negro + calles blancas brillantes), brillo en geocercas y manzanas,
+  nombres de territorio neón, `activarHoverCasas` (casita iluminada + tarjeta al pasar el mouse)
+- `hooks/useMapa3D.js`, `utils/prefs3d.js` (`neon`), `components/BotonesMapa3D.jsx` (botón Neón en modo claro)
+- `components/MapaFondo.jsx`, `index.css` (tarjeta `.m3d-tooltip`, hover de exhibidores, `.con-neon`), `i18n/en.js`
+
 ## 2026-11-05 — Informes de servicio (precursores y publicadores) — requiere Migración 7
 
 - `MIGRACION_7_INFORMES.sql` (nuevo) + `SQL_MIGRATIONS.md`: `tipo_publicador` y metas en `app_usuarios`,

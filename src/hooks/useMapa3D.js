@@ -28,12 +28,15 @@ export default function useMapa3D(contenedorRef, {
 
   // Lo último, para style.load (que llega cuando quiere)
   const datosRef = useRef(datos);
-  const opcionesRef = useRef({ oscuro, satelite: prefs.satelite });
+  // Neón: siempre en modo oscuro; en modo claro, si se eligió el botón (prefs.neon). El satélite manda.
+  const neon = !prefs.satelite && (oscuro || !!prefs.neon);
+  const baseOscura = oscuro || neon;
+  const opcionesRef = useRef({ oscuro: baseOscura, satelite: prefs.satelite, neon });
   const alCrearRef = useRef(alCrear);
   const onFalloRef = useRef(onFallo);
   useEffect(() => {
     datosRef.current = datos;
-    opcionesRef.current = { oscuro, satelite: prefs.satelite };
+    opcionesRef.current = { oscuro: baseOscura, satelite: prefs.satelite, neon };
     alCrearRef.current = alCrear;
     onFalloRef.current = onFallo;
   });
@@ -44,7 +47,7 @@ export default function useMapa3D(contenedorRef, {
   // ── Crear (una sola vez) ──
   useEffect(() => {
     let map;
-    const estiloInicial = estiloPara(prefs.satelite, oscuro);
+    const estiloInicial = estiloPara(prefs.satelite, baseOscura);
     try {
       map = new maplibregl.Map({
         container: contenedorRef.current,
@@ -116,11 +119,11 @@ export default function useMapa3D(contenedorRef, {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const estilo = estiloPara(prefs.satelite, oscuro);
+    const estilo = estiloPara(prefs.satelite, baseOscura);
     if (estiloRef.current === estilo) return;
     estiloRef.current = estilo;
     map.setStyle(estilo, { diff: false });
-  }, [prefs.satelite, oscuro]);
+  }, [prefs.satelite, baseOscura]);
 
   // 2D / 3D
   useEffect(() => {

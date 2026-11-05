@@ -12,6 +12,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as turf from '@turf/turf';
 import { STATUS_COLORS, EXHIBIDOR_ICON_SVG_PATHS } from './constants';
+import { t } from '../i18n';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -134,6 +135,8 @@ export const coordsCasa = (c) => {
 
 const propsCasa = (c) => ({
   id: String(c.id),
+  lng: Number(c.longitud),
+  lat: Number(c.latitud),
   direccion: c.direccion || '',
   estado: c.estado || 'Pendiente',
   color: STATUS_COLORS[c.estado]?.hex || '#9CA3AF',
@@ -147,6 +150,15 @@ const oscurecer = (hex, f = 0.68) => {
   return `rgb(${Math.round(((n >> 16) & 255) * f)}, ${Math.round(((n >> 8) & 255) * f)}, ${Math.round((n & 255) * f)})`;
 };
 
+// Color más claro (casita 3D bajo el mouse)
+const aclarar = (color, f = 0.45) => {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(color));
+  const rgb = m
+    ? [0, 8, 16].map(sh => (parseInt(m[1], 16) >> (16 - sh)) & 255)
+    : (String(color).match(/\d+/g) || [128, 128, 128]).slice(0, 3).map(Number);
+  return `rgb(${rgb.map(v => Math.round(v + (255 - v) * f)).join(', ')})`;
+};
+
 // Casita 3D: paredes + techo de dos aguas (franjas que se angostan hacia la cumbrera).
 // Cada parte lleva base/tope (metros) y colorParte; `props` = datos de la casa (para los toques).
 export const casaPartes = (lng, lat, { lado = 8, pared = 3.2, techo = 2.6, colorPared, colorTecho, props = {} } = {}) => {
@@ -158,7 +170,7 @@ export const casaPartes = (lng, lat, { lado = 8, pared = 3.2, techo = 2.6, color
     [lng - dLng * fx, lat - dLat * fy],
   ]];
   const parte = (coords, base, tope, colorParte) => ({
-    type: 'Feature', geometry: { type: 'Polygon', coordinates: coords }, properties: { ...props, base, tope, colorParte },
+    type: 'Feature', geometry: { type: 'Polygon', coordinates: coords }, properties: { ...props, base, tope, colorParte, colorHover: aclarar(colorParte) },
   });
   const ANCHOS = [1.12, 0.84, 0.56, 0.28]; // alero → cumbrera
   const paso = techo / ANCHOS.length;
@@ -246,6 +258,7 @@ export const crearMarcadorExhibidor = (exh, seleccionado, onClick) => {
   const icono = document.createElement('div');
   icono.className = 'm3d-exhibidor';
   icono.style.background = exh.color || '#F59E0B';
+  el.style.setProperty('--c', exh.color || '#F59E0B');
   icono.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${EXHIBIDOR_ICON_SVG_PATHS}</svg>`;
   const nombre = document.createElement('span');
   nombre.className = 'm3d-exhibidor__nombre';
@@ -285,18 +298,69 @@ const primeraCapaDeTexto = (map) => {
   return capas[ultima + 1]?.id;
 };
 
+// Las casas usan su id como id de feature: así el hover ilumina todas las partes de la casita
+const CON_ID = ['casas-bloques', 'casas-puntos'];
 const ponerFuente = (map, id, data) => {
   const fuente = map.getSource(id);
   if (fuente) fuente.setData(data);
-  else map.addSource(id, { type: 'geojson', data });
+  else map.addSource(id, { type: 'geojson', data, ...(CON_ID.includes(id) ? { promoteId: 'id' } : {}) });
+};
+
+// ── Mapa neón: negro con calles en blanco brillante (sobre el estilo oscuro de OpenFreeMap) ──
+const NEON_FONDO = '#000000';
+const pintar = (map, id, prop, valor) => { try { map.setPaintProperty(id, prop, valor); } catch { /* capa sin esa propiedad */ } };
+const aplicarNeon = (map) => {
+  const capas = map.getStyle()?.layers || [];
+  let primeraCalle = null;
+  capas.forEach(l => {
+    const sl = l['source-layer'];
+    if (l.type === 'background') pintar(map, l.id, 'background-color', NEON_FONDO);
+    else if (l.type === 'fill') {
+      if (sl === 'water') pintar(map, l.id, 'fill-color', '#03111F');
+      else if (sl === 'building') pintar(map, l.id, 'fill-color', '#0E0F12');
+      else if (/park|wood/.test(l.id)) pintar(map, l.id, 'fill-color', '#04100A');
+      else pintar(map, l.id, 'fill-color', '#050608');
+    } else if (l.type === 'line') {
+      if (sl === 'transportation') {
+        if (!primeraCalle) primeraCalle = l.id;
+        if (/railway/.test(l.id)) pintar(map, l.id, 'line-color', /dashline/.test(l.id) ? NEON_FONDO : '#3F3F46');
+        else if (/motorway/.test(l.id)) pintar(map, l.id, 'line-color', '#FFFFFF');
+        else if (/major/.test(l.id)) pintar(map, l.id, 'line-color', /casing/.test(l.id) ? '#9CA3AF' : '#F1F5F9');
+        else pintar(map, l.id, 'line-color', /path/.test(l.id) ? '#52525B' : '#A1A1AA');
+      } else if (sl === 'waterway') pintar(map, l.id, 'line-color', '#0C4A6E');
+      else if (sl === 'boundary') pintar(map, l.id, 'line-color', '#3F3F46');
+    } else if (l.type === 'symbol' && l.layout?.['text-field']) {
+      pintar(map, l.id, 'text-color', sl === 'water_name' ? '#38BDF8' : '#F8FAFC');
+      pintar(map, l.id, 'text-halo-color', 'rgba(255,255,255,0.22)');
+      pintar(map, l.id, 'text-halo-width', 1);
+      pintar(map, l.id, 'text-halo-blur', 2);
+    }
+  });
+  // Brillo blanco difuminado debajo de las calles
+  if (primeraCalle && !map.getLayer('neon-calles')) {
+    map.addLayer({
+      id: 'neon-calles', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation',
+      filter: ['!', ['in', ['get', 'class'], ['literal', ['rail', 'transit', 'path', 'ferry']]]],
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': '#FFFFFF',
+        'line-width': ['interpolate', ['exponential', 1.5], ['zoom'], 10, 2, 14, 6, 18, 22],
+        'line-blur': ['interpolate', ['exponential', 1.5], ['zoom'], 10, 2, 14, 5, 18, 16],
+        'line-opacity': 0.13,
+      },
+    }, primeraCalle);
+  }
 };
 
 // Agrega (o vuelve a agregar tras cambiar de estilo) todas las capas propias.
 // `datos` = { [idFuente]: GeoJSON } (ver FUENTES); lo que falte queda vacío.
-export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false } = {}) => {
+export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false, neon = false } = {}) => {
   prepararIconosCasa(map);
+  if (neon && !satelite && map.getSource('openmaptiles')) aplicarNeon(map);
+  const brillo = oscuro || satelite; // sobre fondo oscuro el neón luce más
   FUENTES.forEach(id => ponerFuente(map, id, datos[id] || VACIO));
   ponerFuente(map, 'territorios-etq', etiquetasGeoJSON(datos.territorios || VACIO));
+  ponerFuente(map, 'casa-hover', VACIO);
 
   // Lo 3D va debajo de los textos del mapa base (calles, colonias)
   const antes = primeraCapaDeTexto(map);
@@ -307,13 +371,30 @@ export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false
     // colorRelleno (opcional): relleno distinto al borde (p. ej. color del progreso en Territorios)
     paint: { 'fill-color': ['coalesce', ['get', 'colorRelleno'], ['get', 'color']], 'fill-opacity': ['coalesce', ['get', 'relleno'], satelite ? 0.18 : 0.12] },
   });
+  // Geocercas: brillo difuminado del color del territorio + borde nítido (efecto neón)
+  capa({
+    id: 'territorios-brillo', type: 'line', source: 'territorios',
+    layout: { 'line-join': 'round' },
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 11, 5, 17, 16],
+      'line-blur': ['interpolate', ['linear'], ['zoom'], 11, 4, 17, 12],
+      'line-opacity': brillo ? 0.6 : 0.35,
+    },
+  });
   capa({
     id: 'territorios-borde', type: 'line', source: 'territorios',
-    paint: { 'line-color': ['get', 'color'], 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 17, 3.5], 'line-opacity': 0.9 },
+    layout: { 'line-join': 'round' },
+    paint: { 'line-color': ['get', 'color'], 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 17, 3], 'line-opacity': 1 },
+  });
+  // Manzanas: punteado fino con un brillo tenue (no compiten con el territorio)
+  capa({
+    id: 'manzanas-brillo', type: 'line', source: 'manzanas',
+    paint: { 'line-color': ['get', 'color'], 'line-width': 5, 'line-blur': 4, 'line-opacity': brillo ? 0.3 : 0.15 },
   });
   capa({
     id: 'manzanas-borde', type: 'line', source: 'manzanas',
-    paint: { 'line-color': ['get', 'color'], 'line-width': 1.5, 'line-dasharray': [3, 2], 'line-opacity': 0.85 },
+    paint: { 'line-color': ['get', 'color'], 'line-width': 1.3, 'line-dasharray': [2, 2], 'line-opacity': 0.85 },
   });
 
   // Edificios de OpenStreetMap en 3D (solo si el estilo tiene la fuente vectorial)
@@ -321,7 +402,7 @@ export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false
     capa({
       id: 'edificios-3d', type: 'fill-extrusion', source: 'openmaptiles', 'source-layer': 'building', minzoom: 14,
       paint: {
-        'fill-extrusion-color': oscuro ? '#334155' : '#E2E8F0',
+        'fill-extrusion-color': neon && !satelite ? '#16181D' : oscuro ? '#334155' : '#E2E8F0',
         'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, ['coalesce', ['get', 'render_height'], 4]],
         'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
         'fill-extrusion-opacity': satelite ? 0.55 : 0.9,
@@ -340,7 +421,8 @@ export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false
   capa({
     id: 'casas-3d', type: 'fill-extrusion', source: 'casas-bloques', minzoom: 16.5,
     paint: {
-      'fill-extrusion-color': ['coalesce', ['get', 'colorParte'], ['get', 'color']],
+      'fill-extrusion-color': ['case', ['boolean', ['feature-state', 'hover'], false],
+        ['coalesce', ['get', 'colorHover'], '#FFFFFF'], ['coalesce', ['get', 'colorParte'], ['get', 'color']]],
       'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 16.5, 0, 17.5, ['get', 'tope']],
       'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 16.5, 0, 17.5, ['get', 'base']],
       'fill-extrusion-opacity': 0.95,
@@ -354,6 +436,15 @@ export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false
       'fill-extrusion-height': ['coalesce', ['get', 'tope'], ['+', ['get', 'altura'], 0.6]],
       'fill-extrusion-base': ['coalesce', ['get', 'base'], 0],
       'fill-extrusion-opacity': 0.95,
+    },
+  });
+  capa({
+    id: 'casa-hover-brillo', type: 'circle', source: 'casa-hover',
+    paint: {
+      'circle-color': ['get', 'color'],
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 12, 16, 26],
+      'circle-blur': 0.85,
+      'circle-opacity': 0.85,
     },
   });
   // De lejos: ícono de casita del color del estado (borde punteado + punto naranja = sin sincronizar).
@@ -390,8 +481,63 @@ export const agregarCapas = (map, datos = {}, { oscuro = false, satelite = false
       // Siempre visibles (como en la vista clásica): si chocan con un nombre del mapa base, gana el nuestro
       'text-allow-overlap': true,
     },
-    paint: { 'text-color': ['get', 'color'], 'text-halo-color': oscuro ? '#0F172A' : '#FFFFFF', 'text-halo-width': 2 },
+    paint: brillo
+      ? { 'text-color': '#FFFFFF', 'text-halo-color': ['get', 'color'], 'text-halo-width': 2.4, 'text-halo-blur': 2 }
+      : { 'text-color': ['get', 'color'], 'text-halo-color': '#FFFFFF', 'text-halo-width': 2 },
   }, undefined);
+};
+
+// ── Hover de casas (solo con mouse): brillo de su color, casita 3D iluminada y tarjeta neón ──
+// Devuelve la función que lo quita. El texto de la tarjeta va con textContent.
+export const activarHoverCasas = (map) => {
+  if (!window.matchMedia?.('(hover: hover)').matches) return () => {};
+  const CAPAS = ['casas-punto', 'casas-3d'];
+  const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'm3d-tooltip', offset: [0, -30], maxWidth: '260px' });
+  let actual = null;
+  const limpiar = () => {
+    if (actual != null) {
+      try { map.setFeatureState({ source: 'casas-bloques', id: actual }, { hover: false }); } catch { /* sin fuente */ }
+    }
+    actual = null;
+    map.getSource('casa-hover')?.setData(VACIO);
+    popup.remove();
+    map.getCanvas().style.cursor = '';
+  };
+  const mover = (e) => {
+    const capas = CAPAS.filter(id => map.getLayer(id));
+    const f = capas.length ? map.queryRenderedFeatures(e.point, { layers: capas })[0] : null;
+    if (!f) { if (actual != null) limpiar(); return; }
+    map.getCanvas().style.cursor = 'pointer';
+    const p = f.properties;
+    if (p.id === actual) return;
+    limpiar();
+    actual = p.id;
+    map.getCanvas().style.cursor = 'pointer';
+    try { map.setFeatureState({ source: 'casas-bloques', id: p.id }, { hover: true }); } catch { /* sin fuente */ }
+    const lng = Number(p.lng); const lat = Number(p.lat);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+    map.getSource('casa-hover')?.setData({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: { color: p.color } }] });
+    const div = document.createElement('div');
+    div.className = 'm3d-tooltip__cuerpo';
+    const dir = document.createElement('strong');
+    dir.textContent = p.direccion || '—';
+    const estado = document.createElement('span');
+    estado.className = 'm3d-tooltip__estado';
+    estado.textContent = t(p.estado);
+    estado.style.background = p.color;
+    div.append(dir, estado);
+    popup.setLngLat([lng, lat]).setDOMContent(div).addTo(map);
+    popup.getElement()?.style.setProperty('--c', p.color);
+  };
+  map.on('mousemove', mover);
+  map.getCanvas().addEventListener('mouseleave', limpiar);
+  map.on('movestart', limpiar);
+  return () => {
+    map.off('mousemove', mover);
+    map.getCanvas().removeEventListener('mouseleave', limpiar);
+    map.off('movestart', limpiar);
+    limpiar();
+  };
 };
 
 // Actualiza los datos sin volver a crear capas

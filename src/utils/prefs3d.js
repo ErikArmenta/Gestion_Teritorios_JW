@@ -4,8 +4,8 @@ const PREFS_KEY = 'mapa3d_prefs';
 
 export const leerPrefs3D = () => {
   try {
-    return { tresD: true, satelite: false, ...(JSON.parse(localStorage.getItem(PREFS_KEY) || localStorage.getItem('registro3d_prefs')) || {}) };
-  } catch { return { tresD: true, satelite: false }; }
+    return { tresD: true, satelite: false, neon: false, ...(JSON.parse(localStorage.getItem(PREFS_KEY) || localStorage.getItem('registro3d_prefs')) || {}) };
+  } catch { return { tresD: true, satelite: false, neon: false }; }
 };
 
 export const guardarPrefs3D = (p) => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* sin storage */ } };

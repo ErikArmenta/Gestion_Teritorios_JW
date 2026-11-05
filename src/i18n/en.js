@@ -731,6 +731,8 @@ const en = {
   '{n} exhibidores': '{n} carts',
   '{n} turnos próximos': '{n} upcoming shifts',
   'Ver turnos': 'View shifts',
+  'Mapa neón': 'Neon map',
+  'Mapa claro': 'Light map',
   'Mueve el mapa para ubicarlo': 'Move the map to place it',
   'Toca un exhibidor en el mapa': 'Tap a cart on the map',
 

@@ -202,6 +202,15 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   solo llega si el resolver no da la imagen). Exhibidores: `crearMarcadorExhibidor` (pin con el anaquel),
   también en el mapa principal (solo consulta: ficha con "Ver turnos" → `/exhibidores?id=X`).
   El punto azul y el círculo de "mi ubicación" llevan `pointer-events: none` (si no, no dejaban dibujar encima).
+  - **Mapa neón** (negro con calles blancas brillantes): `aplicarNeon(map)` repinta el estilo `dark` y agrega
+    la capa `neon-calles`. Siempre en modo oscuro; en modo claro solo con el botón Neón (`prefs.neon`, en
+    `utils/prefs3d.js`, se recuerda en todos los mapas). Satélite manda sobre neón. Con el botón Neón visible
+    `MapaFondo` pone `.con-neon` y en escritorio los controles del mapa bajan un lugar (no se enciman).
+    Geocercas y manzanas llevan una línea de brillo (`*-brillo`, `line-blur`); nombres de territorio en
+    texto blanco con halo del color del territorio sobre mapa oscuro/satélite.
+  - Hover (solo con mouse, `(hover: hover)`): `activarHoverCasas(map)` (lo llama `MapaFondo`) ilumina la
+    casita 3D (`feature-state hover`, `promoteId: 'id'` en las fuentes de casas) y muestra la tarjeta
+    `.m3d-tooltip` (dirección + estado, con `textContent`). Exhibidores: brillo y escala por CSS.
   Texto de usuario en MapLibre: capas `symbol` o `textContent` en popups, nunca `innerHTML`.
 - "Sugerir dirección" usa Nominatim (OSM) **solo al tocar el botón** (su política: ≤ 1 petición/seg, sin
   consultas automáticas).

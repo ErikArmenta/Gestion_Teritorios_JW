@@ -1,10 +1,11 @@
 import React from 'react';
-import { Box, Map as MapIcon, Satellite, ListChecks } from 'lucide-react';
+import { Box, Map as MapIcon, Satellite, ListChecks, Sparkles } from 'lucide-react';
 import { t } from '../i18n';
 
 // Botones flotantes de los mapas 3D (a la derecha, debajo de la barra superior):
-// 2D/3D, satélite y "Vista clásica". `children` = botones extra de la pantalla (van al final).
-const BotonesMapa3D = ({ prefs, onCambiar, onVistaClasica, children }) => (
+// 2D/3D, satélite, neón (solo en modo claro: en oscuro el mapa ya es neón) y "Vista clásica".
+// `children` = botones extra de la pantalla (van al final).
+const BotonesMapa3D = ({ prefs, onCambiar, onVistaClasica, oscuro = false, children }) => (
   <div className="m3d-flotantes">
     <button
       type="button"
@@ -24,6 +25,17 @@ const BotonesMapa3D = ({ prefs, onCambiar, onVistaClasica, children }) => (
     >
       {prefs.satelite ? <MapIcon size={18} /> : <Satellite size={18} />}
     </button>
+    {!oscuro && !prefs.satelite && (
+      <button
+        type="button"
+        className={`m3d-fab${prefs.neon ? ' is-active' : ''}`}
+        onClick={() => onCambiar({ neon: !prefs.neon })}
+        title={prefs.neon ? t('Mapa claro') : t('Mapa neón')}
+        aria-label={prefs.neon ? t('Mapa claro') : t('Mapa neón')}
+      >
+        <Sparkles size={18} />
+      </button>
+    )}
     {onVistaClasica && (
       <button
         type="button"
