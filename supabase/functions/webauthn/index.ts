@@ -47,6 +47,11 @@ async function llaveSesion() {
   }
   return llaveCache;
 }
+// ¿BD blindada (Migración 12)? Igual que en `sesion`.
+async function blindaje() {
+  const { data, error } = await supabase.from('seguridad_config').select('valor').eq('clave', 'blindaje').maybeSingle();
+  return !error && data?.valor === 'si';
+}
 let aceptadoHasta = 0;
 // deno-lint-ignore no-explicit-any
 async function tokenSesion(u: any, apikey: string) {
@@ -243,6 +248,7 @@ async function atender(accion: string, d: any, origen: string, apikey: string) {
         congregacion_id: u.congregacion_id || null, congregacion_nombre,
       },
       ...(await tokenSesion(u, apikey)),
+      blindaje: await blindaje(),
     };
   }
 

@@ -7,6 +7,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import ModalOverlay from '../components/ModalOverlay';
 import { ROLES } from '../utils/constants';
 import { TIPOS_PUBLICADOR, METAS_SUGERIDAS, esPrecursor } from '../utils/informes';
+import { seleccionarUsuarios } from '../utils/usuarios';
 import { createPortal } from 'react-dom';
 import { Eye, EyeOff, Pencil, Trash2, UserPlus, X, Search, Lock } from 'lucide-react';
 import Pagination from '../components/Pagination';
@@ -45,14 +46,17 @@ const UsersList = () => {
 
   const fetchUsuarios = async () => {
     setLoading(true);
-    let query;
-    if (user?.rol === 'Super Admin') {
-      query = supabase.from('app_usuarios').select('*, congregaciones(nombre)');
-    } else {
-      query = supabase.from('app_usuarios').select('*');
-      if (user?.congregacion_id) query = query.eq('congregacion_id', user.congregacion_id);
-    }
-    const { data, error } = await query.order('created_at', { ascending: false });
+    // Columnas explícitas (con el blindaje la BD no deja leer las contraseñas; ver utils/usuarios.js)
+    const { data, error } = await seleccionarUsuarios((columnas) => {
+      let query;
+      if (user?.rol === 'Super Admin') {
+        query = supabase.from('app_usuarios').select(`${columnas}, congregaciones(nombre)`);
+      } else {
+        query = supabase.from('app_usuarios').select(columnas);
+        if (user?.congregacion_id) query = query.eq('congregacion_id', user.congregacion_id);
+      }
+      return query.order('created_at', { ascending: false });
+    }, { conPassword: true });
     if (!error) setUsuarios(data || []);
     setLoading(false);
   };
@@ -198,8 +202,8 @@ const UsersList = () => {
     </div>
   );
 
-  // Con la Migración 11B la contraseña solo existe cifrada: nadie la puede ver, solo cambiar
-  const PasswordCell = ({ u }) => (!u.password && u.password_hash) ? (
+  // Con la Migración 11B (o el blindaje) la contraseña no se puede leer: nadie la puede ver, solo cambiar
+  const PasswordCell = ({ u }) => !u.password ? (
     <span className="inline-flex items-center gap-1 text-xs text-muted" title={tx('Solo se puede cambiar, no ver')}>
       <Lock size={12} /> {tx('Cifrada')}
     </span>

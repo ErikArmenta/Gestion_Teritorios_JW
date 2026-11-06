@@ -3,7 +3,10 @@ import { supabase, actualizarTokenRealtime } from '../supabaseClient';
 import { t } from '../i18n';
 import { olvidarUsuario } from '../utils/onesignal';
 import { entrarConBiometria } from '../utils/webauthn';
-import { entrarEnServidor, renovarSiToca, guardarToken, olvidarToken } from '../utils/sesion';
+import {
+  entrarEnServidor, renovarSiToca, guardarToken, olvidarToken, tokenVigente,
+  anotarBlindaje, blindajeActivo, consultarBlindaje, EVENTO_SESION_INVALIDA,
+} from '../utils/sesion';
 
 const AuthContext = createContext();
 
@@ -30,6 +33,7 @@ export const AuthProvider = ({ children }) => {
       if (!vivo || !r) return;
       guardarToken(r);
       actualizarTokenRealtime();
+      if (!r.token && blindajeActivo()) { cerrarSesion(); return; }
       setUser((prev) => {
         if (!prev || prev.id !== r.usuario.id) return prev;
         const nuevo = { ...prev, ...r.usuario };
@@ -40,12 +44,43 @@ export const AuthProvider = ({ children }) => {
     }).catch((err) => {
       if (!vivo) return;
       if (err?.codigo === 'desactivada' || err?.codigo === 'credenciales') cerrarSesion();
-      else if (err?.codigo === 'token_invalido') olvidarToken();
+      else if (err?.codigo === 'token_invalido') {
+        olvidarToken();
+        if (blindajeActivo()) cerrarSesion();
+      }
     });
     return () => { vivo = false; };
   }, []);
 
+  // Blindaje (paso 3): con la BD blindada una sesión sin token válido no ve nada → pedir entrar otra vez.
+  // Mientras la BD no esté blindada no hace nada (todo sigue como antes).
+  useEffect(() => {
+    let vivo = true;
+    const salirPorSeguridad = () => {
+      if (!vivo || !localStorage.getItem('territorial_user')) return;
+      try { sessionStorage.setItem('aviso_login', 'Por seguridad, vuelve a iniciar sesión'); } catch { /* nada */ }
+      cerrarSesion();
+    };
+    const revisar = async () => {
+      if (!localStorage.getItem('territorial_user') || tokenVigente() || navigator.onLine === false) return;
+      if (blindajeActivo() || (await consultarBlindaje()) === true) salirPorSeguridad();
+    };
+    revisar();
+    window.addEventListener('online', revisar);
+    window.addEventListener(EVENTO_SESION_INVALIDA, salirPorSeguridad);
+    return () => {
+      vivo = false;
+      window.removeEventListener('online', revisar);
+      window.removeEventListener(EVENTO_SESION_INVALIDA, salirPorSeguridad);
+    };
+  }, []);
+
   const guardarSesion = (u, firma) => {
+    anotarBlindaje(firma);
+    // Con la BD blindada, entrar sin token dejaría la app vacía
+    if (blindajeActivo() && !firma?.token) {
+      throw new Error(t('No se pudo iniciar una sesión segura. Inténtalo de nuevo o avisa al administrador.'));
+    }
     const sessionUser = {
       id: u.id,
       nombre: u.nombre,
@@ -64,14 +99,17 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     // 1) En el servidor (Edge Function `sesion`): revisa la contraseña allá y entrega el token firmado
+    let r = null;
     try {
-      const r = await entrarEnServidor(username, password);
-      return guardarSesion(r.usuario, r);
+      r = await entrarEnServidor(username, password);
     } catch (err) {
       if (err?.codigo === 'desactivada') throw new Error(t('Esta cuenta ha sido desactivada por un administrador'), { cause: err });
       if (err?.codigo === 'credenciales') throw new Error(t('Usuario o contraseña incorrectos'), { cause: err });
-      // 'no_disponible' (función sin desplegar, sin internet hacia ella…) → el login de siempre
+      // 'no_disponible' (función sin desplegar, sin internet hacia ella…) → el login de siempre,
+      // salvo con la BD blindada (ahí el login directo ya no puede funcionar)
+      if (blindajeActivo()) throw new Error(t('No se pudo conectar. Revisa tu internet e inténtalo de nuevo.'), { cause: err });
     }
+    if (r) return guardarSesion(r.usuario, r);
     return loginDirecto(username, password);
   };
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-06 — Blindaje paso 3 (preparación) + arreglo de Backup
+
+- `pages/Backup.jsx`: restaurar ya **no borra las casas de todas las congregaciones** ni borra usuarios (upsert);
+  exportar solo trae lo de tu congregación y falla en vez de generar un respaldo vacío
+- `utils/usuarios.js` (nuevo): columnas explícitas de `app_usuarios` (`pages/UsersList.jsx`, Backup)
+- `pages/SharedTerritory.jsx`: datos por `compartido_datos` (con respaldo a las consultas de siempre)
+- `utils/sesion.js`, `supabaseClient.js`, `context/AuthContext.jsx`, `pages/Login.jsx`: sesión obligatoria cuando la BD
+  esté blindada (sin efecto hasta la Migración 12); funciones `sesion` (acción `estado`) y `webauthn` avisan `blindaje`
+- `DIAGNOSTICO_BLINDAJE.sql` (nuevo, solo lee la estructura), `i18n/en.js`
+
 ## 2026-11-06 — Blindaje paso 2: contraseñas cifradas (bcrypt) — Migración 11 (fase 1) y 11B (fase 2)
 
 - `MIGRACION_11_PASSWORDS.sql` (nuevo): `password_hash`, disparador que cifra, `verificar_password` (solo servidor)

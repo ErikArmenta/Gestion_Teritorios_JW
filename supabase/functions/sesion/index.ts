@@ -8,6 +8,8 @@
 //   entrar            { usuario, password }          → { usuario, token?, expira? }
 //   renovar           { token }                      → { usuario, token, expira }  (403 si la cuenta se desactivó)
 //   cambiar-password  { usuario_id, actual, nueva }  → { ok: true }
+//   estado            {}                             → { ok: true, blindaje }  (¿Migración 12 activa?)
+// Las respuestas con usuario llevan `blindaje: true|false`.
 // Contraseñas: con la Migración 11 se revisan cifradas (verificar_password); sin ella, como siempre.
 //
 // Firma (Edge Functions → Secrets), UNA de las dos (pasos en docs/SESION_SEGURA.md):
@@ -152,15 +154,28 @@ async function cargarUsuario(filtro: { id: number }) {
   return usuario;
 }
 
+// ¿La BD ya está blindada (Migración 12)? La app lo usa para no dejar sesiones sin token.
+let blindajeCache = { valor: false, hasta: 0 };
+async function blindaje() {
+  if (Date.now() < blindajeCache.hasta) return blindajeCache.valor;
+  const { data, error } = await supabase.from('seguridad_config').select('valor').eq('clave', 'blindaje').maybeSingle();
+  const valor = !error && data?.valor === 'si';
+  blindajeCache = { valor, hasta: Date.now() + 60_000 };
+  return valor;
+}
+
 async function conToken(u: Usuario, apikey: string) {
   const { grupo_id: _g, ...usuario } = u;
+  const b = await blindaje();
   const f = await firmar(u);
-  if (!f || !apikey || !(await supabaseAcepta(f.token, apikey))) return { usuario };
-  return { usuario, token: f.token, expira: f.expira };
+  if (!f || !apikey || !(await supabaseAcepta(f.token, apikey))) return { usuario, blindaje: b };
+  return { usuario, token: f.token, expira: f.expira, blindaje: b };
 }
 
 // deno-lint-ignore no-explicit-any
 async function atender(accion: string, d: any, apikey: string) {
+  if (accion === 'estado') return { ok: true, blindaje: await blindaje() };
+
   if (accion === 'entrar') {
     if (typeof d.usuario !== 'string' || typeof d.password !== 'string' || !d.usuario || !d.password) {
       throw new Fallo('credenciales', 401);

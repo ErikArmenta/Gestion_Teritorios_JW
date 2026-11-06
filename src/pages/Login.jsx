@@ -16,7 +16,14 @@ const Login = () => {
   const { lang, toggleLang } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  // Aviso que dejó la app al cerrar la sesión por seguridad (blindaje)
+  const [error, setError] = useState(() => {
+    try {
+      const aviso = sessionStorage.getItem('aviso_login');
+      if (aviso) sessionStorage.removeItem('aviso_login');
+      return aviso ? t(aviso) : '';
+    } catch { return ''; }
+  });
   const [loading, setLoading] = useState(false);
   const [bio, setBio] = useState(false); // botón de huella / Face ID (solo si el aparato y el servidor lo permiten)
   const [loadingBio, setLoadingBio] = useState(false);

@@ -5,6 +5,7 @@ import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
 import { supabase } from '../supabaseClient';
 import { t as tx } from '../i18n';
+import { seleccionarUsuarios } from '../utils/usuarios';
 
 const Backup = () => {
   const { user } = useAuth();
@@ -22,18 +23,15 @@ const Backup = () => {
 
   // ─── EXPORT ─────────────────────────────────────────────────────────────────
 
+  // Si una tabla principal falla, el respaldo NO se genera (antes salía vacío y restaurarlo borraba todo)
   const fetchTable = async (table, filters = {}) => {
-    try {
-      let query = supabase.from(table).select('*');
-      if (filters.congregacion_id) {
-        query = query.eq('congregacion_id', filters.congregacion_id);
-      }
-      const { data, error } = await query;
-      if (error) return [];
-      return data || [];
-    } catch {
-      return [];
+    let query = supabase.from(table).select('*');
+    if (filters.congregacion_id) {
+      query = query.eq('congregacion_id', filters.congregacion_id);
     }
+    const { data, error } = await query;
+    if (error) throw new Error(`${table}: ${error.message}`);
+    return data || [];
   };
 
   const handleExport = async () => {
@@ -41,27 +39,41 @@ const Backup = () => {
     try {
       const congregacion_id = user.congregacion_id;
 
-      const [territorios, casas, usuarios, congregaciones] = await Promise.all([
+      if (!congregacion_id) throw new Error(tx('Tu usuario no tiene congregación asignada'));
+      const [territorios, usuariosRes, congregaciones] = await Promise.all([
         fetchTable('territorios', { congregacion_id }),
-        fetchTable('casas'),
-        fetchTable('app_usuarios', { congregacion_id }),
+        // Columnas explícitas: con el blindaje la BD no deja leer contraseñas (utils/usuarios.js)
+        seleccionarUsuarios((columnas) => supabase.from('app_usuarios').select(columnas).eq('congregacion_id', congregacion_id), { conPassword: true }),
         fetchTable('congregaciones'),
       ]);
+      if (usuariosRes.error) throw new Error(`app_usuarios: ${usuariosRes.error.message}`);
+      const usuarios = usuariosRes.data || [];
+      // Solo las casas de los territorios de esta congregación
+      const idsTerritorios = territorios.map(t => t.id);
+      let casas = [];
+      for (let i = 0; i < idsTerritorios.length; i += 100) {
+        const { data, error } = await supabase.from('casas').select('*').in('territorio_id', idsTerritorios.slice(i, i + 100));
+        if (error) throw error;
+        casas = casas.concat(data || []);
+      }
 
       // Tables that may not exist — wrapped individually
       let historial_visitas = [];
       let asignaciones = [];
       let notificaciones = [];
 
-      try {
-        const { data } = await supabase.from('historial_visitas').select('*');
-        historial_visitas = data || [];
-      } catch { /* tabla no existe */ }
-
-      try {
-        const { data } = await supabase.from('territorio_asignaciones').select('*');
-        asignaciones = data || [];
-      } catch { /* tabla no existe */ }
+      // Solo lo de esta congregación (por casa y por territorio), en bloques de 100 ids
+      const enBloques = async (tabla, columna, ids) => {
+        let filas = [];
+        for (let i = 0; i < ids.length; i += 100) {
+          const { data, error } = await supabase.from(tabla).select('*').in(columna, ids.slice(i, i + 100));
+          if (error) return filas; // tabla opcional (si no existe, sin ella)
+          filas = filas.concat(data || []);
+        }
+        return filas;
+      };
+      historial_visitas = await enBloques('historial_visitas', 'casa_id', casas.map(c => c.id));
+      asignaciones = await enBloques('territorio_asignaciones', 'territorio_id', idsTerritorios);
 
       try {
         const { data } = await supabase
@@ -143,13 +155,25 @@ const Backup = () => {
     setConfirmStep(0);
     setRestoring(true);
     try {
-      const { congregaciones, territorios, casas, usuarios } = backupData;
+      const { congregaciones, territorios } = backupData;
       const congregacion_id = user.congregacion_id;
+      if (!congregacion_id) throw new Error(tx('Tu usuario no tiene congregación asignada'));
+      // Solo lo de esta congregación (respaldos viejos traían casas y usuarios de todas)
+      const idsBackup = new Set((territorios || []).map(t => t.id));
+      const casas = (backupData.casas || []).filter(c => idsBackup.has(c.territorio_id));
+      const usuarios = (backupData.usuarios || []).filter(u => !u.congregacion_id || u.congregacion_id === congregacion_id);
 
-      // Delete in reverse dependency order
-      await supabase.from('casas').delete().neq('id', 0);
+      // Borrar SOLO las casas y territorios de esta congregación (antes se borraban las casas de todas)
+      const { data: actuales, error: errAct } = await supabase.from('territorios').select('id').eq('congregacion_id', congregacion_id);
+      if (errAct) throw errAct;
+      const idsActuales = (actuales || []).map(t => t.id);
+      for (let i = 0; i < idsActuales.length; i += 100) {
+        const { error } = await supabase.from('casas').delete().in('territorio_id', idsActuales.slice(i, i + 100));
+        if (error) throw error;
+      }
       await supabase.from('territorios').delete().eq('congregacion_id', congregacion_id);
-      await supabase.from('app_usuarios').delete().eq('congregacion_id', congregacion_id);
+      // Los usuarios NO se borran: borrar un usuario borra en cascada sus informes, huellas y asignaciones.
+      // Se actualizan o se agregan (abajo); las contraseñas actuales se conservan si el respaldo no las trae.
 
       // Insert in correct order: congregaciones → territorios → casas → app_usuarios
       if (congregaciones && congregaciones.length > 0) {
@@ -168,7 +192,15 @@ const Backup = () => {
       }
 
       if (usuarios && usuarios.length > 0) {
-        const { error } = await supabase.from('app_usuarios').insert(usuarios);
+        // Sin las columnas de contraseña vacías (para no borrar la actual) ni datos de otras tablas
+        const limpios = usuarios.map((u) => {
+          const fila = { ...u };
+          delete fila.congregaciones;
+          if (!fila.password) delete fila.password;
+          if (!fila.password_hash) delete fila.password_hash;
+          return fila;
+        });
+        const { error } = await supabase.from('app_usuarios').upsert(limpios, { onConflict: 'id' });
         if (error) throw new Error(tx('Error restaurando usuarios: ') + error.message);
       }
 

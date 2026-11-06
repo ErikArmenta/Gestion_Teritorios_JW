@@ -53,7 +53,29 @@ async function llamar(accion, datos) {
   throw new ErrorSesion('no_disponible');
 }
 
-const conUsuario = (r) => { if (!r?.usuario) throw new ErrorSesion('no_disponible'); return r; };
+// ── Blindaje (paso 3, Migración 12): la BD ya no deja ver nada sin token ──
+// El servidor lo dice en cada respuesta (`blindaje: true|false`); se recuerda en el aparato.
+const CLAVE_BLINDAJE = 'territorial_blindaje';
+export function anotarBlindaje(r) {
+  if (typeof r?.blindaje !== 'boolean') return;
+  try { localStorage.setItem(CLAVE_BLINDAJE, r.blindaje ? '1' : '0'); } catch { /* nada */ }
+}
+export const blindajeActivo = () => { try { return localStorage.getItem(CLAVE_BLINDAJE) === '1'; } catch { return false; } };
+// Pregunta al servidor (sesiones viejas que nunca recibieron el aviso). null si no se pudo saber.
+export async function consultarBlindaje() {
+  try {
+    const r = await llamar('estado', {});
+    anotarBlindaje(r);
+    return typeof r?.blindaje === 'boolean' ? r.blindaje : null;
+  } catch {
+    return null;
+  }
+}
+// Token rechazado o vencido con la BD blindada → AuthContext cierra la sesión (evento del navegador)
+export const EVENTO_SESION_INVALIDA = 'territorial:sesion-invalida';
+export const avisarSesionInvalida = () => { try { window.dispatchEvent(new Event(EVENTO_SESION_INVALIDA)); } catch { /* nada */ } };
+
+const conUsuario = (r) => { if (!r?.usuario) throw new ErrorSesion('no_disponible'); anotarBlindaje(r); return r; };
 
 // Entrar con usuario y contraseña revisados en el servidor
 export const entrarEnServidor = async (usuario, password) => conUsuario(await llamar('entrar', { usuario, password }));

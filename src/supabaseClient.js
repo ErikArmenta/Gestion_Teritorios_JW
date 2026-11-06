@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { tokenVigente, olvidarToken } from './utils/sesion';
+import { tokenVigente, olvidarToken, blindajeActivo, avisarSesionInvalida } from './utils/sesion';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -17,6 +17,8 @@ const fetchConRespaldo = async (input, init = {}) => {
   if (!RECHAZO_TOKEN.test(texto)) return res;
   console.warn('Token de sesión rechazado; se usa la llave pública');
   olvidarToken();
+  // Con la BD blindada la llave pública sola no ve nada: hay que volver a entrar
+  if (blindajeActivo()) avisarSesionInvalida();
   headers.set('Authorization', `Bearer ${supabaseKey}`);
   return fetch(input, { ...init, headers });
 };

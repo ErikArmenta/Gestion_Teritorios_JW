@@ -109,6 +109,16 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   (`entrar`, `cambiar-password`) y `webauthn`; sin la migración caen a la comparación de siempre.
   Nunca leer ni comparar `password` desde el navegador para algo nuevo. Usuarios: al editar, contraseña
   vacía = no cambiarla (no mandar `password`); sin texto plano se muestra "Cifrada".
+- **Blindaje paso 3 (en preparación, Migración 12)**: RLS por congregación leyendo el token. La app ya está lista:
+  - **Nunca** `select('*')` en `app_usuarios`: la BD no dejará leer `password`/`password_hash`. Usar
+    `seleccionarUsuarios()` / `COLUMNAS_USUARIO_BASE` de `utils/usuarios.js`.
+  - El link compartido pide sus datos con la función `compartido_datos(p_id)` (sin sesión); sin ella, las
+    consultas de siempre.
+  - `seguridad_config.blindaje = 'si'` → las funciones lo avisan (`blindaje: true`) y la app no deja sesiones
+    sin token (pide entrar otra vez; `EVENTO_SESION_INVALIDA` en `utils/sesion.js`).
+  - Diagnóstico de la estructura real: `DIAGNOSTICO_BLINDAJE.sql` (solo lee).
+- Backup: solo exporta/restaura la congregación del usuario; restaurar **no** borra usuarios (upsert; borrar
+  un usuario borra en cascada informes, huellas y asignaciones).
 - Riesgo conocido: el login de respaldo (`loginDirecto`) compara usuario/contraseña directo contra `app_usuarios`
   con la anon key, y la tabla sigue legible con la anon key hasta el paso 3 del blindaje (permisos RLS que lean el token).
   No exponer más datos sensibles por esa vía; cualquier mejora de seguridad debe coordinarse con el dueño.

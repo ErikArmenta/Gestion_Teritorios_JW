@@ -62,19 +62,33 @@ export default function SharedTerritory() {
 
   useEffect(() => {
     const load = async () => {
-      const { data, error } = await supabase
-        .from('territorio_compartidos')
-        .select('*, territorios(*)')
-        .eq('id', id)
-        .single();
-
-      if (error || !data) {
-        setStatus('invalid');
-        return;
+      // Con el blindaje (Migración 12) quien abre el link no tiene sesión: la BD solo entrega este
+      // territorio por la función compartido_datos (y solo si el link sigue vigente).
+      // Sin la migración, las consultas de siempre.
+      let data;
+      let casasData = null;
+      const rpc = await supabase.rpc('compartido_datos', { p_id: id });
+      if (!rpc.error) {
+        const r = rpc.data;
+        if (!r) { setStatus('invalid'); return; }
+        if (r.expirado) { setStatus('expired'); return; }
+        data = { ...r.compartido, territorios: r.territorio };
+        casasData = r.casas || [];
+      } else {
+        const res = await supabase
+          .from('territorio_compartidos')
+          .select('*, territorios(*)')
+          .eq('id', id)
+          .single();
+        if (res.error || !res.data) {
+          setStatus('invalid');
+          return;
+        }
+        data = res.data;
       }
 
-      if (new Date(data.expira_en) < new Date()) {
-        setStatus('expired');
+      if (!data?.territorios || new Date(data.expira_en) < new Date()) {
+        setStatus(data?.territorios ? 'expired' : 'invalid');
         return;
       }
 
@@ -84,10 +98,13 @@ export default function SharedTerritory() {
         setReunion({ lat: rLat, lng: rLng, nota: data.punto_reunion_nota || '' });
       }
 
-      const { data: casasData } = await supabase
-        .from('casas')
-        .select('*')
-        .eq('territorio_id', data.territorios.id);
+      if (!casasData) {
+        const res = await supabase
+          .from('casas')
+          .select('*')
+          .eq('territorio_id', data.territorios.id);
+        casasData = res.data;
+      }
 
       setCasas(casasData || []);
       setStatus('valid');

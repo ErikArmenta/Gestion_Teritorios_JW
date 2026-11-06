@@ -889,6 +889,10 @@ const en = {
   'Solo se puede cambiar, no ver': "Can only be changed, not viewed",
   'Cifrada': "Encrypted",
   'Déjala vacía para no cambiarla': "Leave empty to keep it",
+  // Blindaje paso 3
+  'Tu usuario no tiene congregación asignada': "Your user has no congregation assigned",
+  'No se pudo iniciar una sesión segura. Inténtalo de nuevo o avisa al administrador.': "Couldn't start a secure session. Try again or tell the administrator.",
+  'Por seguridad, vuelve a iniciar sesión': "For security, please sign in again",
 };
 
 export default en;
