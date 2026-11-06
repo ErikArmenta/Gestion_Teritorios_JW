@@ -5,6 +5,7 @@ import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
 import { supabase } from '../supabaseClient';
 import { t as tx } from '../i18n';
+import BiometriaPerfil from '../components/BiometriaPerfil';
 
 const ROLE_STYLES = {
   'Super Admin':     { bg: 'rgba(37,99,235,0.1)',   color: '#2563EB' },
@@ -289,6 +290,9 @@ const Profile = () => {
           </button>
         </div>
       </div>
+
+      {/* ── Card: Entrar con huella / Face ID (Migración 10; no aparece sin ella) ── */}
+      <BiometriaPerfil />
 
       {/* ── Card: Cambiar Contraseña ── */}
       <div className="card">

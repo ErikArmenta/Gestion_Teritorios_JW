@@ -86,6 +86,14 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - Antes de usar una columna, confirmar que existe (ya hubo bugs por columnas inexistentes, p. ej. `telefono`).
 - Si un `select` con relación da error de "relación ambigua", especificar la FK: `app_usuarios!fk_nombre(...)`.
 - Estados de casa: usar `STATUS_COLORS` / `STATUS_OPTIONS` de `constants.js`, nunca strings sueltos.
+- **Entrar con huella / Face ID** (Migración 10, `MIGRACION_10_WEBAUTHN.sql` + Edge Function
+  `supabase/functions/webauthn`, pasos en `docs/ENTRAR_CON_HUELLA.md`): WebAuthn con passkeys
+  (`@simplewebauthn/browser` en `utils/webauthn.js`; `@simplewebauthn/server` en la función). Retos y llaves
+  públicas en `webauthn_retos` / `webauthn_credenciales` (RLS sin políticas: **solo** la función, nunca la anon key).
+  Activar pide la contraseña otra vez (Mi Perfil, `components/BiometriaPerfil.jsx`); el botón del login
+  (`loginConBiometria` de `AuthContext`) solo aparece si hay lector en el aparato y la acción `estado` responde.
+  Ícono Huella/Face ID = preferencia del usuario (`localStorage biometria_icono`); el teléfono decide el método.
+  Orígenes permitidos: secreto `WEBAUTHN_ORIGENES` (las llaves van ligadas al dominio).
 - Riesgo conocido: el login compara usuario/contraseña directo contra `app_usuarios` con la anon key.
   No exponer más datos sensibles por esa vía; cualquier mejora de seguridad debe coordinarse con el dueño.
 

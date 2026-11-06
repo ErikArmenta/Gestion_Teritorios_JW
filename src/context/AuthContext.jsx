@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '../supabaseClient';
 import { t } from '../i18n';
 import { olvidarUsuario } from '../utils/onesignal';
+import { entrarConBiometria } from '../utils/webauthn';
 
 const AuthContext = createContext();
 
@@ -59,6 +60,23 @@ export const AuthProvider = ({ children }) => {
     return sessionUser;
   };
 
+  // Entrar con huella / Face ID: la Edge Function `webauthn` ya verificó la firma y devuelve el usuario
+  const loginConBiometria = async () => {
+    const u = await entrarConBiometria();
+    const sessionUser = {
+      id: u.id,
+      nombre: u.nombre,
+      usuario: u.usuario,
+      rol: u.rol,
+      foto_url: u.foto_url || null,
+      congregacion_id: u.congregacion_id || null,
+      congregacion_nombre: u.congregacion_nombre || null,
+    };
+    setUser(sessionUser);
+    localStorage.setItem('territorial_user', JSON.stringify(sessionUser));
+    return sessionUser;
+  };
+
   const logout = () => {
     olvidarUsuario(); // el dispositivo deja de recibir push de este usuario
     setUser(null);
@@ -84,7 +102,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, loginConBiometria, logout, loading, updateProfile }}>
       {!loading && children}
     </AuthContext.Provider>
   );

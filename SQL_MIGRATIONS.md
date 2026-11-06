@@ -308,3 +308,30 @@ CREATE INDEX IF NOT EXISTS idx_historial_usuario_fecha ON historial_visitas(usua
 - Informes → pestaña "Actividad": inactivo = `meses_inactividad` meses completos sin actividad (informe con
   "Prediqué", horas de predicación o visitas en el mapa). Lo ajustan Anciano, Admin Principal y Super Admin.
 - Sin la migración la pestaña funciona igual con 3 meses y el ajuste se guarda solo en ese dispositivo.
+
+---
+
+## Migración 10 — Entrar con huella / Face ID (WebAuthn)
+
+Archivo listo para pegar: `MIGRACION_10_WEBAUTHN.sql` (re-ejecutable). Además hay que desplegar la
+Edge Function `webauthn` (pasos en `docs/ENTRAR_CON_HUELLA.md`).
+
+```sql
+CREATE TABLE IF NOT EXISTS webauthn_credenciales (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES app_usuarios(id) ON DELETE CASCADE,
+  credencial_id TEXT NOT NULL UNIQUE, llave_publica TEXT NOT NULL, contador BIGINT NOT NULL DEFAULT 0,
+  transportes TEXT[], dispositivo TEXT, creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), usado_en TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS webauthn_retos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(), reto TEXT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('registro', 'login')),
+  usuario_id BIGINT REFERENCES app_usuarios(id) ON DELETE CASCADE,
+  expira_en TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '5 minutes'
+);
+-- RLS activado SIN políticas + REVOKE a anon/authenticated: solo la Edge Function (service role) las usa
+```
+
+- Solo se guarda la llave **pública**; la huella nunca sale del teléfono.
+- Sin la migración (o sin la función) la app no muestra el botón de huella y todo sigue igual.
+

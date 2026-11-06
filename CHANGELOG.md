@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-06 — Entrar con huella / Face ID (WebAuthn) — Migración 10 + Edge Function `webauthn` opcionales
+
+- `pages/Login.jsx`: botón de huella / Face ID junto a "Iniciar Sesión" (solo si el aparato y el servidor lo permiten)
+- `components/BiometriaPerfil.jsx` (nuevo) en Mi Perfil: elegir Huella o Face ID, activar (con contraseña) y quitar
+- `utils/webauthn.js` (nuevo), `context/AuthContext.jsx` (`loginConBiometria`), dependencia `@simplewebauthn/browser`
+- `supabase/functions/webauthn/index.ts` (nuevo): retos de un solo uso y verificación de firmas en el servidor
+- `MIGRACION_10_WEBAUTHN.sql` (nuevo, tablas blindadas con RLS) + `SQL_MIGRATIONS.md` + `docs/ENTRAR_CON_HUELLA.md`
+- `i18n/en.js`
+
 ## 2026-11-06 — Informes: horas por concepto, servicio sagrado para publicadores y pestaña Actividad — Migración 9 opcional
 
 - `pages/Informes.jsx`: una casilla de horas por concepto (horas libres 0–24, minutos de 5 en 5) que se suman;

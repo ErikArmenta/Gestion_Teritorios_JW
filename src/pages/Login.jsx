@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Languages } from 'lucide-react';
+import { Languages, Fingerprint, ScanFace } from 'lucide-react';
 import { t, useLanguage } from '../i18n';
+import { lectorDisponible, estadoBiometria, iconoBiometria } from '../utils/webauthn';
+
+const Spinner = () => (
+  <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+  </svg>
+);
 
 const Login = () => {
   const { lang, toggleLang } = useLanguage();
@@ -10,8 +18,34 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const [bio, setBio] = useState(false); // botón de huella / Face ID (solo si el aparato y el servidor lo permiten)
+  const [loadingBio, setLoadingBio] = useState(false);
+  const { login, loginConBiometria } = useAuth();
   const navigate = useNavigate();
+  const rostro = iconoBiometria() === 'rostro';
+  const IconoBio = rostro ? ScanFace : Fingerprint;
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      const ok = (await lectorDisponible()) && (await estadoBiometria());
+      if (vivo) setBio(ok);
+    })();
+    return () => { vivo = false; };
+  }, []);
+
+  const handleBio = async () => {
+    setError('');
+    setLoadingBio(true);
+    try {
+      await loginConBiometria();
+      navigate('/');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingBio(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -134,25 +168,41 @@ const Login = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 mt-2 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:opacity-40"
-              style={{
-                background: loading ? '#2563EB' : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                boxShadow: '0 4px 20px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
-              }}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  {t('Entrando...')}
-                </span>
-              ) : t('Iniciar Sesión')}
-            </button>
+            <div className="flex gap-3 mt-2">
+              {bio && (
+                <button
+                  type="button"
+                  onClick={handleBio}
+                  disabled={loadingBio || loading}
+                  title={rostro ? t('Entrar con Face ID') : t('Entrar con huella')}
+                  aria-label={rostro ? t('Entrar con Face ID') : t('Entrar con huella')}
+                  className="shrink-0 flex items-center justify-center rounded-xl text-white transition-all duration-200 disabled:opacity-40 active:scale-95"
+                  style={{
+                    width: 52,
+                    background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                    boxShadow: '0 4px 20px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                  }}
+                >
+                  {loadingBio ? <Spinner /> : <IconoBio size={26} strokeWidth={1.8} />}
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={loading || loadingBio}
+                className="flex-1 min-w-0 py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:opacity-40"
+                style={{
+                  background: loading ? '#2563EB' : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                  boxShadow: '0 4px 20px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                }}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner />
+                    {t('Entrando...')}
+                  </span>
+                ) : t('Iniciar Sesión')}
+              </button>
+            </div>
           </form>
         </div>
 
