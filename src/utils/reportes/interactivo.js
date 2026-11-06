@@ -14,7 +14,7 @@ const CSS = `
 body{margin:0;background:var(--bg);color:var(--t1);font:15px/1.5 Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .cab{background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);color:#fff;padding:22px 16px 26px;border-bottom:4px solid var(--acento)}
 .cab-in{max-width:1180px;margin:0 auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-.logo{width:58px;height:58px;border-radius:14px;background:#fff;padding:3px;flex:none;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.logo{width:60px;height:60px;flex:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.35))}
 .cab h1{margin:0;font-size:clamp(20px,4.5vw,28px);line-height:1.15;letter-spacing:-.02em}
 .cab .sub{margin:4px 0 0;color:#93C5FD;font-weight:600;font-size:14px}
 .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}

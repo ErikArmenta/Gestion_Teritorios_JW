@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-06 — Congregación junto al rol y logo bien recortado en los reportes
+
+- `components/MenuFlotante.jsx` + `index.css`: el nombre de la congregación sube a la barra, debajo del rol (también en pantallas con mapa)
+- `utils/reportes/comun.js`: el logo se recorta solo al ícono (JW.jpg es 1200×630) con esquinas transparentes; sin marco blanco en PDF y reporte interactivo
+
 ## 2026-11-06 — Reportes con formato de la app: Excel, PDF y "Reporte interactivo"
 
 - `utils/reportes/` (nuevo): modelo de reporte único + `excel.js` (exceljs), `pdf.js`, `interactivo.js` y `graficas.js` (SVG)

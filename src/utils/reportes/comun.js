@@ -113,21 +113,67 @@ export function calcularTotales(seccion) {
   return fila;
 }
 
-// ── Logo (el de la app, reducido para no inflar los archivos) ──
+// ── Logo (el de la app) ──
+// /JW.jpg es rectangular (1200×630) con el ícono morado al centro sobre fondo gris claro: se recorta solo el
+// ícono (detectando dónde deja de ser fondo), queda cuadrado y las esquinas redondas transparentes.
 let logoPromesa = null;
+function recortarLogo(img, lado = 256) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const { data, width, height } = ctx.getImageData(0, 0, c.width, c.height);
+  const fondo = [data[0], data[1], data[2]]; // color de la esquina
+  const dif = (i) => Math.abs(data[i] - fondo[0]) + Math.abs(data[i + 1] - fondo[1]) + Math.abs(data[i + 2] - fondo[2]);
+  let x0 = width, y0 = height, x1 = -1, y1 = -1;
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
+      if (dif((y * width + x) * 4) > 60) {
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (x1 < 0) return null;
+  // Cuadrado centrado en el ícono
+  const tam = Math.max(x1 - x0, y1 - y0) + 2;
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const sal = document.createElement('canvas');
+  sal.width = lado; sal.height = lado;
+  const s = sal.getContext('2d', { willReadFrequently: true });
+  s.imageSmoothingQuality = 'high';
+  s.drawImage(c, cx - tam / 2, cy - tam / 2, tam, tam, 0, 0, lado, lado);
+  // Fondo → transparente, SOLO el que toca el borde (relleno desde afuera): las letras blancas de adentro
+  // se parecen al fondo pero quedan rodeadas de morado y no se tocan. Borde suave en las esquinas redondas.
+  const out = s.getImageData(0, 0, lado, lado);
+  const d = out.data;
+  const v = (p) => Math.abs(d[p * 4] - fondo[0]) + Math.abs(d[p * 4 + 1] - fondo[1]) + Math.abs(d[p * 4 + 2] - fondo[2]);
+  const visto = new Uint8Array(lado * lado);
+  const pila = [];
+  for (let i = 0; i < lado; i++) pila.push(i, (lado - 1) * lado + i, i * lado, i * lado + lado - 1);
+  while (pila.length) {
+    const p = pila.pop();
+    if (visto[p]) continue;
+    visto[p] = 1;
+    const dv = v(p);
+    if (dv >= 90) continue; // ya es el ícono
+    d[p * 4 + 3] = dv < 24 ? 0 : Math.round((255 * (dv - 24)) / 66);
+    if (dv >= 24) continue; // orilla suave: no seguir hacia adentro
+    const x = p % lado, y = (p - x) / lado;
+    if (x > 0) pila.push(p - 1);
+    if (x < lado - 1) pila.push(p + 1);
+    if (y > 0) pila.push(p - lado);
+    if (y < lado - 1) pila.push(p + lado);
+  }
+  s.putImageData(out, 0, 0);
+  return sal.toDataURL('image/png');
+}
 export function logoPNG() {
   if (!logoPromesa) {
     logoPromesa = new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        try {
-          const lado = 192;
-          const c = document.createElement('canvas');
-          c.width = lado; c.height = lado;
-          const ctx = c.getContext('2d');
-          ctx.drawImage(img, 0, 0, lado, lado);
-          resolve(c.toDataURL('image/png'));
-        } catch { resolve(null); }
+        try { resolve(recortarLogo(img)); } catch { resolve(null); }
       };
       img.onerror = () => resolve(null);
       img.src = '/JW.jpg';

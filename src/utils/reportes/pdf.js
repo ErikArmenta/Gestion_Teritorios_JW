@@ -27,10 +27,8 @@ export async function exportarPDF(reporte) {
   doc.rect(0, 46, W, 2.2, 'F');
   let xt = M;
   if (logo) {
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(M, 10, 26, 26, 4, 4, 'F');
-    doc.addImage(logo, 'PNG', M + 1.5, 11.5, 23, 23);
-    xt = M + 32;
+    doc.addImage(logo, 'PNG', M, 9.5, 27, 27);
+    xt = M + 33;
   }
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');

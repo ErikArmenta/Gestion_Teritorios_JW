@@ -175,7 +175,18 @@ const MenuFlotante = ({ enMapa = true }) => {
             <span className="m3d-menu__titulo">{t('Gestión Territorial')}</span>
             <span className="m3d-menu__nombre" title={user.nombre}>{user.nombre}</span>
           </div>
-          {user.rol && <span className="m3d-menu__rol" style={{ '--neon': NEON_ROL[user.rol] || NEON_ROL.Publicador }}>{t(user.rol)}</span>}
+          {/* Rol y, debajo, la congregación (arriba, a la vista en todas las pantallas) */}
+          {(user.rol || user.congregacion_nombre) && (
+            <div className="m3d-menu__etiquetas">
+              {user.rol && <span className="m3d-menu__rol" style={{ '--neon': NEON_ROL[user.rol] || NEON_ROL.Publicador }}>{t(user.rol)}</span>}
+              {user.congregacion_nombre && (
+                <span className="m3d-menu__congre m3d-menu__congre--barra" title={user.congregacion_nombre}>
+                  <Building2 size={12} className="shrink-0" />
+                  <span className="truncate">{user.congregacion_nombre}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
         {!enMapa && (
           <div className="m3d-menu__slot">
@@ -192,12 +203,6 @@ const MenuFlotante = ({ enMapa = true }) => {
                 </NavLink>
               ))}
             </nav>
-            {user.congregacion_nombre && (
-              <div className="m3d-menu__congre">
-                <Building2 size={15} className="shrink-0" />
-                <span className="truncate">{user.congregacion_nombre}</span>
-              </div>
-            )}
             <NotificacionesToggle className="m3d-menu__notif" />
           </div>
         )}
