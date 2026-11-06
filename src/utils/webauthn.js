@@ -121,9 +121,9 @@ export async function entrarConBiometria() {
     throw errorDelLector(err, true);
   }
   try {
-    const { usuario } = await llamar('login-verificar', { reto_id, respuesta });
-    escribir(llaveLocal(usuario.id), respuesta.id);
-    return usuario;
+    const r = await llamar('login-verificar', { reto_id, respuesta }); // { usuario, token?, expira? }
+    escribir(llaveLocal(r.usuario.id), respuesta.id);
+    return r;
   } catch (err) {
     if (err?.codigo === 'sin_huella') avisarLlaveBorrada(respuesta.id);
     throw err;

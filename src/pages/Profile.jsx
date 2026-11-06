@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Lock, User, Shield, Building2, AtSign, Loader2 } from 'lucide-react';
+import { Camera, Lock, User, Shield, Building2, AtSign, Loader2, ShieldCheck } from 'lucide-react';
+import { tokenVigente } from '../utils/sesion';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
@@ -34,6 +35,7 @@ const Profile = () => {
   const [savingPass, setSavingPass]           = useState(false);
 
   const roleStyle = ROLE_STYLES[user?.rol] || ROLE_STYLES['Publicador'];
+  const [sesionFirmada] = useState(() => !!tokenVigente());
 
   const initial = (user?.nombre || user?.usuario || '?')[0].toUpperCase();
 
@@ -130,6 +132,15 @@ const Profile = () => {
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
           {tx('Administra tu información personal y seguridad')}
         </p>
+        {sesionFirmada && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.625rem',
+            padding: '0.25rem 0.625rem', borderRadius: 9999, fontSize: '0.75rem', fontWeight: 600,
+            color: '#059669', background: 'rgba(5,150,105,0.1)', border: '1px solid rgba(5,150,105,0.25)',
+          }}>
+            <ShieldCheck size={13} /> {tx('Sesión protegida por el servidor')}
+          </span>
+        )}
       </div>
 
       {/* ── Card principal: info ── */}

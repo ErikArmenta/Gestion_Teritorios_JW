@@ -23,9 +23,56 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from 'npm:@simplewebauthn/server@13.3.3';
+import { SignJWT, importJWK, type JWK } from 'npm:jose@5.10.0';
 
 const env = (k: string) => Deno.env.get(k) ?? '';
 const supabase = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'));
+
+// ── Token de sesión (mismo formato que la función `sesion`; si cambias uno, cambia el otro) ──
+// Usa el secreto SESION_JWT_SECRET o SESION_JWK_PRIVADA. Sin ellos, o si Supabase no lo acepta, no hay token.
+const DIAS_TOKEN = 30;
+let llaveCache: { alg: 'HS256' | 'ES256'; kid?: string; firmar: CryptoKey | Uint8Array } | null | undefined;
+async function llaveSesion() {
+  if (llaveCache !== undefined) return llaveCache;
+  try {
+    const jwk = env('SESION_JWK_PRIVADA');
+    const secreto = env('SESION_JWT_SECRET');
+    if (jwk) {
+      const privada = JSON.parse(jwk) as JWK;
+      llaveCache = { alg: 'ES256', kid: privada.kid, firmar: (await importJWK({ ...privada, alg: 'ES256' }, 'ES256')) as CryptoKey };
+    } else llaveCache = secreto ? { alg: 'HS256', firmar: new TextEncoder().encode(secreto) } : null;
+  } catch (err) {
+    console.error('Llave de sesión inválida', err);
+    llaveCache = null;
+  }
+  return llaveCache;
+}
+let aceptadoHasta = 0;
+// deno-lint-ignore no-explicit-any
+async function tokenSesion(u: any, apikey: string) {
+  const k = await llaveSesion();
+  if (!k || !apikey) return {};
+  const ahora = Math.floor(Date.now() / 1000);
+  const expira = ahora + DIAS_TOKEN * 86400;
+  const token = await new SignJWT({
+    role: 'anon', usuario_id: u.id, congregacion_id: u.congregacion_id || null, app_rol: u.rol, grupo_id: u.grupo_id ?? null,
+  })
+    .setProtectedHeader(k.kid ? { alg: k.alg, kid: k.kid, typ: 'JWT' } : { alg: k.alg, typ: 'JWT' })
+    .setIssuer('gestion-territorial').setIssuedAt(ahora).setExpirationTime(expira)
+    .sign(k.firmar);
+  if (Date.now() >= aceptadoHasta) {
+    try {
+      const r = await fetch(`${env('SUPABASE_URL')}/rest/v1/congregaciones?select=id&limit=1`, {
+        headers: { apikey, Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) { console.error('Supabase rechazó el token de sesión', r.status); return {}; }
+      aceptadoHasta = Date.now() + 10 * 60_000;
+    } catch {
+      return {};
+    }
+  }
+  return { token, expira };
+}
 
 const ORIGENES = (env('WEBAUTHN_ORIGENES') ||
   'https://gestion-teritorios-jw.vercel.app,http://localhost:5173,http://localhost:4173')
@@ -77,7 +124,7 @@ async function tomarReto(id: string, tipo: 'registro' | 'login') {
 }
 
 // deno-lint-ignore no-explicit-any
-async function atender(accion: string, d: any, origen: string) {
+async function atender(accion: string, d: any, origen: string, apikey: string) {
   const rpID = new URL(origen).hostname;
 
   if (accion === 'estado') {
@@ -170,7 +217,7 @@ async function atender(accion: string, d: any, origen: string) {
       .eq('id', cred.id);
 
     const { data: u } = await supabase.from('app_usuarios')
-      .select('id, nombre, usuario, rol, foto_url, congregacion_id, activo').eq('id', cred.usuario_id).maybeSingle();
+      .select('*').eq('id', cred.usuario_id).maybeSingle();
     if (!u) throw new Fallo('sin_huella', 404);
     if (!activo(u)) throw new Fallo('desactivada', 403);
     let congregacion_nombre = null;
@@ -183,6 +230,7 @@ async function atender(accion: string, d: any, origen: string) {
         id: u.id, nombre: u.nombre, usuario: u.usuario, rol: u.rol, foto_url: u.foto_url || null,
         congregacion_id: u.congregacion_id || null, congregacion_nombre,
       },
+      ...(await tokenSesion(u, apikey)),
     };
   }
 
@@ -212,7 +260,9 @@ Deno.serve(async (req) => {
 
   try {
     const d = await req.json().catch(() => ({}));
-    return Response.json(await atender(String(d.accion ?? ''), d, origen), { headers: cors });
+    // La llave pública con que llega la app sirve para probar el token de sesión contra la base de datos
+    const apikey = req.headers.get('apikey') || env('SUPABASE_ANON_KEY');
+    return Response.json(await atender(String(d.accion ?? ''), d, origen, apikey), { headers: cors });
   } catch (err) {
     if (err instanceof Fallo) return Response.json({ error: err.codigo }, { status: err.status, headers: cors });
     console.error(err);

@@ -883,6 +883,8 @@ const en = {
   'La entrada con huella aún no está configurada en el servidor': "Fingerprint sign-in isn't set up on the server yet",
   'La entrada con huella no está permitida en esta dirección': "Fingerprint sign-in isn't allowed at this address",
   'No se pudo conectar. Revisa tu internet e inténtalo de nuevo.': "Couldn't connect. Check your internet and try again.",
+  // Sesión firmada (blindaje paso 1)
+  'Sesión protegida por el servidor': "Session protected by the server",
 };
 
 export default en;

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-06 — Blindaje paso 1: sesión firmada por el servidor — Edge Function `sesion` opcional
+
+- `supabase/functions/sesion/index.ts` (nuevo): login revisado en el servidor + token firmado (HS256 legacy o ES256
+  propia), renovación diaria; prueba el token contra la BD antes de entregarlo
+- `supabase/functions/webauthn/index.ts`: entrar con huella también entrega el token
+- `utils/sesion.js` (nuevo), `supabaseClient.js` (token en cada consulta + respaldo a la llave pública si se rechaza),
+  `context/AuthContext.jsx` (login por el servidor con respaldo al de siempre, renovación, cierre si se desactiva)
+- `pages/Profile.jsx`: "Sesión protegida por el servidor"; `docs/SESION_SEGURA.md` (nuevo), `i18n/en.js`
+
 ## 2026-11-06 — Entrar con huella / Face ID (WebAuthn) — Migración 10 + Edge Function `webauthn` opcionales
 
 - `pages/Login.jsx`: botón de huella / Face ID junto a "Iniciar Sesión" (solo si el aparato y el servidor lo permiten)

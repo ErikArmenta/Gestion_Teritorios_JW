@@ -94,7 +94,17 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   (`loginConBiometria` de `AuthContext`) solo aparece si hay lector en el aparato y la acción `estado` responde.
   Ícono Huella/Face ID = preferencia del usuario (`localStorage biometria_icono`); el teléfono decide el método.
   Orígenes permitidos: secreto `WEBAUTHN_ORIGENES` (las llaves van ligadas al dominio).
-- Riesgo conocido: el login compara usuario/contraseña directo contra `app_usuarios` con la anon key.
+- **Sesión firmada** (blindaje paso 1, `docs/SESION_SEGURA.md`): `login` llama primero a la Edge Function
+  `supabase/functions/sesion` (revisa la contraseña en el servidor y devuelve `{ usuario, token?, expira? }`);
+  si no está desplegada usa el login directo de siempre (`loginDirecto`). El token (JWT con `role: 'anon'`,
+  `usuario_id`, `congregacion_id`, `app_rol`, `grupo_id`; firmado con el secreto `SESION_JWT_SECRET` o
+  `SESION_JWK_PRIVADA`) se guarda en `localStorage territorial_token` (`utils/sesion.js`) y `supabaseClient`
+  lo manda en cada consulta (`accessToken`; por eso **no** usar `supabase.auth`). Si Supabase lo rechaza,
+  `fetchConRespaldo` lo olvida y repite con la llave pública. Se renueva una vez al día (`renovarSiToca`);
+  cuenta desactivada/borrada → se cierra la sesión. `webauthn` firma igual (si cambias el formato, cambia ambas).
+  Las funciones prueban el token contra la BD antes de entregarlo.
+- Riesgo conocido: el login compara usuario/contraseña directo contra `app_usuarios` con la anon key
+  (sigue como respaldo hasta el paso 3 del blindaje: permisos RLS que lean el token).
   No exponer más datos sensibles por esa vía; cualquier mejora de seguridad debe coordinarse con el dueño.
 
 ## Offline y PWA
