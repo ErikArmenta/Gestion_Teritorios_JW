@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-06 — Reportes con formato de la app: Excel, PDF y "Reporte interactivo"
+
+- `utils/reportes/` (nuevo): modelo de reporte único + `excel.js` (exceljs), `pdf.js`, `interactivo.js` y `graficas.js` (SVG)
+- `components/BotonesExportar.jsx` (nuevo): Excel · PDF · Reporte interactivo
+- Estadísticas, Alertas, Informes (Congregación y Actividad — esta ahora también con PDF y reporte interactivo)
+- Plantilla de casas con formato, listas desplegables de Territorio/Estado e instrucciones (mismo formato de importación)
+- Dependencia `exceljs` (se carga solo al exportar); se quitó `utils/chartImage.js`; `i18n/en.js`
+
 ## 2026-11-06 — Blindaje paso 3: Migración 12 (RLS por congregación)
 
 - `MIGRACION_12_BLINDAJE.sql` (nuevo): permisos por congregación en las 16 tablas de la app (solo esas: el proyecto

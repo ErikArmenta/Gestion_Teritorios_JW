@@ -8,11 +8,8 @@ import {
   ArcElement, Tooltip, Legend, Title
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { FileText, Table, Home, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { chartToPNG } from '../utils/chartImage';
+import { Home, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import BotonesExportar from '../components/BotonesExportar';
 import { useGrupos } from '../context/GruposContext';
 import { getTerritoryProgress, indexarHistorial, resumenPorGrupo, conteoPorEstado, PROGRESO } from '../utils/territoryProgress';
 import GruposDashboardCard from '../components/GruposDashboardCard';
@@ -290,294 +287,143 @@ const DashboardStats = () => {
     }
   };
 
-  // --- PDF Generation ---
-  const generatePDF = () => {
-    const doc = new jsPDF('p', 'mm', 'letter');
-    const pageW = doc.internal.pageSize.getWidth();
-    let y = 20;
-
-    doc.setFillColor(31, 41, 55);
-    doc.rect(0, 0, pageW, 42, 'F');
-    doc.setTextColor(255);
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Gestión Territorial JW', pageW / 2, 18, { align: 'center' });
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Reporte Ejecutivo de Cobertura y Actividad', pageW / 2, 27, { align: 'center' });
-    doc.setFontSize(9);
-    const periodoLabel = periodoActivo === 'todo' && !fechaDesde
-      ? 'Todos los datos'
-      : `${fechaDesde || '—'} al ${fechaHasta || '—'}`;
-    doc.text(`Período: ${periodoLabel}  |  Generado: ${new Date().toLocaleString('es-MX')}  |  Usuario: ${user?.nombre || 'N/A'}`, pageW / 2, 36, { align: 'center' });
-    y = 52;
-
-    doc.setTextColor(31, 41, 55);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('1. Resumen Ejecutivo', 14, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    const resumen = [
-      `Este documento presenta un análisis integral del progreso de cobertura territorial. Al momento de la generación de este reporte, se han registrado un total de ${totalCasas} viviendas distribuidas en ${territorios.length} territorio(s) activo(s).`,
-      ``,
-      `El índice de atención global es del ${porcAtendidos}%, con ${atendidos} hogares atendidos, ${noAtendidos} hogares donde no se logró contacto, y ${pendientes} registros en estado pendiente. Se identificaron ${especiales} caso(s) con marcación especial que requieren atención diferenciada.`
-    ];
-    resumen.forEach(line => {
-      const split = doc.splitTextToSize(line, pageW - 28);
-      doc.text(split, 14, y);
-      y += split.length * 5 + 2;
-    });
-    y += 4;
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('2. Indicadores Clave de Desempeño (KPIs)', 14, y);
-    y += 6;
-    autoTable(doc, {
-      startY: y,
-      head: [['Indicador', 'Valor', 'Detalle']],
-      body: [
-        ['Total de Viviendas', String(totalCasas), 'Registros activos en la plataforma'],
-        ['Viviendas Atendidas', String(atendidos), `${porcAtendidos}% del total`],
-        ['Sin Contacto', String(noAtendidos), 'Hogares donde no se logró atención'],
-        ['Pendientes', String(pendientes), 'Hogares por visitar'],
-        ['Casos Especiales', String(especiales), 'Marcados con atención diferenciada'],
-        ['Territorios Activos', String(territorios.length), 'Zonas geográficas definidas']
-      ],
-      headStyles: { fillColor: [31, 41, 55], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-      bodyStyles: { font: 'helvetica', fontSize: 9 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      margin: { left: 14, right: 14 },
-      styles: { cellPadding: 4 }
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('3. Desglose por Territorio', 14, y);
-    y += 6;
-    autoTable(doc, {
-      startY: y,
-      head: [['Territorio', 'Total', 'Atendidos', 'No Atendió', 'Pendientes', 'Especiales']],
-      body: terrData.map(t => [t.nombre, t.total, t.atendidos, t.noAtendidos, t.pendientes, t.especiales]),
-      headStyles: { fillColor: [59, 130, 246], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-      bodyStyles: { font: 'helvetica', fontSize: 9 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      margin: { left: 14, right: 14 },
-      styles: { cellPadding: 4 }
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('4. Distribución por Estado de Visita', 14, y);
-    y += 6;
-    autoTable(doc, {
-      startY: y,
-      head: [['Estado', 'Cantidad', 'Porcentaje']],
-      body: statusLabels.map((label, i) => [label, statusValues[i], `${((statusValues[i] / totalCasas) * 100).toFixed(1)}%`]),
-      headStyles: { fillColor: [16, 185, 129], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-      bodyStyles: { font: 'helvetica', fontSize: 9 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      margin: { left: 14, right: 14 },
-      styles: { cellPadding: 4 }
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
+  // --- Reporte (Excel, PDF y reporte interactivo con el mismo modelo: utils/reportes) ---
+  const armarReporte = () => {
+    const todo = periodoActivo === 'todo' && !fechaDesde;
+    const periodo = todo ? 'Todos los datos' : `${fechaDesde || '—'} al ${fechaHasta || '—'}`;
+    const sufijo = todo ? new Date().toISOString().slice(0, 10) : `${fechaDesde || 'inicio'}_${fechaHasta || 'hoy'}`;
+    const colorEstado = Object.fromEntries(Object.entries(STATUS_COLORS).map(([k, v]) => [k, v.hex]));
     const casosEsp = casasFiltradas.filter(c => c.tiene_caso_especial);
-    if (casosEsp.length > 0) {
-      if (y > 230) { doc.addPage(); y = 20; }
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('5. Detalle de Casos Especiales', 14, y);
-      y += 6;
-      autoTable(doc, {
-        startY: y,
-        head: [['Dirección', 'Territorio', 'Tipo', 'Detalles']],
-        body: casosEsp.map(c => [c.direccion, c.territorio_nombre, c.tipo_caso || 'N/A', c.detalles_caso || 'N/A']),
-        headStyles: { fillColor: [239, 68, 68], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-        bodyStyles: { font: 'helvetica', fontSize: 9 },
-        alternateRowStyles: { fillColor: [254, 242, 242] },
-        margin: { left: 14, right: 14 },
-        styles: { cellPadding: 4 },
-        columnStyles: { 3: { cellWidth: 60 } }
-      });
-    }
-
-    // ── GRÁFICOS EN PDF ──
-    // Cada gráfico en su propia página
-
-    // Gráfico 1: Donut — Distribución por Estado
-    if (chartDonutRef.current) {
-      doc.addPage();
-      y = 20;
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text('6. Distribución por Estado', 14, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      const estadoLabels = Object.entries(statusCounts)
-        .filter(([, v]) => v > 0)
-        .map(([k, v]) => `${k}: ${v} (${((v / totalCasas) * 100).toFixed(1)}%)`)
-        .join('   |   ');
-      doc.text(estadoLabels, 14, y, { maxWidth: pageW - 28 });
-      y += 10;
-      const donutImg = chartToPNG(chartDonutRef, { width: 1200, height: 900 });
-      const donutW = Math.min(pageW - 60, 120);
-      const donutX = (pageW - donutW) / 2;
-      doc.addImage(donutImg, 'PNG', donutX, y, donutW, donutW * 0.75);
-    }
-
-    // Gráfico 2: Bar — Actividad por Territorio
-    if (chartBarRef.current) {
-      doc.addPage();
-      y = 20;
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text('7. Actividad por Territorio', 14, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      const terrResumen = terrData.slice(0, 5).map(t => `${t.nombre}: ${t.total}`).join('   |   ');
-      doc.text(terrResumen, 14, y, { maxWidth: pageW - 28 });
-      y += 10;
-      const barImg = chartToPNG(chartBarRef, { width: 1600, height: 720 });
-      const barW = pageW - 30;
-      doc.addImage(barImg, 'PNG', 15, y, barW, barW * 0.45);
-    }
-
-    // Gráfico 3: Casos Especiales
-    if (chartEspRef.current && especiales > 0) {
-      doc.addPage();
-      y = 20;
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text('8. Casos Especiales por Territorio', 14, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      const espResumen = terrData.filter(t => t.especiales > 0)
-        .map(t => `${t.nombre}: ${t.especiales}`)
-        .join('   |   ');
-      doc.text(`Total: ${especiales} casos  |  ${espResumen}`, 14, y, { maxWidth: pageW - 28 });
-      y += 10;
-      const espImg = chartToPNG(chartEspRef, { width: 1600, height: 720 });
-      const espW = pageW - 30;
-      doc.addImage(espImg, 'PNG', 15, y, espW, espW * 0.45);
-    }
-
-    // 9. Progreso de territorios y grupos de predicación
-    doc.addPage();
-    y = 20;
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(31, 41, 55);
-    doc.text('9. Progreso de Territorios y Grupos', 14, y);
-    y += 6;
-    autoTable(doc, {
-      startY: y,
-      head: [['Estado del territorio', 'Territorios', 'Porcentaje']],
-      body: ['completado', 'en_progreso', 'sin_trabajar'].map(estado => {
-        const totalT = territorios.length || 1;
-        return [PROGRESO[estado].label, conteoTerritorios[estado], `${((conteoTerritorios[estado] / totalT) * 100).toFixed(1)}%`];
-      }),
-      headStyles: { fillColor: [16, 185, 129], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-      bodyStyles: { font: 'helvetica', fontSize: 9 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      margin: { left: 14, right: 14 },
-      styles: { cellPadding: 4 }
-    });
-    y = doc.lastAutoTable.finalY + 10;
-    if (resumenGrupos.length) {
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Avance por grupo de predicación', 14, y);
-      y += 6;
-      autoTable(doc, {
-        startY: y,
-        head: [['Grupo', 'Publicadores', 'En progreso', 'Avance', `Terminados ${new Date().getFullYear()}`]],
-        body: resumenGrupos.map(r => [
-          r.grupo.nombre,
-          r.publicadores,
-          r.enProgreso.length ? r.enProgreso.map(x => x.numero || x.nombre).join(', ') : '—',
-          r.enProgreso.length ? `${r.avance}%` : '—',
-          r.terminadosAnio,
-        ]),
-        headStyles: { fillColor: [245, 158, 11], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-        bodyStyles: { font: 'helvetica', fontSize: 9 },
-        alternateRowStyles: { fillColor: [255, 251, 235] },
-        margin: { left: 14, right: 14 },
-        styles: { cellPadding: 4 },
-        columnStyles: { 2: { cellWidth: 60 } }
-      });
-    }
-
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(156, 163, 175);
-      doc.text('Gestión Territorial JW  |  Desarrollado por Master Engenering EA', pageW / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-      doc.text(`Página ${i} de ${totalPages}`, pageW - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
-    }
-    const sufijoFechaPDF = periodoActivo === 'todo' && !fechaDesde
-      ? 'todo'
-      : `${fechaDesde || 'inicio'}_${fechaHasta || 'hoy'}`;
-    doc.save(`Reporte_Territorial_${sufijoFechaPDF}.pdf`);
-  };
-
-  // --- Excel Generation ---
-  const generateExcel = () => {
-    const wb = XLSX.utils.book_new();
-    const periodoExcel = periodoActivo === 'todo' && !fechaDesde
-      ? 'Todos los datos'
-      : `${fechaDesde || '—'} al ${fechaHasta || '—'}`;
-    const resumenData = [
-      ['Período', periodoExcel],
-      [],
-      ['Indicador', 'Valor'],
-      ['Total de Viviendas', totalCasas],
-      ['Atendidos', atendidos],
-      ['No Atendió', noAtendidos],
-      ['Pendientes', pendientes],
-      ['Casos Especiales', especiales],
-      ['% Cobertura', `${porcAtendidos}%`],
-      ['Territorios Activos', territorios.length]
-    ];
-    const ws1 = XLSX.utils.aoa_to_sheet(resumenData);
-    ws1['!cols'] = [{ wch: 25 }, { wch: 15 }];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
-
-    const headers = ['Dirección', 'Territorio', 'Estado', 'Contacto', 'Teléfono', 'Caso Especial', 'Tipo Caso', 'Detalles', 'Notas', 'Latitud', 'Longitud'];
-    const rows = casasFiltradas.map(c => [
-      c.direccion, c.territorio_nombre, c.estado, c.nombre_contacto || '',
-      c.telefono || '', c.tiene_caso_especial ? 'Sí' : 'No',
-      c.tipo_caso || '', c.detalles_caso || '', c.notas || '',
-      c.latitud, c.longitud
-    ]);
-    const ws2 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws2['!cols'] = headers.map(() => ({ wch: 18 }));
-    XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Casas');
-
-    const terrHeaders = ['Territorio', 'Total', 'Atendidos', 'No Atendió', 'Pendientes', 'Especiales'];
-    const terrRows = terrData.map(t => [t.nombre, t.total, t.atendidos, t.noAtendidos, t.pendientes, t.especiales]);
-    const ws3 = XLSX.utils.aoa_to_sheet([terrHeaders, ...terrRows]);
-    ws3['!cols'] = terrHeaders.map(() => ({ wch: 16 }));
-    XLSX.utils.book_append_sheet(wb, ws3, 'Por Territorio');
-
-    const sufijo = periodoActivo === 'todo' && !fechaDesde
-      ? 'todo'
-      : `${fechaDesde || 'inicio'}_${fechaHasta || 'hoy'}`;
-    XLSX.writeFile(wb, `Datos_Territorial_${sufijo}.xlsx`);
+    const totalT = territorios.length || 1;
+    const anio = new Date().getFullYear();
+    return {
+      archivo: `Reporte_Territorial_${sufijo}`,
+      titulo: 'Reporte de cobertura territorial',
+      subtitulo: user?.congregacion_nombre || 'Todas las congregaciones',
+      usuario: user?.nombre,
+      meta: [{ etiqueta: 'Período', valor: periodo }],
+      color: '#2563EB',
+      kpis: [
+        { etiqueta: 'Total de casas', valor: totalCasas.toLocaleString('es-MX'), detalle: `${territorios.length} territorios`, color: '#2563EB' },
+        { etiqueta: 'Atendidas', valor: atendidos.toLocaleString('es-MX'), detalle: `${porcAtendidos}% de cobertura`, color: '#059669' },
+        { etiqueta: 'Sin contacto', valor: noAtendidos.toLocaleString('es-MX'), detalle: 'No atendieron la visita', color: '#DC2626' },
+        { etiqueta: 'Pendientes', valor: pendientes.toLocaleString('es-MX'), detalle: 'Por visitar', color: '#D97706' },
+        { etiqueta: 'Casos especiales', valor: especiales.toLocaleString('es-MX'), detalle: 'Atención diferenciada', color: '#7C3AED' },
+        { etiqueta: 'Territorios completados', valor: `${conteoTerritorios.completado} de ${territorios.length}`, detalle: `${conteoTerritorios.en_progreso} en progreso`, color: '#0891B2' },
+      ],
+      secciones: [
+        {
+          tipo: 'texto', titulo: 'Resumen',
+          parrafos: [
+            `Se han registrado ${totalCasas.toLocaleString('es-MX')} viviendas en ${territorios.length} territorio(s). El índice de atención es del ${porcAtendidos}%: ${atendidos} hogares atendidos, ${noAtendidos} sin contacto y ${pendientes} pendientes.`,
+            `Hay ${especiales} caso(s) especial(es) que requieren atención diferenciada. De los territorios, ${conteoTerritorios.completado} están completados, ${conteoTerritorios.en_progreso} en progreso y ${conteoTerritorios.sin_trabajar} sin trabajar.`,
+          ],
+        },
+        {
+          tipo: 'grafica', titulo: 'Distribución por estado', en: ['pdf', 'html'],
+          grafica: { tipo: 'dona', etiquetas: statusLabels, series: [{ nombre: 'Casas', valores: statusValues }], colores: statusLabels.map(s => colorEstado[s] || '#9CA3AF'), unidad: 'casas' },
+        },
+        {
+          tipo: 'grafica', titulo: 'Actividad por territorio', en: ['pdf', 'html'],
+          grafica: {
+            tipo: 'barras', apiladas: true, etiquetas: terrData.map(t => t.nombre),
+            series: [
+              { nombre: 'Atendidos', valores: terrData.map(t => t.atendidos), color: '#10B981' },
+              { nombre: 'No atendió', valores: terrData.map(t => t.noAtendidos), color: '#EF4444' },
+              { nombre: 'Pendientes', valores: terrData.map(t => t.pendientes), color: '#F59E0B' },
+            ],
+          },
+        },
+        especiales > 0 && {
+          tipo: 'grafica', titulo: 'Casos especiales por territorio', en: ['pdf', 'html'],
+          grafica: { tipo: 'barrasH', etiquetas: terrData.filter(t => t.especiales > 0).map(t => t.nombre), series: [{ nombre: 'Casos especiales', valores: terrData.filter(t => t.especiales > 0).map(t => t.especiales), color: '#7C3AED' }] },
+        },
+        {
+          tipo: 'tabla', titulo: 'Desglose por territorio', hoja: 'Por territorio',
+          columnas: [
+            { titulo: 'Territorio', clave: 'nombre' },
+            { titulo: 'Casas', clave: 'total', tipo: 'numero' },
+            { titulo: 'Atendidos', clave: 'atendidos', tipo: 'numero' },
+            { titulo: 'No atendió', clave: 'noAtendidos', tipo: 'numero' },
+            { titulo: 'Pendientes', clave: 'pendientes', tipo: 'numero' },
+            { titulo: 'Especiales', clave: 'especiales', tipo: 'numero' },
+            { titulo: 'Cobertura', clave: 'cobertura', tipo: 'porcentaje' },
+            { titulo: 'Progreso', clave: 'progreso', colores: { 'Completado': '#059669', 'En progreso': '#D97706', 'Sin trabajar': '#64748B' } },
+          ],
+          filas: terrData.map((t, i) => ({
+            ...t,
+            cobertura: t.total ? t.atendidos / t.total : 0,
+            progreso: PROGRESO[progresoTerritorios[territorios[i]?.id]?.estado]?.label || '',
+          })),
+          totales: { total: 'suma', atendidos: 'suma', noAtendidos: 'suma', pendientes: 'suma', especiales: 'suma', cobertura: totalCasas ? atendidos / totalCasas : 0 },
+        },
+        {
+          tipo: 'tabla', titulo: 'Casas por estado de visita', hoja: 'Por estado',
+          columnas: [
+            { titulo: 'Estado', clave: 'estado', colores: colorEstado },
+            { titulo: 'Casas', clave: 'casas', tipo: 'numero' },
+            { titulo: 'Porcentaje', clave: 'porcentaje', tipo: 'porcentaje' },
+          ],
+          filas: statusLabels.map((s, i) => ({ estado: s, casas: statusValues[i], porcentaje: totalCasas ? statusValues[i] / totalCasas : 0 })),
+          totales: { casas: 'suma', porcentaje: totalCasas ? 1 : 0 },
+        },
+        {
+          tipo: 'tabla', titulo: 'Progreso de territorios', hoja: 'Progreso', color: '#0891B2',
+          columnas: [
+            { titulo: 'Estado del territorio', clave: 'estado', colores: { 'Completado': '#059669', 'En progreso': '#D97706', 'Sin trabajar': '#64748B' } },
+            { titulo: 'Territorios', clave: 'n', tipo: 'numero' },
+            { titulo: 'Porcentaje', clave: 'p', tipo: 'porcentaje' },
+          ],
+          filas: ['completado', 'en_progreso', 'sin_trabajar'].map(e => ({ estado: PROGRESO[e].label, n: conteoTerritorios[e], p: conteoTerritorios[e] / totalT })),
+        },
+        resumenGrupos.length > 0 && {
+          tipo: 'tabla', titulo: 'Avance por grupo de predicación', hoja: 'Grupos', color: '#D97706',
+          columnas: [
+            { titulo: 'Grupo', clave: 'grupo' },
+            { titulo: 'Publicadores', clave: 'publicadores', tipo: 'numero' },
+            { titulo: 'Territorio en progreso', clave: 'enProgreso' },
+            { titulo: 'Avance', clave: 'avance', tipo: 'porcentaje' },
+            { titulo: `Terminados ${anio}`, clave: 'terminados', tipo: 'numero' },
+          ],
+          filas: resumenGrupos.map(r => ({
+            grupo: r.grupo.nombre,
+            publicadores: r.publicadores,
+            enProgreso: r.enProgreso.length ? r.enProgreso.map(x => x.numero || x.nombre).join(', ') : '',
+            avance: r.enProgreso.length ? r.avance / 100 : null,
+            terminados: r.terminadosAnio,
+          })),
+        },
+        casosEsp.length > 0 && {
+          tipo: 'tabla', titulo: 'Casos especiales', hoja: 'Casos especiales', color: '#DC2626',
+          columnas: [
+            { titulo: 'Dirección', clave: 'direccion' },
+            { titulo: 'Territorio', clave: 'territorio_nombre' },
+            { titulo: 'Tipo', clave: 'tipo_caso' },
+            { titulo: 'Detalles', clave: 'detalles_caso', anchoPDF: 70 },
+          ],
+          filas: casosEsp,
+        },
+        // Datos de contacto: solo en el Excel (el reporte interactivo se comparte)
+        {
+          tipo: 'tabla', titulo: 'Detalle de casas', hoja: 'Casas', en: ['excel'],
+          columnas: [
+            { titulo: 'Dirección', clave: 'direccion' },
+            { titulo: 'Territorio', clave: 'territorio_nombre' },
+            { titulo: 'Estado', clave: 'estado', colores: colorEstado },
+            { titulo: 'Contacto', clave: 'nombre_contacto' },
+            { titulo: 'Teléfono', clave: 'telefono' },
+            { titulo: 'Caso especial', clave: 'tiene_caso_especial', tipo: 'siNo' },
+            { titulo: 'Tipo de caso', clave: 'tipo_caso' },
+            { titulo: 'Detalles', clave: 'detalles_caso' },
+            { titulo: 'Notas', clave: 'notas', ancho: 40 },
+            { titulo: 'Registrada', clave: 'created_at', tipo: 'fecha' },
+            { titulo: 'Latitud', clave: 'latitud', tipo: 'decimal', ancho: 12 },
+            { titulo: 'Longitud', clave: 'longitud', tipo: 'decimal', ancho: 12 },
+          ],
+          filas: casasFiltradas,
+        },
+      ].filter(Boolean),
+    };
   };
 
   const kpiCards = [
@@ -642,14 +488,7 @@ const DashboardStats = () => {
           <h1 className="text-2xl sm:text-3xl font-bold heading-gradient m-0">{tx('Estadísticas')}</h1>
           <p className="text-sm mt-0.5 text-secondary">{tx('Cobertura y actividad territorial en tiempo real')}</p>
         </div>
-        <div className="flex gap-2.5">
-          <button onClick={generatePDF} className="btn btn-primary flex items-center gap-2">
-            <FileText size={15} /> {tx('Exportar PDF')}
-          </button>
-          <button onClick={generateExcel} className="btn btn-secondary flex items-center gap-2">
-            <Table size={15} /> {tx('Exportar Excel')}
-          </button>
-        </div>
+        <BotonesExportar armar={armarReporte} clase="btn btn-secondary text-sm" />
       </div>
 
       {/* Filtros de período */}

@@ -11,7 +11,7 @@ Multi-congregación. Desarrollada por Master Engenering EA. Idioma de la UI: **e
 - Supabase (`src/supabaseClient.js`) — solo base de datos/storage/realtime, **no** Supabase Auth
 - Leaflet / react-leaflet 5 / leaflet-draw / react-leaflet-cluster / Turf
 - MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — todos los mapas (móvil y escritorio, también links compartidos) menos pánico; dibujo con Terra Draw
-- Chart.js, jsPDF + autotable, xlsx, lucide-react (iconos)
+- Chart.js, jsPDF + autotable, exceljs (exportar), xlsx (solo leer importaciones), lucide-react (iconos)
 - Deploy en Vercel (`vercel.json`: rewrite SPA + headers de `sw.js` y `manifest.json`)
 
 ## Comandos
@@ -289,8 +289,16 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - Tema claro/oscuro: usar variables CSS (`var(--bg-card)`, `var(--text-primary)`, `var(--border-color)`…)
   o las clases `text-primary`, `text-secondary`, `text-muted`, `bg-card`; evitar colores fijos nuevos.
 - Iconos solo de `lucide-react`.
-- Gráficas en PDFs: `chartToPNG(ref, { width, height })` de `utils/chartImage.js` (redibuja la
-  gráfica en PNG de alta resolución con fondo blanco); nunca `toBase64Image()` de la gráfica en pantalla.
+- **Reportes (Excel, PDF y "Reporte interactivo")**: un solo modelo de reporte (`utils/reportes/comun.js`, ahí
+  está documentado) y tres salidas con la marca de la app: `excel.js` (exceljs: logo, encabezados de color,
+  filtros, totales, formatos de número), `pdf.js` (jsPDF: portada, tarjetas, gráficas, tablas) e `interactivo.js`
+  (un archivo que se abre en el navegador, sin internet: tema claro/oscuro, gráficas con detalle, tablas con
+  búsqueda/orden; en la app **nunca** se dice "HTML"). Gráficas en SVG propio (`graficas.js`, al PDF van como PNG).
+  En las pantallas: `<BotonesExportar armar={() => modelo} />` (`components/BotonesExportar.jsx`, carga todo
+  con import dinámico). Secciones y columnas con `en: ['excel','pdf','html']`. Teléfonos/contactos de casas solo
+  en Excel (el reporte interactivo se comparte). Texto de usuario siempre escapado (`escapar`). Los documentos van en español.
+  Plantilla de importar casas: `exportarPlantilla` (la fila 1 y el orden de columnas los lee `HousesList`; no cambiarlos).
+  `xlsx` (SheetJS) se queda solo para **leer** el Excel de importación.
 
 ## CSS / Tailwind v4
 

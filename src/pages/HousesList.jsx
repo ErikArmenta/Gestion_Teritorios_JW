@@ -116,16 +116,36 @@ const HousesList = () => {
 
   const IMPORT_ALLOWED_ROLES = ['Super Admin', 'Admin Principal'];
 
-  const handleDownloadTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const wsData = [
-      ['Dirección', 'Territorio', 'Estado', 'Contacto', 'Teléfono', 'Notas'],
-      ['Calle Ejemplo 123', 'Territorio Norte', 'Pendiente', 'Juan Pérez', '555-1234', 'Casa esquina'],
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 30 }];
-    XLSX.utils.book_append_sheet(wb, ws, 'Casas');
-    XLSX.writeFile(wb, 'plantilla_casas.xlsx');
+  // Plantilla con formato. Las columnas (orden y nombres) son las que lee handleImportFile: no cambiarlas.
+  const handleDownloadTemplate = async () => {
+    try {
+      const { exportarPlantilla } = await import('../utils/reportes/excel');
+      const nombresTerritorios = territorios.map(t => t.nombre).filter(Boolean);
+      await exportarPlantilla({
+        archivo: 'plantilla_casas',
+        hoja: 'Casas',
+        columnas: [
+          { titulo: 'Dirección', ancho: 34 },
+          { titulo: 'Territorio', ancho: 24, opciones: nombresTerritorios },
+          { titulo: 'Estado', ancho: 20, opciones: STATUS_OPTIONS },
+          { titulo: 'Contacto', ancho: 22 },
+          { titulo: 'Teléfono', ancho: 16 },
+          { titulo: 'Notas', ancho: 36 },
+        ],
+        ejemplos: [['Calle Ejemplo 123', nombresTerritorios[0] || 'Territorio Norte', 'Pendiente', 'Juan Pérez', '555-1234', 'Casa esquina']],
+        instrucciones: [
+          '1. Escribe una casa por fila en la hoja "Casas", empezando en la fila 2. Borra la fila de ejemplo.',
+          '2. Dirección y Territorio son obligatorios. El territorio debe llamarse igual que en la app (elígelo de la lista).',
+          `3. Estado: ${STATUS_OPTIONS.join(', ')}. Si lo dejas vacío o no coincide, se guarda como "Pendiente".`,
+          '4. Contacto, Teléfono y Notas son opcionales.',
+          '5. No cambies el orden ni los nombres de las columnas de la fila 1.',
+          '6. En la app: Casas → Importar Excel → elige este archivo y revisa la vista previa antes de importar.',
+        ],
+      });
+      toast.success(tx('Archivo descargado'));
+    } catch (err) {
+      toast.error(tx('No se pudo generar el archivo: ') + (err?.message || err));
+    }
   };
 
   const handleImportFile = (e) => {

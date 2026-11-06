@@ -18,13 +18,10 @@ import {
   PointElement, LineElement, Filler
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { Bell, MapPin, Clock, User, Filter, X, ExternalLink, FileText, Table, Shield, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Bell, MapPin, Clock, User, Filter, X, ExternalLink, Shield, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 import DarkTileLayers from '../components/DarkTileLayers';
 import LocateButton from '../components/LocateButton';
-import { chartToPNG } from '../utils/chartImage';
+import BotonesExportar from '../components/BotonesExportar';
 import { t as tx } from '../i18n';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, ChartTooltip, Legend, Title, PointElement, LineElement, Filler);
@@ -707,247 +704,99 @@ const PanicHistory = () => {
     },
   };
 
-  // ── Export functions ──
-  const generateAlertPDF = () => {
-    const doc = new jsPDF('p', 'mm', 'letter');
-    const pageW = doc.internal.pageSize.getWidth();
-    let y = 20;
-
-    doc.setFillColor(127, 29, 29);
-    doc.rect(0, 0, pageW, 42, 'F');
-    doc.setTextColor(255);
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Reporte de Alertas de Emergencia', pageW / 2, 18, { align: 'center' });
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Gestión Territorial JW — Historial de Pánico', pageW / 2, 27, { align: 'center' });
-    doc.setFontSize(9);
-    doc.text(`Generado: ${new Date().toLocaleString('es-MX')}  |  Usuario: ${user?.nombre || 'N/A'}`, pageW / 2, 36, { align: 'center' });
-    y = 52;
-
-    doc.setTextColor(31, 41, 55);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('1. Resumen de Alertas', 14, y);
-    y += 6;
-    autoTable(doc, {
-      startY: y,
-      head: [['Indicador', 'Valor']],
-      body: [
-        ['Total de Alertas', String(totalAlertas)],
-        ['Alertas Activas', String(alertasActivas)],
-        ['Alertas Cerradas', String(alertasCerradas)],
-        ['Tiempo Prom. Respuesta', `${tiempoPromedio} min`],
-        ['Total Respuestas "Voy en camino"', String(totalResponses)],
-        ['Seguridad', String(porTipo.seguridad || 0)],
-        ['Médica', String(porTipo.medica || 0)],
-        ['Accidente', String(porTipo.accidente || 0)],
+  // ── Reporte (Excel, PDF y reporte interactivo con el mismo modelo: utils/reportes) ──
+  const armarReporte = () => {
+    const COLOR_TIPO_ALERTA = { Seguridad: '#DC2626', 'Médica': '#2563EB', Accidente: '#EA580C' };
+    const tipos = ['seguridad', 'medica', 'accidente'];
+    const filtros = [
+      filterFechaInicio && `desde ${filterFechaInicio}`,
+      filterFechaFin && `hasta ${filterFechaFin}`,
+      filterTipo && (TYPE_CONFIG[filterTipo]?.label || filterTipo),
+      filterEstado !== 'todos' && (filterEstado === 'activa' ? 'activas' : 'cerradas'),
+      filterUsuario && (alertas.find(a => String(a.usuario_id) === filterUsuario)?.app_usuarios?.nombre || `usuario #${filterUsuario}`),
+    ].filter(Boolean);
+    return {
+      archivo: `Reporte_Alertas_${new Date().toISOString().slice(0, 10)}`,
+      titulo: 'Reporte de alertas de emergencia',
+      subtitulo: user?.congregacion_nombre || 'Todas las congregaciones',
+      usuario: user?.nombre,
+      color: '#DC2626',
+      meta: filtros.length ? [{ etiqueta: 'Detalle filtrado', valor: filtros.join(', ') }] : [],
+      kpis: [
+        { etiqueta: 'Total de alertas', valor: totalAlertas, detalle: 'Desde que hay registro', color: '#DC2626' },
+        { etiqueta: 'Activas', valor: alertasActivas, detalle: 'Sin cerrar', color: '#EA580C' },
+        { etiqueta: 'Cerradas', valor: alertasCerradas, detalle: 'Atendidas', color: '#059669' },
+        { etiqueta: 'Respuesta promedio', valor: `${tiempoPromedio} min`, detalle: 'De la alerta al cierre', color: '#2563EB' },
+        { etiqueta: '"Voy en camino"', valor: totalResponses, detalle: 'Respuestas de hermanos', color: '#7C3AED' },
       ],
-      headStyles: { fillColor: [185, 28, 28], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-      bodyStyles: { font: 'helvetica', fontSize: 9 },
-      alternateRowStyles: { fillColor: [254, 242, 242] },
-      margin: { left: 14, right: 14 },
-      styles: { cellPadding: 4 },
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('2. Ranking de Reportes por Usuario', 14, y);
-    y += 6;
-    autoTable(doc, {
-      startY: y,
-      head: [['#', 'Usuario', 'Total Alertas', 'Seguridad', 'Médica', 'Accidente']],
-      body: rankingUsuarios.map((u, i) => [
-        i + 1, u.nombre, u.count,
-        u.tipos.seguridad || 0, u.tipos.medica || 0, u.tipos.accidente || 0,
-      ]),
-      headStyles: { fillColor: [220, 38, 38], font: 'helvetica', fontStyle: 'bold', fontSize: 10 },
-      bodyStyles: { font: 'helvetica', fontSize: 9 },
-      alternateRowStyles: { fillColor: [254, 242, 242] },
-      margin: { left: 14, right: 14 },
-      styles: { cellPadding: 4 },
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
-    if (y > 200) { doc.addPage(); y = 20; }
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('3. Detalle de Alertas', 14, y);
-    y += 6;
-    autoTable(doc, {
-      startY: y,
-      head: [['Fecha', 'Usuario', 'Tipo', 'Estado', 'Territorio', 'Mensaje', 'Respondieron']],
-      body: filtered.map(a => {
-        const terr = findTerritorio(a.latitud, a.longitud, territorios);
-        return [
-          formatDate(a.created_at),
-          a.app_usuarios?.nombre || `#${a.usuario_id}`,
-          TYPE_CONFIG[a.tipo]?.label || a.tipo,
-          a.activa ? 'Activa' : 'Cerrada',
-          terr?.nombre || 'Sin territorio',
-          a.mensaje || '—',
-          Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '—',
-        ];
-      }),
-      headStyles: { fillColor: [31, 41, 55], font: 'helvetica', fontStyle: 'bold', fontSize: 9 },
-      bodyStyles: { font: 'helvetica', fontSize: 8 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      margin: { left: 14, right: 14 },
-      styles: { cellPadding: 3 },
-      columnStyles: { 5: { cellWidth: 40 }, 6: { cellWidth: 30 } },
-    });
-
-    // ── GRÁFICOS EN PDF ──
-    // Cada gráfico va en su propia página para evitar empalmes
-
-    // Gráfico 1: Donut — Por Tipo de Emergencia
-    if (chartDonutRef.current) {
-      doc.addPage();
-      y = 20;
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text('4. Distribución por Tipo de Emergencia', 14, y);
-      y += 8;
-      // Etiquetas manuales debajo del título
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      const tipoLabels = [
-        `Seguridad: ${porTipo.seguridad || 0}`,
-        `Médica: ${porTipo.medica || 0}`,
-        `Accidente: ${porTipo.accidente || 0}`,
-      ];
-      doc.text(tipoLabels.join('   |   '), 14, y);
-      y += 8;
-      const donutImg = chartToPNG(chartDonutRef, { width: 1200, height: 900 });
-      // Centrar el donut con buen tamaño
-      const donutW = Math.min(pageW - 60, 120);
-      const donutX = (pageW - donutW) / 2;
-      doc.addImage(donutImg, 'PNG', donutX, y, donutW, donutW * 0.75);
-    }
-
-    // Gráfico 2: Bar — Alertas por Mes
-    if (chartBarRef.current) {
-      doc.addPage();
-      y = 20;
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text('5. Alertas por Mes', 14, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      const meses = Object.entries(porMes);
-      const mesLabels = meses.map(([mes, count]) => `${mes}: ${count}`).join('   |   ');
-      doc.text(mesLabels, 14, y);
-      y += 8;
-      const barImg = chartToPNG(chartBarRef, { width: 1600, height: 720 });
-      const barW = pageW - 30;
-      doc.addImage(barImg, 'PNG', 15, y, barW, barW * 0.45);
-    }
-
-    // Gráfico 3: Bar — Alertas por Territorio
-    if (chartTerrRef.current) {
-      doc.addPage();
-      y = 20;
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text('6. Alertas por Territorio', 14, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      const terrLabels = rankingTerritorios.slice(0, 5).map(t => `${t.nombre}: ${t.total}`).join('   |   ');
-      doc.text(terrLabels, 14, y);
-      y += 8;
-      const terrImg = chartToPNG(chartTerrRef, { width: 1600, height: 800 });
-      const terrW = pageW - 30;
-      doc.addImage(terrImg, 'PNG', 15, y, terrW, terrW * 0.5);
-    }
-
-    // Gráfico 4: Línea — Tendencia
-    if (chartLineRef.current) {
-      doc.addPage();
-      y = 20;
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(31, 41, 55);
-      doc.text('7. Tendencia de Alertas', 14, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Período: últimos 6 meses  |  Total: ${totalAlertas} alertas`, 14, y);
-      y += 8;
-      const lineImg = chartToPNG(chartLineRef, { width: 1600, height: 720 });
-      const lineW = pageW - 30;
-      doc.addImage(lineImg, 'PNG', 15, y, lineW, lineW * 0.45);
-    }
-
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(156, 163, 175);
-      doc.text('Gestión Territorial JW  |  Reporte de Alertas', pageW / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-      doc.text(`Página ${i} de ${totalPages}`, pageW - 14, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
-    }
-    doc.save(`Reporte_Alertas_${new Date().toISOString().slice(0, 10)}.pdf`);
-  };
-
-  const generateAlertExcel = () => {
-    const wb = XLSX.utils.book_new();
-
-    const resumen = [
-      ['Indicador', 'Valor'],
-      ['Total Alertas', totalAlertas],
-      ['Activas', alertasActivas],
-      ['Cerradas', alertasCerradas],
-      ['Tiempo Prom. Respuesta (min)', tiempoPromedio],
-      ['Total Respuestas', totalResponses],
-      ['Tipo Seguridad', porTipo.seguridad || 0],
-      ['Tipo Médica', porTipo.medica || 0],
-      ['Tipo Accidente', porTipo.accidente || 0],
-    ];
-    const ws1 = XLSX.utils.aoa_to_sheet(resumen);
-    ws1['!cols'] = [{ wch: 30 }, { wch: 15 }];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
-
-    const headers = ['Fecha', 'Usuario', 'Tipo', 'Estado', 'Territorio', 'Mensaje', 'Latitud', 'Longitud', 'Cerrada', 'Respondieron'];
-    const rows = filtered.map(a => {
-      const terr = findTerritorio(a.latitud, a.longitud, territorios);
-      return [
-        formatDate(a.created_at),
-        a.app_usuarios?.nombre || `#${a.usuario_id}`,
-        TYPE_CONFIG[a.tipo]?.label || a.tipo,
-        a.activa ? 'Activa' : 'Cerrada',
-        terr?.nombre || 'Sin territorio',
-        a.mensaje || '',
-        a.latitud || '',
-        a.longitud || '',
-        a.cerrada_at ? formatDate(a.cerrada_at) : '',
-        Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '',
-      ];
-    });
-    const ws2 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws2['!cols'] = headers.map(() => ({ wch: 18 }));
-    XLSX.utils.book_append_sheet(wb, ws2, 'Detalle Alertas');
-
-    const rankHeaders = ['#', 'Usuario', 'Total', 'Seguridad', 'Médica', 'Accidente'];
-    const rankRows = rankingUsuarios.map((u, i) => [
-      i + 1, u.nombre, u.count,
-      u.tipos.seguridad || 0, u.tipos.medica || 0, u.tipos.accidente || 0,
-    ]);
-    const ws3 = XLSX.utils.aoa_to_sheet([rankHeaders, ...rankRows]);
-    ws3['!cols'] = rankHeaders.map(() => ({ wch: 16 }));
-    XLSX.utils.book_append_sheet(wb, ws3, 'Ranking Usuarios');
-
-    XLSX.writeFile(wb, `Alertas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      secciones: [
+        {
+          tipo: 'grafica', titulo: 'Por tipo de emergencia', en: ['pdf', 'html'],
+          grafica: { tipo: 'dona', etiquetas: tipos.map(t => TYPE_CONFIG[t].label), series: [{ nombre: 'Alertas', valores: tipos.map(t => porTipo[t] || 0) }], colores: tipos.map(t => COLOR_TIPO_ALERTA[TYPE_CONFIG[t].label]), unidad: 'alertas' },
+        },
+        {
+          tipo: 'grafica', titulo: 'Alertas por mes (últimos 6 meses)', en: ['pdf', 'html'],
+          grafica: { tipo: 'lineas', etiquetas: Object.keys(porMes), series: [{ nombre: 'Alertas', valores: Object.values(porMes), color: '#DC2626' }] },
+        },
+        rankingTerritorios.length > 0 && {
+          tipo: 'grafica', titulo: 'Alertas por territorio', en: ['pdf', 'html'],
+          grafica: { tipo: 'barrasH', etiquetas: rankingTerritorios.map(t => t.nombre), series: [{ nombre: 'Alertas', valores: rankingTerritorios.map(t => t.total), color: '#EF4444' }] },
+        },
+        {
+          tipo: 'tabla', titulo: 'Alertas por usuario', hoja: 'Por usuario',
+          columnas: [
+            { titulo: '#', clave: 'n', tipo: 'numero', ancho: 6 },
+            { titulo: 'Usuario', clave: 'nombre' },
+            { titulo: 'Total', clave: 'count', tipo: 'numero' },
+            { titulo: 'Seguridad', clave: 'seguridad', tipo: 'numero' },
+            { titulo: 'Médica', clave: 'medica', tipo: 'numero' },
+            { titulo: 'Accidente', clave: 'accidente', tipo: 'numero' },
+          ],
+          filas: rankingUsuarios.map((u, i) => ({ n: i + 1, nombre: u.nombre, count: u.count, seguridad: u.tipos.seguridad || 0, medica: u.tipos.medica || 0, accidente: u.tipos.accidente || 0 })),
+          totales: { n: '', nombre: 'Total', count: 'suma', seguridad: 'suma', medica: 'suma', accidente: 'suma' },
+        },
+        {
+          tipo: 'tabla', titulo: 'Territorios: alertas por tipo', hoja: 'Por territorio',
+          columnas: [
+            { titulo: 'Territorio', clave: 'nombre' },
+            { titulo: 'Total', clave: 'total', tipo: 'numero' },
+            { titulo: 'Seguridad', clave: 'seguridad', tipo: 'numero' },
+            { titulo: 'Médica', clave: 'medica', tipo: 'numero' },
+            { titulo: 'Accidente', clave: 'accidente', tipo: 'numero' },
+          ],
+          filas: rankingTerritorios.map(t => ({ nombre: t.nombre, total: t.total, seguridad: t.tipos.seguridad || 0, medica: t.tipos.medica || 0, accidente: t.tipos.accidente || 0 })),
+          totales: { total: 'suma', seguridad: 'suma', medica: 'suma', accidente: 'suma' },
+        },
+        {
+          tipo: 'tabla', titulo: 'Detalle de alertas', hoja: 'Detalle', color: '#1E293B',
+          descripcion: filtros.length ? `Con los filtros: ${filtros.join(', ')}.` : undefined,
+          columnas: [
+            { titulo: 'Fecha', clave: 'fecha', tipo: 'fechaHora' },
+            { titulo: 'Usuario', clave: 'usuario' },
+            { titulo: 'Tipo', clave: 'tipo', colores: COLOR_TIPO_ALERTA },
+            { titulo: 'Estado', clave: 'estado', colores: { Activa: '#DC2626', Cerrada: '#059669' } },
+            { titulo: 'Territorio', clave: 'territorio' },
+            { titulo: 'Mensaje', clave: 'mensaje', anchoPDF: 38 },
+            { titulo: 'Respondieron', clave: 'respondieron', anchoPDF: 30 },
+            { titulo: 'Cerrada', clave: 'cerrada', tipo: 'fechaHora', en: ['excel', 'html'] },
+            { titulo: 'Latitud', clave: 'latitud', tipo: 'decimal', ancho: 12, en: ['excel'] },
+            { titulo: 'Longitud', clave: 'longitud', tipo: 'decimal', ancho: 12, en: ['excel'] },
+          ],
+          filas: filtered.map(a => ({
+            fecha: a.created_at,
+            usuario: a.app_usuarios?.nombre || `#${a.usuario_id}`,
+            tipo: TYPE_CONFIG[a.tipo]?.label || a.tipo,
+            estado: a.activa ? 'Activa' : 'Cerrada',
+            territorio: findTerritorio(a.latitud, a.longitud, territorios)?.nombre || 'Sin territorio',
+            mensaje: a.mensaje || '',
+            respondieron: Array.isArray(a.respondieron) ? a.respondieron.map(r => r.nombre).join(', ') : '',
+            cerrada: a.cerrada_at,
+            latitud: a.latitud,
+            longitud: a.longitud,
+          })),
+        },
+      ].filter(Boolean),
+    };
   };
 
   return (
@@ -963,14 +812,7 @@ const PanicHistory = () => {
             <p className="text-sm mt-0.5 text-secondary">{tx('Analytics y registro completo de alertas')}</p>
           </div>
         </div>
-        <div className="flex gap-2.5">
-          <button onClick={generateAlertPDF} className="btn btn-primary flex items-center gap-2">
-            <FileText size={15} /> PDF
-          </button>
-          <button onClick={generateAlertExcel} className="btn btn-secondary flex items-center gap-2">
-            <Table size={15} /> Excel
-          </button>
-        </div>
+        <BotonesExportar armar={armarReporte} clase="btn btn-secondary text-sm" />
       </div>
 
       {/* KPI Cards */}

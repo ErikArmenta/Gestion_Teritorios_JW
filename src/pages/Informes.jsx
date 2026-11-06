@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ClipboardList, ChevronLeft, ChevronRight, Target, Plus, Minus, Trash2, Send, Check, Clock, BookOpen, Repeat,
-  Wrench, Pencil, FileSpreadsheet, FileDown, CloudOff, AlertTriangle, Users, Loader2,
+  Wrench, Pencil, CloudOff, AlertTriangle, Users, Loader2,
   Activity, UserCheck, UserX, Hourglass, Search, MapPin,
 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import BotonesExportar from '../components/BotonesExportar';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
@@ -582,58 +580,86 @@ const MiInforme = ({ mes, setMes }) => {
 
 // ── Congregación ───────────────────────────────────────────────────────────────────
 
-const exportarExcel = (mes, filas, resumen) => {
+// Reporte (Excel, PDF y reporte interactivo con el mismo modelo: utils/reportes). Documento en español.
+const COLOR_ENVIO = { 'Enviado': '#059669', 'Sin enviar': '#D97706' };
+const reporteCongregacion = (mes, filas, resumen, user) => {
   const nombre = nombreMes(mes, 'es-MX');
-  const wb = XLSX.utils.book_new();
-  const res = [
-    [`Informe de servicio — ${nombre}`], [],
-    ['Tipo', 'Miembros', 'Enviaron', 'Predicaron', 'Horas', 'Estudios', 'Revisitas', 'Servicio sagrado (h)'],
-    ...TIPOS_PUBLICADOR.map(tp => {
-      const r = resumen[tp];
-      return [tp, r.total, r.enviados, r.predicaron, Number(r.horas.toFixed(2)), r.estudios, r.revisitas, Number(r.servicioSagrado.toFixed(2))];
-    }),
-  ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(res), 'Resumen');
-  const det = [
-    ['Nombre', 'Tipo', 'Enviado', 'Predicó', 'Horas', ...TIPOS_SALIDA.map(ts => `${ts.etiqueta} (h)`), 'Estudios', 'Revisitas', 'Servicio sagrado (h)', 'Comentarios'],
-    ...filas.map(f => [f.nombre, f.tipo, f.enviado ? 'Sí' : 'No', f.predico ? 'Sí' : 'No',
-      esPrecursor(f.tipo) ? Number(f.horas.toFixed(2)) : '',
-      ...TIPOS_SALIDA.map(ts => (esPrecursor(f.tipo) ? Number((f.porTipo?.[ts.valor] || 0).toFixed(2)) : '')),
-      f.estudios, esPrecursor(f.tipo) ? f.revisitas : '',
-      Number(f.servicioSagrado.toFixed(2)), f.comentarios]),
-  ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(det), 'Detalle');
-  XLSX.writeFile(wb, `informes_${mes.slice(0, 7)}.xlsx`);
-};
-
-const exportarPDF = (mes, filas, resumen) => {
-  const nombre = nombreMes(mes, 'es-MX');
-  const doc = new jsPDF();
-  doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-  doc.text(`Informe de servicio — ${nombre}`, 14, 18);
-  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-  doc.text(`Generado el ${new Date().toLocaleDateString('es-MX')}`, 14, 25);
-  autoTable(doc, {
-    startY: 31,
-    head: [['Tipo', 'Miembros', 'Enviaron', 'Predicaron', 'Horas', 'Estudios', 'Revisitas', 'Serv. sagrado']],
-    body: TIPOS_PUBLICADOR.map(tp => {
-      const r = resumen[tp];
-      return [tp, r.total, r.enviados, r.predicaron, formatHoras(r.horas), r.estudios, r.revisitas, formatHoras(r.servicioSagrado)];
-    }),
-    styles: { fontSize: 9 }, headStyles: { fillColor: [37, 99, 235] },
-  });
-  autoTable(doc, {
-    startY: doc.lastAutoTable.finalY + 8,
-    head: [['Nombre', 'Tipo', 'Enviado', 'Predicó', 'Horas', 'Estudios', 'Revisitas', 'Serv. sagrado']],
-    body: filas.map(f => [f.nombre, f.tipo, f.enviado ? 'Sí' : 'No', f.predico ? 'Sí' : 'No',
-      esPrecursor(f.tipo) ? formatHoras(f.horas) : '—', f.estudios, esPrecursor(f.tipo) ? f.revisitas : '—',
-      formatHoras(f.servicioSagrado)]),
-    styles: { fontSize: 8 }, headStyles: { fillColor: [15, 23, 42] },
-  });
-  doc.save(`informes_${mes.slice(0, 7)}.pdf`);
+  const tot = TIPOS_PUBLICADOR.reduce((a, tp) => {
+    const r = resumen[tp];
+    a.total += r.total; a.enviados += r.enviados; a.predicaron += r.predicaron; a.horas += r.horas;
+    a.estudios += r.estudios; a.revisitas += r.revisitas; a.sagrado += r.servicioSagrado;
+    return a;
+  }, { total: 0, enviados: 0, predicaron: 0, horas: 0, estudios: 0, revisitas: 0, sagrado: 0 });
+  const porConcepto = TIPOS_SALIDA.map(ts => filas.reduce((suma, f) => suma + (esPrecursor(f.tipo) ? (f.porTipo?.[ts.valor] || 0) : 0), 0));
+  const soloPrecursor = (f, v) => (esPrecursor(f.tipo) ? v : null);
+  return {
+    archivo: `Informes_${mes.slice(0, 7)}`,
+    titulo: `Informe de servicio · ${nombre}`,
+    subtitulo: user?.congregacion_nombre || 'Congregación',
+    usuario: user?.nombre,
+    color: '#2563EB',
+    meta: [{ etiqueta: 'Mes', valor: nombre }],
+    kpis: [
+      { etiqueta: 'Enviaron su informe', valor: `${tot.enviados} de ${tot.total}`, detalle: `${tot.total - tot.enviados} sin enviar`, color: '#2563EB' },
+      { etiqueta: 'Predicaron', valor: tot.predicaron, detalle: 'Publicadores y precursores', color: '#059669' },
+      { etiqueta: 'Horas de precursores', valor: formatHoras(tot.horas), detalle: 'Auxiliares y regulares', color: '#7C3AED' },
+      { etiqueta: 'Estudios bíblicos', valor: tot.estudios, color: '#0891B2' },
+      { etiqueta: 'Revisitas', valor: tot.revisitas, detalle: 'De precursores', color: '#D97706' },
+      { etiqueta: 'Servicio sagrado', valor: formatHoras(tot.sagrado), detalle: 'No suma a la predicación', color: '#64748B' },
+    ],
+    secciones: [
+      {
+        tipo: 'grafica', titulo: 'Informes enviados', en: ['pdf', 'html'],
+        grafica: { tipo: 'dona', etiquetas: ['Enviados', 'Sin enviar'], series: [{ nombre: 'Miembros', valores: [tot.enviados, tot.total - tot.enviados] }], colores: ['#059669', '#F59E0B'], unidad: 'miembros' },
+      },
+      porConcepto.some(v => v > 0) && {
+        tipo: 'grafica', titulo: 'Horas de precursores por concepto', en: ['pdf', 'html'],
+        grafica: { tipo: 'barrasH', etiquetas: TIPOS_SALIDA.map(ts => ts.etiqueta), series: [{ nombre: 'Horas', valores: porConcepto.map(v => Number(v.toFixed(2))), color: '#7C3AED' }] },
+      },
+      {
+        tipo: 'tabla', titulo: 'Resumen por tipo de publicador', hoja: 'Resumen por tipo',
+        columnas: [
+          { titulo: 'Tipo', clave: 'tipo', colores: COLOR_TIPO },
+          { titulo: 'Miembros', clave: 'total', tipo: 'numero' },
+          { titulo: 'Enviaron', clave: 'enviados', tipo: 'numero' },
+          { titulo: 'Predicaron', clave: 'predicaron', tipo: 'numero' },
+          { titulo: 'Horas', clave: 'horas', tipo: 'horas' },
+          { titulo: 'Estudios', clave: 'estudios', tipo: 'numero' },
+          { titulo: 'Revisitas', clave: 'revisitas', tipo: 'numero' },
+          { titulo: 'Servicio sagrado', clave: 'servicioSagrado', tipo: 'horas' },
+        ],
+        filas: TIPOS_PUBLICADOR.map(tp => ({ tipo: tp, ...resumen[tp] })),
+        totales: { total: 'suma', enviados: 'suma', predicaron: 'suma', horas: 'suma', estudios: 'suma', revisitas: 'suma', servicioSagrado: 'suma' },
+      },
+      {
+        tipo: 'tabla', titulo: 'Detalle por persona', hoja: 'Detalle',
+        columnas: [
+          { titulo: 'Nombre', clave: 'nombre' },
+          { titulo: 'Tipo', clave: 'tipo', colores: COLOR_TIPO },
+          { titulo: 'Informe', clave: 'envio', colores: COLOR_ENVIO },
+          { titulo: 'Predicó', clave: 'predico', tipo: 'siNo' },
+          { titulo: 'Horas', clave: 'horas', tipo: 'horas' },
+          ...TIPOS_SALIDA.map(ts => ({ titulo: ts.etiqueta, clave: `c_${ts.valor}`, tipo: 'horas', en: ['excel', 'html'] })),
+          { titulo: 'Estudios', clave: 'estudios', tipo: 'numero' },
+          { titulo: 'Revisitas', clave: 'revisitas', tipo: 'numero' },
+          { titulo: 'Servicio sagrado', clave: 'servicioSagrado', tipo: 'horas' },
+          { titulo: 'Comentarios', clave: 'comentarios', ancho: 40, en: ['excel', 'html'] },
+        ],
+        filas: filas.map(f => ({
+          ...f,
+          envio: f.enviado ? 'Enviado' : 'Sin enviar',
+          horas: soloPrecursor(f, f.horas),
+          revisitas: soloPrecursor(f, f.revisitas),
+          ...Object.fromEntries(TIPOS_SALIDA.map(ts => [`c_${ts.valor}`, soloPrecursor(f, f.porTipo?.[ts.valor] || 0)])),
+        })),
+        totales: { horas: 'suma', estudios: 'suma', revisitas: 'suma', servicioSagrado: 'suma', ...Object.fromEntries(TIPOS_SALIDA.map(ts => [`c_${ts.valor}`, 'suma'])) },
+      },
+    ].filter(Boolean),
+  };
 };
 
 const InformeCongregacion = ({ mes, setMes }) => {
+  const { user } = useAuth();
   const { cargando, filas, resumen } = useInformesCongregacion(mes);
   const [filtro, setFiltro] = useState('todos');
 
@@ -646,14 +672,7 @@ const InformeCongregacion = ({ mes, setMes }) => {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <NavegadorMes mes={mes} setMes={setMes} />
-        <div className="flex gap-2">
-          <button type="button" className="btn btn-outline text-sm" onClick={() => exportarExcel(mes, filas, resumen)} disabled={!filas.length}>
-            <FileSpreadsheet size={15} /> Excel
-          </button>
-          <button type="button" className="btn btn-outline text-sm" onClick={() => exportarPDF(mes, filas, resumen)} disabled={!filas.length}>
-            <FileDown size={15} /> PDF
-          </button>
-        </div>
+        <BotonesExportar armar={() => reporteCongregacion(mes, filas, resumen, user)} disabled={!filas.length} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -791,17 +810,58 @@ const BadgeActividad = ({ estado }) => {
   );
 };
 
-const exportarActividad = (filas, umbral) => {
-  const wb = XLSX.utils.book_new();
-  const hoja = [
-    [`Actividad de la congregación — ${new Date().toLocaleDateString('es-MX')}`],
-    [`Inactivo = ${umbral} meses o más sin actividad (informe con "Prediqué", horas de predicación o visitas en el mapa)`], [],
-    ['Nombre', 'Tipo', 'Estado', 'Última actividad', 'Días sin actividad', 'Meses completos sin actividad', 'Horas este mes', 'Visitas en el mapa este mes'],
-    ...filas.map(f => [f.nombre, f.tipo, ESTADOS_ACTIVIDAD[f.estado].etiqueta, f.ultima || 'Sin registro',
-      f.dias ?? '', f.estado === 'activo' ? 0 : (f.mesesSin ?? ''), Number(f.horasMes.toFixed(2)), f.visitasMes]),
-  ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hoja), 'Actividad');
-  XLSX.writeFile(wb, `actividad_${hoyLocal()}.xlsx`);
+const reporteActividad = (todas, visibles, umbral, user) => {
+  const n = (e) => todas.filter(f => f.estado === e).length;
+  const colorEstado = Object.fromEntries(Object.values(ESTADOS_ACTIVIDAD).map(c => [c.etiqueta, c.color]));
+  const filtrado = visibles.length !== todas.length;
+  return {
+    archivo: `Actividad_${hoyLocal()}`,
+    titulo: 'Actividad de la congregación',
+    subtitulo: user?.congregacion_nombre || 'Congregación',
+    usuario: user?.nombre,
+    color: '#059669',
+    meta: [{ etiqueta: 'Inactivo', valor: `${umbral} meses o más sin actividad` }],
+    kpis: [
+      { etiqueta: 'Activos', valor: n('activo'), detalle: 'Predicaron este mes o el anterior', color: '#059669' },
+      { etiqueta: 'Sin predicar', valor: n('sin_predicar'), detalle: `Menos de ${umbral} meses sin actividad`, color: '#D97706' },
+      { etiqueta: 'Inactivos', valor: n('inactivo'), detalle: `${umbral}+ meses sin actividad`, color: '#DC2626' },
+      { etiqueta: 'Miembros', valor: todas.length, color: '#2563EB' },
+    ],
+    secciones: [
+      {
+        tipo: 'texto', titulo: 'Cómo se cuenta',
+        parrafos: [
+          'Cuenta como actividad el informe del mes con "Prediqué", las horas de predicación anotadas y las visitas registradas en el mapa. El servicio sagrado no cuenta como predicación.',
+          `Activo = tuvo actividad este mes o el anterior (los publicadores informan al terminar el mes). Inactivo = ${umbral} meses completos o más sin actividad.`,
+        ],
+      },
+      {
+        tipo: 'grafica', titulo: 'Estado de la congregación', en: ['pdf', 'html'],
+        grafica: { tipo: 'dona', etiquetas: ['Activos', 'Sin predicar', 'Inactivos'], series: [{ nombre: 'Miembros', valores: [n('activo'), n('sin_predicar'), n('inactivo')] }], colores: ['#10B981', '#F59E0B', '#EF4444'], unidad: 'miembros' },
+      },
+      {
+        tipo: 'tabla', titulo: 'Detalle por persona', hoja: 'Actividad',
+        descripcion: filtrado ? `Lista filtrada: ${visibles.length} de ${todas.length} miembros.` : undefined,
+        columnas: [
+          { titulo: 'Nombre', clave: 'nombre' },
+          { titulo: 'Tipo', clave: 'tipo', colores: COLOR_TIPO },
+          { titulo: 'Estado', clave: 'estadoTexto', colores: colorEstado },
+          { titulo: 'Última actividad', clave: 'ultima', tipo: 'fecha' },
+          { titulo: 'Cómo', clave: 'fuenteTexto' },
+          { titulo: 'Días sin actividad', clave: 'dias', tipo: 'numero' },
+          { titulo: 'Meses sin actividad', clave: 'meses', tipo: 'numero' },
+          { titulo: 'Horas este mes', clave: 'horasMes', tipo: 'horas' },
+          { titulo: 'Visitas este mes', clave: 'visitasMes', tipo: 'numero' },
+        ],
+        filas: visibles.map(f => ({
+          ...f,
+          estadoTexto: ESTADOS_ACTIVIDAD[f.estado].etiqueta,
+          fuenteTexto: f.fuente ? FUENTE_ACTIVIDAD[f.fuente] : (f.nuevo ? 'Nuevo' : 'Sin registro'),
+          meses: f.estado === 'activo' ? 0 : f.mesesSin,
+        })),
+      },
+    ],
+  };
 };
 
 const ActividadCongregacion = () => {
@@ -883,9 +943,7 @@ const ActividadCongregacion = () => {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
             <input value={buscar} onChange={e => setBuscar(e.target.value)} placeholder={t('Buscar nombre')} className="pl-9 w-full" />
           </div>
-          <button type="button" className="btn btn-outline text-sm shrink-0" onClick={() => exportarActividad(visibles, umbral)} disabled={!visibles.length}>
-            <FileSpreadsheet size={15} /> Excel
-          </button>
+          <BotonesExportar armar={() => reporteActividad(filas, visibles, umbral, user)} disabled={!visibles.length} className="shrink-0" />
         </div>
       </div>
 
