@@ -44,7 +44,7 @@ async function llamar(accion, datos) {
     throw new ErrorSesion('no_disponible');
   }
   const cuerpo = await res.json().catch(() => null);
-  if (res.ok && cuerpo?.usuario) return cuerpo;
+  if (res.ok && cuerpo && (cuerpo.usuario || cuerpo.ok)) return cuerpo;
   // 401/403 con código propio = respuesta real del servidor; lo demás (404 sin desplegar, 5xx) = no disponible
   const codigo = cuerpo?.error;
   if ((res.status === 401 || res.status === 403 || res.status === 400) && codigo && codigo !== 'accion_desconocida') {
@@ -53,13 +53,19 @@ async function llamar(accion, datos) {
   throw new ErrorSesion('no_disponible');
 }
 
+const conUsuario = (r) => { if (!r?.usuario) throw new ErrorSesion('no_disponible'); return r; };
+
 // Entrar con usuario y contraseña revisados en el servidor
-export const entrarEnServidor = (usuario, password) => llamar('entrar', { usuario, password });
+export const entrarEnServidor = async (usuario, password) => conUsuario(await llamar('entrar', { usuario, password }));
+
+// Cambiar la contraseña (la actual se revisa en el servidor; con la Migración 11 queda cifrada)
+export const cambiarPasswordEnServidor = (usuarioId, actual, nueva) =>
+  llamar('cambiar-password', { usuario_id: usuarioId, actual, nueva });
 
 // Renueva el token (y trae rol/congregación al día) si ya pasó un día. null si no hace falta o no se puede.
 export async function renovarSiToca() {
   const s = leer();
   if (!s?.token || (typeof navigator !== 'undefined' && navigator.onLine === false)) return null;
   if (Date.now() - (s.obtenido || 0) < RENOVAR_CADA_MS && s.expira * 1000 > Date.now() + 7 * 86400_000) return null;
-  return llamar('renovar', { token: s.token });
+  return conUsuario(await llamar('renovar', { token: s.token }));
 }

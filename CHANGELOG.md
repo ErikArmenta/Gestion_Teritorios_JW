@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-06 — Blindaje paso 2: contraseñas cifradas (bcrypt) — Migración 11 (fase 1) y 11B (fase 2)
+
+- `MIGRACION_11_PASSWORDS.sql` (nuevo): `password_hash`, disparador que cifra, `verificar_password` (solo servidor)
+- `MIGRACION_11B_SIN_TEXTO_PLANO.sql` (nuevo): borra el texto plano
+- `supabase/functions/sesion` (revisa la cifrada; acción `cambiar-password`), `supabase/functions/webauthn`
+- `pages/Profile.jsx` (cambiar contraseña por el servidor), `pages/UsersList.jsx` ("Cifrada"; al editar, vacía = no cambiar),
+  `utils/sesion.js`, `SQL_MIGRATIONS.md`, `docs/SESION_SEGURA.md`, `i18n/en.js`
+
 ## 2026-11-06 — Blindaje paso 1: sesión firmada por el servidor — Edge Function `sesion` opcional
 
 - `supabase/functions/sesion/index.ts` (nuevo): login revisado en el servidor + token firmado (HS256 legacy o ES256

@@ -335,3 +335,25 @@ CREATE TABLE IF NOT EXISTS webauthn_retos (
 - Solo se guarda la llave **pública**; la huella nunca sale del teléfono.
 - Sin la migración (o sin la función) la app no muestra el botón de huella y todo sigue igual.
 
+---
+
+## Migración 11 — Contraseñas cifradas (bcrypt) — en dos fases
+
+Archivos listos para pegar (re-ejecutables), **en este orden y no el mismo día**:
+
+1. `MIGRACION_11_PASSWORDS.sql` — fase 1: `app_usuarios.password_hash` (bcrypt con `pgcrypto`), disparador
+   `trg_app_usuarios_cifrar_password` (cifra toda contraseña que se escriba: alta, cambio, respaldo) y la función
+   `verificar_password(p_password, p_usuario, p_id)` (solo `service_role`; la usan las Edge Functions `sesion` y
+   `webauthn`). La columna `password` original se conserva: todo sigue funcionando igual.
+2. `MIGRACION_11B_SIN_TEXTO_PLANO.sql` — fase 2: marca `seguridad_config.borrar_password_plano = 'si'` y borra el
+   texto plano. Desde ahí nadie puede ver contraseñas (en Usuarios salen "Cifrada"), solo cambiarlas.
+   **Antes:** app nueva publicada + funciones `sesion` y `webauthn` con el código nuevo + probar entrar y
+   cambiar contraseña.
+
+```sql
+ALTER TABLE app_usuarios ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE app_usuarios ALTER COLUMN password DROP NOT NULL;
+CREATE TABLE IF NOT EXISTS seguridad_config (clave TEXT PRIMARY KEY, valor TEXT NOT NULL); -- RLS sin políticas
+-- + disparador app_usuarios_cifrar_password() y función verificar_password(...) (ver el .sql)
+```
+

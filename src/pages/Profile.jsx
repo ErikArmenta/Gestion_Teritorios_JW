@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Lock, User, Shield, Building2, AtSign, Loader2, ShieldCheck } from 'lucide-react';
-import { tokenVigente } from '../utils/sesion';
+import { tokenVigente, cambiarPasswordEnServidor } from '../utils/sesion';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
@@ -90,7 +90,21 @@ const Profile = () => {
 
     setSavingPass(true);
     try {
-      // Verify current password
+      // 1) En el servidor (Edge Function `sesion`): revisa la actual allá y la nueva queda cifrada (Migración 11)
+      try {
+        await cambiarPasswordEnServidor(user.id, currentPassword, newPassword);
+        toast.success(tx('Contraseña actualizada correctamente'));
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        return;
+      } catch (err) {
+        if (err?.codigo === 'credenciales') { toast.error(tx('La contraseña actual es incorrecta')); return; }
+        if (err?.codigo === 'muy_corta') { toast.error(tx('La nueva contraseña debe tener al menos 4 caracteres')); return; }
+        // 'no_disponible' → como siempre (abajo)
+      }
+
+      // 2) Respaldo: la comparación de siempre (solo funciona mientras exista la contraseña sin cifrar)
       const { data, error: fetchError } = await supabase
         .from('app_usuarios')
         .select('password')

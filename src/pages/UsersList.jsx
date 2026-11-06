@@ -8,7 +8,7 @@ import ModalOverlay from '../components/ModalOverlay';
 import { ROLES } from '../utils/constants';
 import { TIPOS_PUBLICADOR, METAS_SUGERIDAS, esPrecursor } from '../utils/informes';
 import { createPortal } from 'react-dom';
-import { Eye, EyeOff, Pencil, Trash2, UserPlus, X, Search } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Trash2, UserPlus, X, Search, Lock } from 'lucide-react';
 import Pagination from '../components/Pagination';
 import { t as tx } from '../i18n';
 
@@ -103,7 +103,9 @@ const UsersList = () => {
       if (formData.id) {
         const { error } = await supabase.from('app_usuarios').update({
           nombre: formData.nombre, usuario: formData.usuario,
-          password: formData.password, rol: formData.rol,
+          // Vacía = no cambiarla (con la Migración 11B la actual no se puede ver)
+          ...(formData.password ? { password: formData.password } : {}),
+          rol: formData.rol,
           activo: formData.activo, foto_url,
           ...camposInforme(),
         }).eq('id', formData.id);
@@ -196,7 +198,12 @@ const UsersList = () => {
     </div>
   );
 
-  const PasswordCell = ({ u }) => (
+  // Con la Migración 11B la contraseña solo existe cifrada: nadie la puede ver, solo cambiar
+  const PasswordCell = ({ u }) => (!u.password && u.password_hash) ? (
+    <span className="inline-flex items-center gap-1 text-xs text-muted" title={tx('Solo se puede cambiar, no ver')}>
+      <Lock size={12} /> {tx('Cifrada')}
+    </span>
+  ) : (
     <div className="flex items-center gap-1.5">
       <span className="font-mono text-xs text-muted">
         {showPassId === u.id ? u.password : '••••••••'}
@@ -471,8 +478,8 @@ const UsersList = () => {
               <input required value={formData.usuario} onChange={e => setFormData(f => ({ ...f, usuario: e.target.value }))} placeholder={tx('Para iniciar sesión')} />
             </div>
             <div className="form-group">
-              <label className="form-label">{tx('Contraseña *')}</label>
-              <input required value={formData.password} onChange={e => setFormData(f => ({ ...f, password: e.target.value }))} type="text" placeholder={tx('Contraseña de acceso')} />
+              <label className="form-label">{formData.id ? tx('Nueva contraseña') : tx('Contraseña *')}</label>
+              <input required={!formData.id} value={formData.password || ''} onChange={e => setFormData(f => ({ ...f, password: e.target.value }))} type="text" placeholder={formData.id ? tx('Déjala vacía para no cambiarla') : tx('Contraseña de acceso')} />
             </div>
             <div className="form-group">
               <label className="form-label">{tx('Rol del Sistema *')}</label>

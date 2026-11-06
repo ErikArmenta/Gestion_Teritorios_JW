@@ -103,6 +103,17 @@ class Fallo extends Error {
 
 const activo = (u: { activo?: boolean | null }) => u.activo !== false;
 
+// ¿La contraseña es correcta? Con la Migración 11 se revisa cifrada (verificar_password); sin ella, como
+// siempre. (Misma lógica que en `sesion`; si cambias una, cambia la otra.)
+async function passwordCorrecta(id: number, password: string) {
+  const { data, error } = await supabase.rpc('verificar_password', { p_password: password, p_usuario: null, p_id: id });
+  if (!error) return data != null;
+  if (!/PGRST202|42883|Could not find the function/i.test(`${error.code} ${error.message}`)) throw error;
+  const { data: u, error: e2 } = await supabase.from('app_usuarios').select('id').eq('id', id).eq('password', password).maybeSingle();
+  if (e2) throw e2;
+  return !!u;
+}
+
 async function guardarReto(reto: string, tipo: 'registro' | 'login', usuario_id: number | null) {
   // Limpieza de retos vencidos (no importa si falla)
   await supabase.from('webauthn_retos').delete().lt('expira_en', new Date().toISOString());
@@ -137,8 +148,9 @@ async function atender(accion: string, d: any, origen: string, apikey: string) {
     // Activar la huella pide la contraseña otra vez: así nadie la activa en una cuenta ajena
     const usuarioId = Number(d.usuario_id);
     if (!usuarioId || typeof d.password !== 'string' || !d.password) throw new Fallo('credenciales');
+    if (!(await passwordCorrecta(usuarioId, d.password))) throw new Fallo('credenciales', 401);
     const { data: u } = await supabase.from('app_usuarios')
-      .select('id, usuario, nombre, activo').eq('id', usuarioId).eq('password', d.password).maybeSingle();
+      .select('id, usuario, nombre, activo').eq('id', usuarioId).maybeSingle();
     if (!u) throw new Fallo('credenciales', 401);
     if (!activo(u)) throw new Fallo('desactivada', 403);
 

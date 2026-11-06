@@ -103,8 +103,14 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   `fetchConRespaldo` lo olvida y repite con la llave pública. Se renueva una vez al día (`renovarSiToca`);
   cuenta desactivada/borrada → se cierra la sesión. `webauthn` firma igual (si cambias el formato, cambia ambas).
   Las funciones prueban el token contra la BD antes de entregarlo.
-- Riesgo conocido: el login compara usuario/contraseña directo contra `app_usuarios` con la anon key
-  (sigue como respaldo hasta el paso 3 del blindaje: permisos RLS que lean el token).
+- **Contraseñas cifradas** (blindaje paso 2, Migración 11 + 11B): bcrypt en `app_usuarios.password_hash`
+  (disparador `trg_app_usuarios_cifrar_password`; con 11B la columna `password` queda siempre `NULL`).
+  Revisarlas **solo** en el servidor con `verificar_password` (rpc, solo service role) — funciones `sesion`
+  (`entrar`, `cambiar-password`) y `webauthn`; sin la migración caen a la comparación de siempre.
+  Nunca leer ni comparar `password` desde el navegador para algo nuevo. Usuarios: al editar, contraseña
+  vacía = no cambiarla (no mandar `password`); sin texto plano se muestra "Cifrada".
+- Riesgo conocido: el login de respaldo (`loginDirecto`) compara usuario/contraseña directo contra `app_usuarios`
+  con la anon key, y la tabla sigue legible con la anon key hasta el paso 3 del blindaje (permisos RLS que lean el token).
   No exponer más datos sensibles por esa vía; cualquier mejora de seguridad debe coordinarse con el dueño.
 
 ## Offline y PWA

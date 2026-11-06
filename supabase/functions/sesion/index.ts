@@ -5,8 +5,10 @@
 // cada tabla leerán ese token (`auth.jwt() ->> 'congregacion_id'`) y la llave pública sola ya no verá nada.
 //
 // Acciones (POST { accion, ... }):
-//   entrar   { usuario, password } → { usuario, token?, expira? }
-//   renovar  { token }             → { usuario, token, expira }  (403 si la cuenta se desactivó)
+//   entrar            { usuario, password }          → { usuario, token?, expira? }
+//   renovar           { token }                      → { usuario, token, expira }  (403 si la cuenta se desactivó)
+//   cambiar-password  { usuario_id, actual, nueva }  → { ok: true }
+// Contraseñas: con la Migración 11 se revisan cifradas (verificar_password); sin ella, como siempre.
 //
 // Firma (Edge Functions → Secrets), UNA de las dos (pasos en docs/SESION_SEGURA.md):
 //   SESION_JWT_SECRET  = el "Legacy JWT secret" del proyecto (HS256)
@@ -114,10 +116,25 @@ async function supabaseAcepta(token: string, apikey: string) {
   return false;
 }
 
-async function cargarUsuario(filtro: { id?: number; usuario?: string; password?: string }) {
-  let q = supabase.from('app_usuarios').select('*');
-  if (filtro.id != null) q = q.eq('id', filtro.id);
-  if (filtro.usuario != null) q = q.eq('usuario', filtro.usuario).eq('password', filtro.password ?? '');
+// ¿La contraseña es correcta? Devuelve el id o null. Con la Migración 11 se revisa la versión cifrada
+// (función verificar_password en la BD); sin ella, la comparación de siempre.
+// (Misma función en `webauthn`; si cambias una, cambia la otra.)
+async function passwordCorrecta(filtro: { id?: number; usuario?: string }, password: string): Promise<number | null> {
+  if (!password) return null;
+  const { data, error } = await supabase.rpc('verificar_password', {
+    p_password: password, p_usuario: filtro.usuario ?? null, p_id: filtro.id ?? null,
+  });
+  if (!error) return data == null ? null : Number(data);
+  if (!/PGRST202|42883|Could not find the function/i.test(`${error.code} ${error.message}`)) throw error;
+  let q = supabase.from('app_usuarios').select('id').eq('password', password);
+  q = filtro.id != null ? q.eq('id', filtro.id) : q.eq('usuario', filtro.usuario ?? '');
+  const { data: u, error: e2 } = await q.maybeSingle();
+  if (e2) throw e2;
+  return u ? Number(u.id) : null;
+}
+
+async function cargarUsuario(filtro: { id: number }) {
+  const q = supabase.from('app_usuarios').select('*').eq('id', filtro.id);
   const { data, error } = await q.maybeSingle();
   if (error) throw error;
   if (!data) throw new Fallo('credenciales', 401);
@@ -148,7 +165,21 @@ async function atender(accion: string, d: any, apikey: string) {
     if (typeof d.usuario !== 'string' || typeof d.password !== 'string' || !d.usuario || !d.password) {
       throw new Fallo('credenciales', 401);
     }
-    return conToken(await cargarUsuario({ usuario: d.usuario, password: d.password }), apikey);
+    const id = await passwordCorrecta({ usuario: d.usuario }, d.password);
+    if (!id) throw new Fallo('credenciales', 401);
+    return conToken(await cargarUsuario({ id }), apikey);
+  }
+
+  if (accion === 'cambiar-password') {
+    // Saber la contraseña actual es la prueba de identidad (no hace falta token)
+    const usuarioId = Number(d.usuario_id);
+    if (!usuarioId || typeof d.actual !== 'string' || typeof d.nueva !== 'string') throw new Fallo('credenciales', 401);
+    if (d.nueva.length < 4) throw new Fallo('muy_corta', 400);
+    if (!(await passwordCorrecta({ id: usuarioId }, d.actual))) throw new Fallo('credenciales', 401);
+    // El disparador de la Migración 11 la cifra (y en la fase 2 no deja el texto plano)
+    const { error } = await supabase.from('app_usuarios').update({ password: d.nueva }).eq('id', usuarioId);
+    if (error) throw error;
+    return { ok: true };
   }
 
   if (accion === 'renovar') {

@@ -78,3 +78,43 @@ vuelva a entrar. En el paso 3 se les pedirá entrar otra vez.
 - Si un admin desactiva o borra una cuenta, esa persona queda fuera la próxima vez que su app renueve
   el token.
 - La app no usa `supabase.auth`: el cliente está configurado con `accessToken` (`src/supabaseClient.js`).
+
+---
+
+# Paso 2: contraseñas cifradas
+
+Hoy las contraseñas se guardan tal cual en `app_usuarios.password`. Con este paso se guardan **cifradas
+con bcrypt**: aunque alguien lea la tabla, no puede ver ninguna contraseña. Va en dos fases para que
+nunca falle el login.
+
+## Fase 1 (segura, se puede hacer ya)
+
+1. Espera a que Vercel publique la app nueva.
+2. Edge Functions → `sesion` → **Code** → pega el `supabase/functions/sesion/index.ts` nuevo → **Deploy**.
+3. Haz lo mismo con `webauthn` (`supabase/functions/webauthn/index.ts`).
+4. SQL Editor → pega `MIGRACION_11_PASSWORDS.sql` → **Run**.
+
+Cada contraseña queda con su versión cifrada y el login revisa esa. La original **todavía no se borra**,
+así que todo sigue igual (y si algo falla, la original sigue ahí).
+
+**Prueba:**
+
+- Sal y entra con tu contraseña.
+- Entra con huella.
+- Cambia una contraseña en Mi Perfil y vuelve a entrar con la nueva.
+- Crea un usuario de prueba y entra con él.
+
+## Fase 2 (cuando la fase 1 jale bien)
+
+SQL Editor → pega `MIGRACION_11B_SIN_TEXTO_PLANO.sql` → **Run**. La última consulta debe mostrar
+`con_texto_plano = 0`.
+
+Desde ahí:
+
+- Las contraseñas solo existen cifradas. En **Usuarios** salen como "Cifrada" y ya nadie las puede ver,
+  ni los admins.
+- Para darle una contraseña nueva a alguien: **Editar** → "Nueva contraseña". Si la dejas vacía, no cambia.
+- Los respaldos ya no llevan contraseñas legibles.
+- Ojo: el login de respaldo (directo a la tabla, el que se usa si la función `sesion` no responde) deja
+  de servir. Por eso la función tiene que estar desplegada.
+

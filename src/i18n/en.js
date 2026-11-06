@@ -885,6 +885,10 @@ const en = {
   'No se pudo conectar. Revisa tu internet e inténtalo de nuevo.': "Couldn't connect. Check your internet and try again.",
   // Sesión firmada (blindaje paso 1)
   'Sesión protegida por el servidor': "Session protected by the server",
+  // Contraseñas cifradas (blindaje paso 2)
+  'Solo se puede cambiar, no ver': "Can only be changed, not viewed",
+  'Cifrada': "Encrypted",
+  'Déjala vacía para no cambiarla': "Leave empty to keep it",
 };
 
 export default en;
