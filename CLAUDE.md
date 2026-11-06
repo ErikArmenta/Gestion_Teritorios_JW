@@ -22,6 +22,7 @@ npm run dev       # desarrollo (el Service Worker NO se registra en dev)
 npm run build     # verificar SIEMPRE antes de commitear
 npm run preview   # probar el build de producción + PWA
 npm run lint
+npm run pruebas   # todas las pruebas (después de npm run build); ver pruebas/README.md
 ```
 
 Variables en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Nunca commitear `.env`.
@@ -124,6 +125,14 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - **Storage y login (Migración 13)**: subir a `fotos_casas`/`notas_voz` exige sesión (`jw_storage_*`; ver por
   link público sigue abierto). `login_intentos`: 5 fallos por usuario / 20 por IP → 15 min (`sesion`, `webauthn`;
   429 `{ error: 'bloqueado', segundos }`). Contraseñas nuevas: mínimo 6.
+- **Respaldos y errores (Migración 14, `docs/RESPALDOS.md`)**: Edge Function `respaldo` (pg_cron semanal o "Respaldar
+  ahora"; bucket privado `respaldos` con candado restrictivo; solo Super Admin lista/descarga) y `errores_app`
+  (`utils/errores.js` reporta errores sueltos y de pantalla; `components/ErrorPantalla.jsx` envuelve las rutas en
+  `App.jsx`: aviso amable en vez de pantalla en blanco). Ambos se ven en Backup.
+- **Pruebas (`pruebas/`, `npm run build` + `npm run pruebas`)**: e2e de la app real con Supabase interceptado y las Edge
+  Functions reales en Node; SQL de las migraciones en PGlite. GitHub Actions las corre en cada push a `main`.
+  **Toda función nueva lleva su prueba** (regístrala en `pruebas/correr.mjs`). Si cambias un texto que una prueba
+  busca, actualiza la prueba.
 - Importar casas: `utils/leerTabla.js` (exceljs para .xlsx, lector propio de .csv). Ya **no** se usa SheetJS (`xlsx`).
 - Backup: solo exporta/restaura la congregación del usuario; restaurar **no** borra usuarios (upsert; borrar
   un usuario borra en cascada informes, huellas y asignaciones).

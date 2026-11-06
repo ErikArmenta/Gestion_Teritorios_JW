@@ -393,3 +393,15 @@ Archivo: `MIGRACION_13_SEGURIDAD.sql` (re-ejecutable; trae sus propias funciones
   usuario (o 20 por IP). Sin la tabla no se limita nada.
 - El reporte final dice cuántas contraseñas siguen en texto plano (si no es 0, falta correr la 11B).
 
+---
+
+## Migración 14 — Respaldos automáticos y errores de la app
+
+Archivos: `MIGRACION_14_RESPALDOS_ERRORES.sql` (re-ejecutable) y `MIGRACION_14B_PROGRAMAR_RESPALDO.sql`
+(pg_cron + pg_net; cambiar la URL y el secreto). Edge Function `supabase/functions/respaldo`. Pasos: `docs/RESPALDOS.md`.
+
+- Bucket privado `respaldos` con candado **restrictivo** `jw_respaldos_candado`: nadie desde la app (ni usuarios de
+  otras apps) lo lista, baja, sube ni borra; solo la función (service role). Se guardan los últimos 12.
+- `errores_app` (agrupados por `firma`, `veces`, `resuelto`): la app reporta con `reportar_error(...)` (SECURITY
+  DEFINER, también sin sesión; textos recortados; tope 300 distintos por día). Solo Super Admin los ve y marca resueltos.
+

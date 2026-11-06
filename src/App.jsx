@@ -23,6 +23,7 @@ import Grupos from './pages/Grupos';
 import TerritoriosAdmin from './pages/TerritoriosAdmin';
 import Informes from './pages/Informes';
 import OfflineIndicator from './components/OfflineIndicator';
+import ErrorPantalla from './components/ErrorPantalla';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
 import BottomNav from './components/BottomNav';
@@ -118,6 +119,8 @@ const AppLayout = () => {
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
           <NotificationBell />
         </div>
+        {/* Si una pantalla truena: aviso amable en vez de pantalla en blanco (y se reporta el error) */}
+        <ErrorPantalla clave={pathname}>
         <Routes>
           <Route path="/" element={<TerritoriesMap />} />
           <Route path="/register" element={<RegisterHouse />} />
@@ -165,6 +168,7 @@ const AppLayout = () => {
             </ProtectedRoute>
           } />
         </Routes>
+        </ErrorPantalla>
       </main>
 
       {/* Notification permission modal */}
@@ -242,11 +246,13 @@ function App() {
         <ToastProvider>
           <BrowserRouter>
             <LangKeyed>
+            <ErrorPantalla>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/shared/:id" element={<SharedTerritory />} />
               <Route path="/*" element={<MapaFondoProvider><AppLayout /></MapaFondoProvider>} />
             </Routes>
+            </ErrorPantalla>
             <PWAPrompts />
             </LangKeyed>
           </BrowserRouter>

@@ -6,6 +6,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import { supabase } from '../supabaseClient';
 import { t as tx } from '../i18n';
 import { seleccionarUsuarios } from '../utils/usuarios';
+import RespaldosAutomaticos from '../components/RespaldosAutomaticos';
+import ErroresApp from '../components/ErroresApp';
 
 const Backup = () => {
   const { user } = useAuth();
@@ -227,6 +229,10 @@ const Backup = () => {
         <h1 className="text-2xl font-bold heading-gradient mb-1">{tx('Backup del Sistema')}</h1>
         <p className="text-sm text-secondary">{tx('Exporta o restaura todos los datos de la congregación.')}</p>
       </div>
+
+      {/* Respaldos semanales en el servidor y errores reportados por los teléfonos (Migración 14) */}
+      <RespaldosAutomaticos />
+      <ErroresApp />
 
       {/* Export Section */}
       <div

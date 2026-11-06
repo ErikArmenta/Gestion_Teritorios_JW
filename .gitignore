@@ -25,3 +25,7 @@ dist-ssr
 
 # FoxOrchestrator deliverables
 _entregables/
+
+# Pruebas (archivos que generan al correr)
+pruebas/salida/
+pruebas/apoyo/fn-*.mts

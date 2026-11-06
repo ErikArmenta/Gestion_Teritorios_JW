@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-06 — Respaldos automáticos, avisos de errores y pruebas en el repo — Migración 14
+
+- `supabase/functions/respaldo` (nuevo) + `MIGRACION_14_RESPALDOS_ERRORES.sql` + `MIGRACION_14B_PROGRAMAR_RESPALDO.sql`:
+  respaldo semanal comprimido en bucket privado (últimos 12), "Respaldar ahora" y descarga para Super Admin
+- `utils/errores.js`, `components/ErrorPantalla.jsx` (nuevos): errores reportados a `errores_app`; aviso amable en vez de
+  pantalla en blanco; `components/RespaldosAutomaticos.jsx` y `components/ErroresApp.jsx` en Backup
+- `pruebas/` (nuevo): 9 suites (e2e + SQL) con `npm run pruebas`; `.github/workflows/pruebas.yml` en cada push
+- `docs/RESPALDOS.md`, `pruebas/README.md`, `SQL_MIGRATIONS.md`, `CLAUDE.md`, `i18n/en.js`
+- Traducciones al inglés que faltaban desde el paso 3 (reportes, seguridad, respaldos); nueva prueba `textos` que lo vigila
+
 ## 2026-11-06 — Seguridad: Storage, límite de intentos, contraseñas de 6 y fuera SheetJS — Migración 13
 
 - `MIGRACION_13_SEGURIDAD.sql` / `MIGRACION_13_REVERTIR.sql` (nuevos): subir fotos/audios solo con sesión, tamaños

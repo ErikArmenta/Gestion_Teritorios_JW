@@ -8,7 +8,9 @@ import 'react-leaflet-cluster/dist/assets/MarkerCluster.css';
 import 'react-leaflet-cluster/dist/assets/MarkerCluster.Default.css';
 import { registerPwa } from './utils/pwa';
 import { initOneSignal } from './utils/onesignal';
+import { instalarReporteDeErrores } from './utils/errores';
 
+instalarReporteDeErrores();
 registerPwa();
 initOneSignal();
 
