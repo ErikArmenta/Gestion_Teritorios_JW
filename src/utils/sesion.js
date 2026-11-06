@@ -29,7 +29,7 @@ export function tokenVigente() {
 }
 
 export class ErrorSesion extends Error {
-  constructor(codigo) { super(codigo); this.codigo = codigo; }
+  constructor(codigo, segundos = null) { super(codigo); this.codigo = codigo; this.segundos = segundos; }
 }
 
 async function llamar(accion, datos) {
@@ -47,8 +47,9 @@ async function llamar(accion, datos) {
   if (res.ok && cuerpo && (cuerpo.usuario || cuerpo.ok)) return cuerpo;
   // 401/403 con código propio = respuesta real del servidor; lo demás (404 sin desplegar, 5xx) = no disponible
   const codigo = cuerpo?.error;
-  if ((res.status === 401 || res.status === 403 || res.status === 400) && codigo && codigo !== 'accion_desconocida') {
-    throw new ErrorSesion(codigo);
+  // 429 = demasiados intentos (Migración 13): trae los segundos que faltan
+  if ([400, 401, 403, 429].includes(res.status) && codigo && codigo !== 'accion_desconocida') {
+    throw new ErrorSesion(codigo, cuerpo?.segundos ?? null);
   }
   throw new ErrorSesion('no_disponible');
 }
@@ -60,6 +61,9 @@ export function anotarBlindaje(r) {
   if (typeof r?.blindaje !== 'boolean') return;
   try { localStorage.setItem(CLAVE_BLINDAJE, r.blindaje ? '1' : '0'); } catch { /* nada */ }
 }
+// Texto para "demasiados intentos" (en minutos, redondeado hacia arriba)
+export const minutosBloqueo = (err) => Math.max(1, Math.ceil((Number(err?.segundos) || 900) / 60));
+
 export const blindajeActivo = () => { try { return localStorage.getItem(CLAVE_BLINDAJE) === '1'; } catch { return false; } };
 // Pregunta al servidor (sesiones viejas que nunca recibieron el aviso). null si no se pudo saber.
 export async function consultarBlindaje() {

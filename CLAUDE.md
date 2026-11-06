@@ -11,7 +11,7 @@ Multi-congregación. Desarrollada por Master Engenering EA. Idioma de la UI: **e
 - Supabase (`src/supabaseClient.js`) — solo base de datos/storage/realtime, **no** Supabase Auth
 - Leaflet / react-leaflet 5 / leaflet-draw / react-leaflet-cluster / Turf
 - MapLibre GL 6 + OpenFreeMap (mapa 3D, gratis y sin API key) — todos los mapas (móvil y escritorio, también links compartidos) menos pánico; dibujo con Terra Draw
-- Chart.js, jsPDF + autotable, exceljs (exportar), xlsx (solo leer importaciones), lucide-react (iconos)
+- Chart.js, jsPDF + autotable, exceljs (exportar e importar), lucide-react (iconos)
 - Deploy en Vercel (`vercel.json`: rewrite SPA + headers de `sw.js` y `manifest.json`)
 
 ## Comandos
@@ -121,6 +121,10 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   - `seguridad_config.blindaje = 'si'` → las funciones lo avisan (`blindaje: true`) y la app no deja sesiones
     sin token (pide entrar otra vez; `EVENTO_SESION_INVALIDA` en `utils/sesion.js`).
   - Diagnóstico de la estructura real: `DIAGNOSTICO_BLINDAJE.sql` (solo lee).
+- **Storage y login (Migración 13)**: subir a `fotos_casas`/`notas_voz` exige sesión (`jw_storage_*`; ver por
+  link público sigue abierto). `login_intentos`: 5 fallos por usuario / 20 por IP → 15 min (`sesion`, `webauthn`;
+  429 `{ error: 'bloqueado', segundos }`). Contraseñas nuevas: mínimo 6.
+- Importar casas: `utils/leerTabla.js` (exceljs para .xlsx, lector propio de .csv). Ya **no** se usa SheetJS (`xlsx`).
 - Backup: solo exporta/restaura la congregación del usuario; restaurar **no** borra usuarios (upsert; borrar
   un usuario borra en cascada informes, huellas y asignaciones).
 - Riesgo conocido: el login de respaldo (`loginDirecto`) compara usuario/contraseña directo contra `app_usuarios`
@@ -298,7 +302,7 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   con import dinámico). Secciones y columnas con `en: ['excel','pdf','html']`. Teléfonos/contactos de casas solo
   en Excel (el reporte interactivo se comparte). Texto de usuario siempre escapado (`escapar`). Los documentos van en español.
   Plantilla de importar casas: `exportarPlantilla` (la fila 1 y el orden de columnas los lee `HousesList`; no cambiarlos).
-  `xlsx` (SheetJS) se queda solo para **leer** el Excel de importación.
+  Leer el Excel/CSV de importación: `utils/leerTabla.js`.
 
 ## CSS / Tailwind v4
 

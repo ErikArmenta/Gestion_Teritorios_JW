@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import * as XLSX from 'xlsx';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -148,15 +147,20 @@ const HousesList = () => {
     }
   };
 
-  const handleImportFile = (e) => {
+  const handleImportFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+    let rows;
+    try {
+      const { leerTabla } = await import('../utils/leerTabla');
+      rows = await leerTabla(file);
+    } catch (err) {
+      toast.error(tx('No se pudo leer el archivo: ') + (err?.message || err));
+      return;
+    }
+    {
       // Skip header row
       const dataRows = rows.slice(1).filter(r => r.some(cell => String(cell).trim() !== ''));
       const parsed = dataRows.map(r => ({
@@ -175,10 +179,7 @@ const HousesList = () => {
       });
       setImportPreview(parsed);
       setImportErrors(errors);
-    };
-    reader.readAsArrayBuffer(file);
-    // Reset input so same file can be re-selected
-    e.target.value = '';
+    }
   };
 
   const handleImport = async () => {

@@ -13,6 +13,7 @@ const escribir = (k, v) => { try { v == null ? localStorage.removeItem(k) : loca
 
 const MENSAJES = {
   credenciales: 'La contraseña no es correcta',
+  bloqueado: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   desactivada: 'Esta cuenta ha sido desactivada por un administrador',
   sin_huella: 'Esta huella ya no está registrada. Entra con tu contraseña y vuelve a activarla en Mi Perfil.',
   reto_vencido: 'Se tardó demasiado. Inténtalo de nuevo.',

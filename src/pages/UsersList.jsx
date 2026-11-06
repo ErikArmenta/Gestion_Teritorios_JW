@@ -99,6 +99,12 @@ const UsersList = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Contraseñas nuevas: mínimo 6 (las que ya existen siguen sirviendo aunque sean más cortas)
+    const original = usuarios.find(u => u.id === formData.id)?.password;
+    if (formData.password && formData.password !== original && formData.password.length < 6) {
+      toast.error(tx('La contraseña debe tener al menos 6 caracteres'));
+      return;
+    }
     setSaving(true);
     try {
       let foto_url = formData.foto_url;

@@ -377,3 +377,17 @@ Pasos completos y orden: `docs/SESION_SEGURA.md` (paso 3). Probada contra el esq
 - Rellena `congregacion_id` vacío donde se puede deducir y al final muestra un reporte.
 - `seguridad_config.blindaje = 'si'`: la app exige sesión con token.
 
+---
+
+## Migración 13 — Seguridad: Storage y límite de intentos de login
+
+Archivo: `MIGRACION_13_SEGURIDAD.sql` (re-ejecutable; requiere la 12). Deshacer: `MIGRACION_13_REVERTIR.sql`.
+
+- Buckets `fotos_casas` (máx. 10 MB, solo imágenes) y `notas_voz` (máx. 15 MB): siguen **públicos para ver**
+  (los links guardados no cambian y el link compartido muestra las fotos), pero **subir** exige sesión
+  firmada de cuenta activa (`jw_storage_subir`), listar también, y **borrar** solo Super Admin/Admin Principal.
+  Solo se quitan las políticas viejas de esos dos buckets (el proyecto lo comparten otras apps).
+- `login_intentos` (RLS sin políticas): las funciones `sesion` y `webauthn` bloquean 15 min tras 5 fallos por
+  usuario (o 20 por IP). Sin la tabla no se limita nada.
+- El reporte final dice cuántas contraseñas siguen en texto plano (si no es 0, falta correr la 11B).
+

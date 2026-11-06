@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-06 — Seguridad: Storage, límite de intentos, contraseñas de 6 y fuera SheetJS — Migración 13
+
+- `MIGRACION_13_SEGURIDAD.sql` / `MIGRACION_13_REVERTIR.sql` (nuevos): subir fotos/audios solo con sesión, tamaños
+  máximos, `login_intentos`; reporte que avisa si faltan contraseñas por cifrar (11B)
+- Funciones `sesion` y `webauthn`: bloqueo tras 5 fallos (usuario) o 20 (IP) por 15 min; contraseña nueva mínimo 6
+- App: mensaje "Demasiados intentos", mínimo 6 en Mi Perfil y Usuarios
+- `utils/leerTabla.js` (nuevo): importar casas sin SheetJS; se quitó la dependencia `xlsx` (vulnerabilidades);
+  `react-router-dom` 7.18.4, `dompurify` y `fflate` actualizados (avisos de seguridad)
+
 ## 2026-11-06 — Congregación junto al rol y logo bien recortado en los reportes
 
 - `components/MenuFlotante.jsx` + `index.css`: el nombre de la congregación sube a la barra, debajo del rol (también en pantallas con mapa)

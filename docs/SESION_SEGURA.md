@@ -159,3 +159,21 @@ Las contraseñas siguen cifradas. Luego me pasas qué pantalla falló.
 - **Tabla nueva:** hay que darle su política `jw_*` (si no tiene, con RLS activo nadie la ve).
 - **Columna nueva en `app_usuarios`:** agregar `GRANT SELECT (columna) ON app_usuarios TO anon, authenticated;`.
 
+---
+
+# Paso 4: fotos, notas de voz e intentos de login (Migración 13)
+
+1. Espera a que Vercel publique y vuelve a desplegar `sesion` y `webauthn` con el código nuevo.
+2. SQL Editor → `MIGRACION_13_SEGURIDAD.sql` → **Run**. Mira el reporte:
+   - `contrasenas_en_texto_plano` debe ser **0**. Si no, corre también `MIGRACION_11B_SIN_TEXTO_PLANO.sql`.
+   - `politicas_storage` = 3.
+3. Prueba: registrar una casa con foto y nota de voz, cambiar tu foto de perfil, y abrir un link compartido.
+
+Qué cambia:
+- Solo quien tiene sesión puede subir fotos y audios. Fotos de máximo 10 MB, y solo imágenes.
+- 5 contraseñas mal seguidas → esa cuenta se bloquea 15 minutos (20 fallos desde un mismo internet → ese
+  internet). Al entrar bien, el contador se borra.
+- Contraseñas nuevas: mínimo **6** caracteres. Las que ya existen siguen sirviendo.
+- Para desbloquear a alguien antes de tiempo: `DELETE FROM login_intentos WHERE clave = 'u:usuario';`
+- Si algo falla: `MIGRACION_13_REVERTIR.sql`.
+

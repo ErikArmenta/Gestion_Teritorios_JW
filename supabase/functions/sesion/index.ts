@@ -7,7 +7,8 @@
 // Acciones (POST { accion, ... }):
 //   entrar            { usuario, password }          → { usuario, token?, expira? }
 //   renovar           { token }                      → { usuario, token, expira }  (403 si la cuenta se desactivó)
-//   cambiar-password  { usuario_id, actual, nueva }  → { ok: true }
+//   cambiar-password  { usuario_id, actual, nueva }  → { ok: true }  (nueva: mínimo 6)
+// Demasiados intentos fallidos (Migración 13) → 429 { error: "bloqueado", segundos }
 //   estado            {}                             → { ok: true, blindaje }  (¿Migración 12 activa?)
 // Las respuestas con usuario llevan `blindaje: true|false`.
 // Contraseñas: con la Migración 11 se revisan cifradas (verificar_password); sin ella, como siempre.
@@ -39,12 +40,51 @@ const cors = {
 class Fallo extends Error {
   codigo: string;
   status: number;
-  constructor(codigo: string, status = 400) {
+  extra: Record<string, unknown>;
+  constructor(codigo: string, status = 400, extra: Record<string, unknown> = {}) {
     super(codigo);
     this.codigo = codigo;
     this.status = status;
+    this.extra = extra;
   }
 }
+// ── Límite de intentos (Migración 13, tabla login_intentos). Sin la tabla no se limita nada. ──
+// 5 fallos por usuario / 20 por IP en 15 minutos → bloqueado 15 minutos. (Igual en `sesion` y `webauthn`.)
+const LIMITES: Record<string, number> = { u: 5, id: 5, ip: 20 };
+const VENTANA_MS = 15 * 60_000;
+let sinTablaIntentos = false;
+const faltaTabla = (e: { code?: string; message?: string }) => /42P01|PGRST205|does not exist|Could not find the table/i.test(`${e.code} ${e.message}`);
+async function revisarBloqueo(claves: string[]) {
+  if (sinTablaIntentos) return;
+  const { data, error } = await supabase.from('login_intentos').select('clave, bloqueado_hasta').in('clave', claves);
+  if (error) { if (faltaTabla(error)) sinTablaIntentos = true; return; }
+  const hasta = Math.max(0, ...(data ?? []).map((r) => (r.bloqueado_hasta ? new Date(r.bloqueado_hasta).getTime() : 0)));
+  if (hasta > Date.now()) throw new Fallo('bloqueado', 429, { segundos: Math.ceil((hasta - Date.now()) / 1000) });
+}
+async function anotarFallo(claves: string[]) {
+  if (sinTablaIntentos) return;
+  const ahora = Date.now();
+  const { data, error } = await supabase.from('login_intentos').select('*').in('clave', claves);
+  if (error) { if (faltaTabla(error)) sinTablaIntentos = true; return; }
+  const filas = claves.map((clave) => {
+    const r = (data ?? []).find((x) => x.clave === clave);
+    const nueva = !r || ahora - new Date(r.primer_fallo).getTime() > VENTANA_MS;
+    const fallos = nueva ? 1 : Number(r.fallos) + 1;
+    const limite = LIMITES[clave.split(':')[0]] ?? 5;
+    return {
+      clave, fallos,
+      primer_fallo: nueva ? new Date(ahora).toISOString() : r.primer_fallo,
+      bloqueado_hasta: fallos >= limite ? new Date(ahora + VENTANA_MS).toISOString() : (nueva ? null : r.bloqueado_hasta),
+    };
+  });
+  await supabase.from('login_intentos').upsert(filas, { onConflict: 'clave' });
+}
+async function limpiarIntentos(claves: string[]) {
+  if (!sinTablaIntentos) await supabase.from('login_intentos').delete().in('clave', claves);
+}
+const ipDe = (req: Request) => (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim()
+  || req.headers.get('cf-connecting-ip') || 'desconocida';
+
 
 // ── Llave de firma ──
 type Llave = { alg: 'HS256' | 'ES256'; kid?: string; firmar: CryptoKey | Uint8Array; verificar: CryptoKey | Uint8Array };
@@ -173,15 +213,18 @@ async function conToken(u: Usuario, apikey: string) {
 }
 
 // deno-lint-ignore no-explicit-any
-async function atender(accion: string, d: any, apikey: string) {
+async function atender(accion: string, d: any, apikey: string, ip: string) {
   if (accion === 'estado') return { ok: true, blindaje: await blindaje() };
 
   if (accion === 'entrar') {
     if (typeof d.usuario !== 'string' || typeof d.password !== 'string' || !d.usuario || !d.password) {
       throw new Fallo('credenciales', 401);
     }
+    const claves = [`u:${d.usuario.trim().toLowerCase()}`, `ip:${ip}`];
+    await revisarBloqueo(claves);
     const id = await passwordCorrecta({ usuario: d.usuario }, d.password);
-    if (!id) throw new Fallo('credenciales', 401);
+    if (!id) { await anotarFallo(claves); throw new Fallo('credenciales', 401); }
+    await limpiarIntentos([claves[0]]);
     return conToken(await cargarUsuario({ id }), apikey);
   }
 
@@ -189,8 +232,11 @@ async function atender(accion: string, d: any, apikey: string) {
     // Saber la contraseña actual es la prueba de identidad (no hace falta token)
     const usuarioId = Number(d.usuario_id);
     if (!usuarioId || typeof d.actual !== 'string' || typeof d.nueva !== 'string') throw new Fallo('credenciales', 401);
-    if (d.nueva.length < 4) throw new Fallo('muy_corta', 400);
-    if (!(await passwordCorrecta({ id: usuarioId }, d.actual))) throw new Fallo('credenciales', 401);
+    if (d.nueva.length < 6) throw new Fallo('muy_corta', 400);
+    const claves = [`id:${usuarioId}`, `ip:${ip}`];
+    await revisarBloqueo(claves);
+    if (!(await passwordCorrecta({ id: usuarioId }, d.actual))) { await anotarFallo(claves); throw new Fallo('credenciales', 401); }
+    await limpiarIntentos([claves[0]]);
     // El disparador de la Migración 11 la cifra (y en la fase 2 no deja el texto plano)
     const { error } = await supabase.from('app_usuarios').update({ password: d.nueva }).eq('id', usuarioId);
     if (error) throw error;
@@ -221,9 +267,9 @@ Deno.serve(async (req) => {
     const d = await req.json().catch(() => ({}));
     // La llave pública con que llega la app sirve para probar el token contra la base de datos
     const apikey = req.headers.get('apikey') || env('SUPABASE_ANON_KEY');
-    return Response.json(await atender(String(d.accion ?? ''), d, apikey), { headers: cors });
+    return Response.json(await atender(String(d.accion ?? ''), d, apikey, ipDe(req)), { headers: cors });
   } catch (err) {
-    if (err instanceof Fallo) return Response.json({ error: err.codigo }, { status: err.status, headers: cors });
+    if (err instanceof Fallo) return Response.json({ error: err.codigo, ...err.extra }, { status: err.status, headers: cors });
     console.error(err);
     return Response.json({ error: 'servidor' }, { status: 500, headers: cors });
   }

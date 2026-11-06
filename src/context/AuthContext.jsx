@@ -5,7 +5,7 @@ import { olvidarUsuario } from '../utils/onesignal';
 import { entrarConBiometria } from '../utils/webauthn';
 import {
   entrarEnServidor, renovarSiToca, guardarToken, olvidarToken, tokenVigente,
-  anotarBlindaje, blindajeActivo, consultarBlindaje, EVENTO_SESION_INVALIDA,
+  anotarBlindaje, blindajeActivo, consultarBlindaje, EVENTO_SESION_INVALIDA, minutosBloqueo,
 } from '../utils/sesion';
 
 const AuthContext = createContext();
@@ -105,6 +105,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       if (err?.codigo === 'desactivada') throw new Error(t('Esta cuenta ha sido desactivada por un administrador'), { cause: err });
       if (err?.codigo === 'credenciales') throw new Error(t('Usuario o contraseña incorrectos'), { cause: err });
+      if (err?.codigo === 'bloqueado') throw new Error(t('Demasiados intentos. Espera {n} min e inténtalo de nuevo.', { n: minutosBloqueo(err) }), { cause: err });
       // 'no_disponible' (función sin desplegar, sin internet hacia ella…) → el login de siempre,
       // salvo con la BD blindada (ahí el login directo ya no puede funcionar)
       if (blindajeActivo()) throw new Error(t('No se pudo conectar. Revisa tu internet e inténtalo de nuevo.'), { cause: err });

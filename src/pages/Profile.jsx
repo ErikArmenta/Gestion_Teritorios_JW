@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Lock, User, Shield, Building2, AtSign, Loader2, ShieldCheck } from 'lucide-react';
-import { tokenVigente, cambiarPasswordEnServidor } from '../utils/sesion';
+import { tokenVigente, cambiarPasswordEnServidor, minutosBloqueo } from '../utils/sesion';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useToast } from '../components/Toast';
@@ -83,8 +83,8 @@ const Profile = () => {
       toast.error(tx('La nueva contraseña y la confirmación no coinciden'));
       return;
     }
-    if (newPassword.length < 4) {
-      toast.error(tx('La nueva contraseña debe tener al menos 4 caracteres'));
+    if (newPassword.length < 6) {
+      toast.error(tx('La nueva contraseña debe tener al menos 6 caracteres'));
       return;
     }
 
@@ -100,7 +100,8 @@ const Profile = () => {
         return;
       } catch (err) {
         if (err?.codigo === 'credenciales') { toast.error(tx('La contraseña actual es incorrecta')); return; }
-        if (err?.codigo === 'muy_corta') { toast.error(tx('La nueva contraseña debe tener al menos 4 caracteres')); return; }
+        if (err?.codigo === 'muy_corta') { toast.error(tx('La nueva contraseña debe tener al menos 6 caracteres')); return; }
+        if (err?.codigo === 'bloqueado') { toast.error(tx('Demasiados intentos. Espera {n} min e inténtalo de nuevo.', { n: minutosBloqueo(err) })); return; }
         // 'no_disponible' → como siempre (abajo)
       }
 
@@ -344,7 +345,7 @@ const Profile = () => {
               type="password"
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              placeholder={tx('Mínimo 4 caracteres')}
+              placeholder={tx('Mínimo 6 caracteres')}
               autoComplete="new-password"
             />
           </div>
