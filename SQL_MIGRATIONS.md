@@ -381,7 +381,7 @@ Pasos completos y orden: `docs/SESION_SEGURA.md` (paso 3). Probada contra el esq
 
 ## Migración 13 — Seguridad: Storage y límite de intentos de login
 
-Archivo: `MIGRACION_13_SEGURIDAD.sql` (re-ejecutable; requiere la 12). Deshacer: `MIGRACION_13_REVERTIR.sql`.
+Archivo: `MIGRACION_13_SEGURIDAD.sql` (re-ejecutable; trae sus propias funciones `jw_*`, funciona con o sin la 12). Deshacer: `MIGRACION_13_REVERTIR.sql`.
 
 - Buckets `fotos_casas` (máx. 10 MB, solo imágenes) y `notas_voz` (máx. 15 MB): siguen **públicos para ver**
   (los links guardados no cambian y el link compartido muestra las fotos), pero **subir** exige sesión

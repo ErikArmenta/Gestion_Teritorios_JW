@@ -1,9 +1,24 @@
 -- ════════════════════════════════════════════════════════════════════════
 -- Migración 13 — Seguridad: Storage (fotos y notas de voz) + límite de intentos de login
--- Requiere la Migración 12 (funciones jw_*). Re-ejecutable. Supabase → SQL Editor → Run.
--- Para deshacerla: MIGRACION_13_REVERTIR.sql
+-- Re-ejecutable. Supabase → SQL Editor → Run. Para deshacerla: MIGRACION_13_REVERTIR.sql
+-- Funciona con o sin la Migración 12 (trae sus propias funciones de sesión, idénticas a las de la 12).
 -- Solo toca los buckets fotos_casas y notas_voz (el proyecto lo comparten otras apps).
 -- ════════════════════════════════════════════════════════════════════════
+
+-- ── 13·0. Quién eres (mismas funciones que la Migración 12; si ya existen, se reemplazan por lo mismo) ──
+CREATE OR REPLACE FUNCTION jw_usuario_id() RETURNS BIGINT
+LANGUAGE sql STABLE SET search_path = public AS $$
+  SELECT CASE WHEN v ~ '^[0-9]{1,18}$' THEN v::BIGINT END
+  FROM (SELECT NULLIF(current_setting('request.jwt.claims', true), '')::jsonb ->> 'usuario_id' AS v) s;
+$$;
+CREATE OR REPLACE FUNCTION jw_rol() RETURNS TEXT
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT rol FROM app_usuarios WHERE id = jw_usuario_id() AND activo IS NOT FALSE;
+$$;
+CREATE OR REPLACE FUNCTION jw_es(p_roles TEXT[]) RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT COALESCE(jw_rol() = ANY (p_roles), false);
+$$;
 
 -- ── 13a. Buckets: siguen públicos para VER (los links de las fotos no cambian; el link compartido las
 --         muestra sin sesión), pero con tamaño máximo y, las fotos, solo imágenes.
