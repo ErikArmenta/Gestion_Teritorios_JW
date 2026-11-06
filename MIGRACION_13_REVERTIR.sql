@@ -6,6 +6,10 @@
 DROP POLICY IF EXISTS jw_storage_subir ON storage.objects;
 DROP POLICY IF EXISTS jw_storage_listar ON storage.objects;
 DROP POLICY IF EXISTS jw_storage_borrar ON storage.objects;
+DROP POLICY IF EXISTS jw_storage_candado_subir ON storage.objects;
+DROP POLICY IF EXISTS jw_storage_candado_listar ON storage.objects;
+DROP POLICY IF EXISTS jw_storage_candado_cambiar ON storage.objects;
+DROP POLICY IF EXISTS jw_storage_candado_borrar ON storage.objects;
 
 DROP POLICY IF EXISTS allow_upload_fotos_casas ON storage.objects;
 DROP POLICY IF EXISTS allow_read_fotos_casas ON storage.objects;

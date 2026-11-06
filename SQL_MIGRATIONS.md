@@ -386,7 +386,9 @@ Archivo: `MIGRACION_13_SEGURIDAD.sql` (re-ejecutable; trae sus propias funciones
 - Buckets `fotos_casas` (máx. 10 MB, solo imágenes) y `notas_voz` (máx. 15 MB): siguen **públicos para ver**
   (los links guardados no cambian y el link compartido muestra las fotos), pero **subir** exige sesión
   firmada de cuenta activa (`jw_storage_subir`), listar también, y **borrar** solo Super Admin/Admin Principal.
-  Solo se quitan las políticas viejas de esos dos buckets (el proyecto lo comparten otras apps).
+  Solo se quitan las políticas viejas de esos dos buckets (el proyecto lo comparten otras apps). Además, 4
+  **candados restrictivos** (`jw_storage_candado_*`, AS RESTRICTIVE) neutralizan para esos buckets las políticas
+  abiertas de otras apps que aplican a todos los buckets, sin tocarlas.
 - `login_intentos` (RLS sin políticas): las funciones `sesion` y `webauthn` bloquean 15 min tras 5 fallos por
   usuario (o 20 por IP). Sin la tabla no se limita nada.
 - El reporte final dice cuántas contraseñas siguen en texto plano (si no es 0, falta correr la 11B).

@@ -51,6 +51,23 @@ CREATE POLICY jw_storage_borrar ON storage.objects FOR DELETE
   USING (bucket_id IN ('fotos_casas', 'notas_voz') AND (SELECT public.jw_es(ARRAY['Super Admin', 'Admin Principal'])));
 -- (Sin política UPDATE: nadie reemplaza archivos desde la app)
 
+-- ── 13b2. Candados RESTRICTIVOS: se suman (AND) a CUALQUIER otra política, también a las de otras apps
+--          que aplican a todos los buckets (p. ej. "Lectura pública de fotos" o "Usuarios autenticados pueden
+--          subir fotos"). Solo afectan a fotos_casas y notas_voz; para los demás buckets siempre pasan.
+DROP POLICY IF EXISTS jw_storage_candado_subir ON storage.objects;
+DROP POLICY IF EXISTS jw_storage_candado_listar ON storage.objects;
+DROP POLICY IF EXISTS jw_storage_candado_cambiar ON storage.objects;
+DROP POLICY IF EXISTS jw_storage_candado_borrar ON storage.objects;
+CREATE POLICY jw_storage_candado_subir ON storage.objects AS RESTRICTIVE FOR INSERT
+  WITH CHECK (bucket_id NOT IN ('fotos_casas', 'notas_voz') OR (SELECT public.jw_rol()) IS NOT NULL);
+CREATE POLICY jw_storage_candado_listar ON storage.objects AS RESTRICTIVE FOR SELECT
+  USING (bucket_id NOT IN ('fotos_casas', 'notas_voz') OR (SELECT public.jw_rol()) IS NOT NULL);
+CREATE POLICY jw_storage_candado_cambiar ON storage.objects AS RESTRICTIVE FOR UPDATE
+  USING (bucket_id NOT IN ('fotos_casas', 'notas_voz') OR (SELECT public.jw_rol()) IS NOT NULL)
+  WITH CHECK (bucket_id NOT IN ('fotos_casas', 'notas_voz') OR (SELECT public.jw_rol()) IS NOT NULL);
+CREATE POLICY jw_storage_candado_borrar ON storage.objects AS RESTRICTIVE FOR DELETE
+  USING (bucket_id NOT IN ('fotos_casas', 'notas_voz') OR (SELECT public.jw_es(ARRAY['Super Admin', 'Admin Principal'])));
+
 -- ── 13c. Límite de intentos de login (lo usan las Edge Functions `sesion` y `webauthn`) ──
 -- clave = 'u:<usuario>' | 'id:<id>' | 'ip:<ip>'. 5 fallos por usuario o 20 por IP → 15 minutos bloqueado.
 CREATE TABLE IF NOT EXISTS login_intentos (
@@ -68,6 +85,7 @@ NOTIFY pgrst, 'reload schema';
 SELECT
   (SELECT count(*) FROM app_usuarios WHERE password IS NOT NULL AND password <> '') AS contrasenas_en_texto_plano,
   (SELECT count(*) FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname LIKE 'jw\_storage\_%') AS politicas_storage,
+  (SELECT count(*) FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname LIKE 'jw\_storage\_candado\_%' AND permissive = 'RESTRICTIVE') AS candados,
   (SELECT string_agg(policyname || ' (' || cmd || ')', ', ') FROM pg_policies
      WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname NOT LIKE 'jw\_%'
-       AND (coalesce(qual, 'true') = 'true' OR coalesce(with_check, 'true') = 'true')) AS otras_politicas_abiertas;
+       AND (coalesce(qual, 'true') = 'true' OR coalesce(with_check, 'true') = 'true')) AS otras_apps_ya_no_aplican_a_fotos_casas_ni_notas_voz;

@@ -166,7 +166,8 @@ Las contraseñas siguen cifradas. Luego me pasas qué pantalla falló.
 1. Espera a que Vercel publique y vuelve a desplegar `sesion` y `webauthn` con el código nuevo.
 2. SQL Editor → `MIGRACION_13_SEGURIDAD.sql` → **Run**. Mira el reporte:
    - `contrasenas_en_texto_plano` debe ser **0**. Si no, corre también `MIGRACION_11B_SIN_TEXTO_PLANO.sql`.
-   - `politicas_storage` = 3.
+   - `politicas_storage` = 7 y `candados` = 4. Si aparecen políticas de otras apps en la última columna, ya no
+     aplican a `fotos_casas` ni `notas_voz` (los candados restrictivos mandan).
 3. Prueba: registrar una casa con foto y nota de voz, cambiar tu foto de perfil, y abrir un link compartido.
 
 Qué cambia:
