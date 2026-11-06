@@ -61,9 +61,46 @@ export const formatHoras = (h) => {
   return horas ? `${horas} h ${min} min` : `${min} min`;
 };
 
+// Totales + desglose por concepto (porTipo: { casa_en_casa: 3.5, cartas: 1, ... }; sin tipo = 'otro')
 export const totalesDe = (registros) => registros.reduce((acc, r) => {
   const horas = Number(r.horas) || 0;
   if (r.categoria === 'servicio_sagrado') acc.servicioSagrado += horas;
-  else { acc.horas += horas; acc.revisitas += Number(r.revisitas) || 0; }
+  else {
+    acc.horas += horas;
+    acc.revisitas += Number(r.revisitas) || 0;
+    const tipo = r.tipo || 'otro';
+    acc.porTipo[tipo] = (acc.porTipo[tipo] || 0) + horas;
+  }
   return acc;
-}, { horas: 0, revisitas: 0, servicioSagrado: 0 });
+}, { horas: 0, revisitas: 0, servicioSagrado: 0, porTipo: {} });
+
+// ── Actividad de la congregación (quién predica, quién no, inactivos) ──
+// Cuenta como actividad: informe del mes con "Prediqué", horas de predicación anotadas y visitas
+// registradas en el mapa (historial_visitas). El servicio sagrado NO cuenta como predicación.
+// Los publicadores informan al terminar el mes → "activo" = actividad este mes o el anterior.
+// Inactivo = `umbral` meses completos o más sin actividad (ajustable por congregación, Migración 9).
+export const MESES_INACTIVIDAD_DEFECTO = 3;
+export const MESES_INACTIVIDAD_OPCIONES = [1, 2, 3, 4, 5, 6, 9, 12];
+
+// Meses de calendario entre dos meses ('YYYY-MM-01'): de octubre a noviembre = 1
+export const mesesEntre = (desde, hasta) => {
+  const [y1, m1] = desde.split('-').map(Number);
+  const [y2, m2] = hasta.split('-').map(Number);
+  return (y2 - y1) * 12 + (m2 - m1);
+};
+export const diasEntre = (desde, hasta) => Math.round((deTexto(hasta) - deTexto(desde)) / 86400000);
+
+// estado: 'activo' | 'sin_predicar' | 'inactivo'; mesesSin = meses completos sin actividad
+export const estadoActividad = (ultima, umbral, { creado = null, hoy = hoyLocal() } = {}) => {
+  const mes = mesDe(hoy);
+  if (!ultima) {
+    // Usuario nuevo (dado de alta hace menos del umbral): todavía no cuenta como inactivo
+    const nuevo = !!creado && mesesEntre(mesDe(creado), mes) < umbral;
+    return { estado: nuevo ? 'sin_predicar' : 'inactivo', mesesSin: null, dias: null, nuevo };
+  }
+  const entre = mesesEntre(mesDe(ultima), mes);
+  const dias = Math.max(0, diasEntre(ultima, hoy));
+  if (entre <= 1) return { estado: 'activo', mesesSin: 0, dias, nuevo: false };
+  const mesesSin = entre - 1;
+  return { estado: mesesSin >= umbral ? 'inactivo' : 'sin_predicar', mesesSin, dias, nuevo: false };
+};

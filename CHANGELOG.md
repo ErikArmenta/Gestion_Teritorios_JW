@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-06 — Informes: horas por concepto, servicio sagrado para publicadores y pestaña Actividad — Migración 9 opcional
+
+- `pages/Informes.jsx`: una casilla de horas por concepto (horas libres 0–24, minutos de 5 en 5) que se suman;
+  desglose por concepto en "Mi meta", el informe y el Excel; salidas agrupadas por día; aviso si el informe ya
+  enviado quedó viejo; revisitas con un toque desde las visitas del mapa
+- Publicadores: siguen con "Prediqué" + estudios y además anotan servicio sagrado
+- Pestaña "Actividad" (ancianos, ministeriales, admins): activos, sin predicar, inactivos, tiempo sin predicar,
+  filtro, búsqueda y Excel — `hooks/useActividadCongregacion.js`, `utils/informes.js`
+- `MIGRACION_9_ACTIVIDAD.sql` (nuevo) + `SQL_MIGRATIONS.md`: meses para inactivo por congregación
+- `hooks/useMiInforme.js`, `hooks/useInformesCongregacion.js`, `i18n/en.js`
+
 ## 2026-11-05 — Link compartido: punto de reunión y ubicación en vivo del grupo — requiere Migración 8
 
 - `MIGRACION_8_PUNTO_REUNION.sql` (nuevo) + `SQL_MIGRATIONS.md`: punto de reunión en `territorio_compartidos`

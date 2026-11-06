@@ -55,13 +55,23 @@ Variables en `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Nunca commit
   `MIGRACION_5_GRUPOS.sql`) y la app solo ofrece grupos de la congregación del territorio/usuario.
 - **Informes de servicio** (Migración 7, `MIGRACION_7_INFORMES.sql`): pantalla `/informes` (todos los roles).
   Cada usuario es `tipo_publicador` = Publicador / Precursor auxiliar / Precursor regular (se elige al dar de
-  alta en Usuarios, para cualquier rol). Precursores: anotan cada salida en `registros_servicio` (predicación
-  por tipo + revisitas, o servicio sagrado aparte, que **no** suma a las horas), ven su avance contra su meta
+  alta en Usuarios, para cualquier rol). Precursores: el formulario tiene una casilla de horas por concepto
+  (casa en casa, cartas, teléfono, exhibidor, informal + servicio sagrado aparte, que **no** suma a las horas),
+  horas libres (0–24) y minutos de 5 en 5; al guardar se crea un `registros_servicio` por concepto con tiempo
+  (`agregarRegistros`, un solo insert; revisitas y nota van en el concepto con más tiempo; el día no pasa de
+  24 h). "Mi meta" e informe muestran el desglose (`totalesDe().porTipo`). Ven su avance contra su meta
   (`meta_horas_mensual`; el regular también `meta_horas_anual` del año de servicio sept–ago) y envían el
   informe del mes (`informes_servicio`, uno por usuario y mes, upsert). Publicadores: casilla "Prediqué" +
-  estudios. Ancianos/ministeriales/admins ven "Congregación" (resumen por tipo, quién falta, Excel/PDF en
+  estudios, y además anotan servicio sagrado (`FormSalida soloSagrado`; va en `horas_servicio_sagrado`).
+  Ancianos/ministeriales/admins ven "Congregación" (resumen por tipo, quién falta, Excel/PDF en
   español). Lógica: `hooks/useMiInforme.js`, `hooks/useInformesCongregacion.js`, `utils/informes.js`.
   Si la migración no existe la pantalla avisa y Usuarios no manda esos campos (detecta la columna).
+  - **Actividad** (pestaña para los mismos roles, `hooks/useActividadCongregacion.js`, `estadoActividad()`):
+    actividad = informe con "Prediqué", horas de predicación o visitas en el mapa (`historial_visitas`, por
+    `usuario_id` de los miembros); el servicio sagrado no cuenta. Activo = este mes o el anterior (los
+    publicadores informan al terminar el mes); Sin predicar; Inactivo = N meses completos sin actividad.
+    N es por congregación (`congregaciones.meses_inactividad`, Migración 9, `MIGRACION_9_ACTIVIDAD.sql`);
+    lo cambian Anciano/Admin/Super Admin; sin la migración se guarda solo en el dispositivo.
 - Migraciones nuevas: además de documentarlas en `SQL_MIGRATIONS.md`, dejar un `.sql` puro y
   re-ejecutable (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP TRIGGER IF EXISTS`) para pegar en Supabase.
 

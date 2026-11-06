@@ -100,6 +100,35 @@ export default function useMiInforme(mes) {
     recontarPendientes();
   };
 
+  // Varias salidas de una vez (una por concepto con tiempo): un solo insert en línea; sin conexión, una
+  // entrada de la cola por salida (DataContext las sube una por una)
+  const agregarRegistros = async (lista) => {
+    const filas = lista.map(datos => ({ ...datos, usuario_id: user.id, congregacion_id: user.congregacion_id || null }));
+    if (!filas.length) return;
+    if (navigator.onLine) {
+      const { data, error } = await supabase.from('registros_servicio').insert(filas).select();
+      if (error) throw error;
+      setRegistrosAnio(prev => [...(data || []), ...prev]);
+      return;
+    }
+    for (const fila of filas) {
+      await offlineStore.addToPendingQueue({ type: 'addRegistroServicio', data: fila, timestamp: Date.now() });
+    }
+    setPendientes(await leerPendientes());
+    recontarPendientes();
+  };
+
+  // Cuántas visitas registró en el mapa ese día (historial_visitas); null sin conexión o si falla
+  const contarVisitasDelDia = useCallback(async (fecha) => {
+    if (!user || !navigator.onLine || !fecha) return null;
+    const inicio = new Date(`${fecha}T00:00:00`);
+    const fin = new Date(inicio); fin.setDate(fin.getDate() + 1);
+    const { count, error } = await supabase.from('historial_visitas')
+      .select('id', { count: 'exact', head: true })
+      .eq('usuario_id', user.id).gte('created_at', inicio.toISOString()).lt('created_at', fin.toISOString());
+    return error ? null : (count || 0);
+  }, [user]);
+
   const eliminarRegistro = async (registro) => {
     if (registro._offline) {
       await offlineStore.removeFromPendingQueue(Number(String(registro.id).replace('cola-', '')));
@@ -132,7 +161,8 @@ export default function useMiInforme(mes) {
       estudios: Math.max(0, parseInt(estudios, 10) || 0),
       horas: precursor ? Number(totalesMes.horas.toFixed(2)) : 0,
       revisitas: precursor ? totalesMes.revisitas : 0,
-      horas_servicio_sagrado: precursor ? Number(totalesMes.servicioSagrado.toFixed(2)) : 0,
+      // El servicio sagrado lo anotan todos (también publicadores); no suma a las horas de predicación
+      horas_servicio_sagrado: Number(totalesMes.servicioSagrado.toFixed(2)),
       comentarios: comentarios?.trim() || null,
       enviado_en: new Date().toISOString(),
     };
@@ -152,6 +182,6 @@ export default function useMiInforme(mes) {
 
   return {
     disponible, perfil, registrosMes, totalesMes, totalesAnio, anio, informe: informeMes,
-    agregarRegistro, eliminarRegistro, guardarMetas, enviarInforme, recargar: cargar,
+    agregarRegistro, agregarRegistros, eliminarRegistro, guardarMetas, enviarInforme, contarVisitasDelDia, recargar: cargar,
   };
 }

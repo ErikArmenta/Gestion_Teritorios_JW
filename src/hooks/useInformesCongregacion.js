@@ -29,7 +29,7 @@ export default function useInformesCongregacion(mes, activo = true) {
     const [miembrosRes, informesRes, registrosRes] = await Promise.all([
       porCongregacion(supabase.from('app_usuarios').select('id, nombre, rol, tipo_publicador, activo, grupo_id')).order('nombre'),
       porCongregacion(supabase.from('informes_servicio').select('*')).eq('mes', mes),
-      porCongregacion(supabase.from('registros_servicio').select('usuario_id, categoria, horas, revisitas'))
+      porCongregacion(supabase.from('registros_servicio').select('usuario_id, categoria, tipo, horas, revisitas'))
         .gte('fecha', mes).lte('fecha', finDeMes(mes)),
     ]);
     const datos = {
@@ -59,6 +59,7 @@ export default function useInformesCongregacion(mes, activo = true) {
       revisitas: inf ? inf.revisitas : propios.revisitas,
       servicioSagrado: inf ? Number(inf.horas_servicio_sagrado) : propios.servicioSagrado,
       comentarios: inf?.comentarios || '',
+      porTipo: propios.porTipo, // desglose por concepto (de las salidas anotadas)
     };
   }), [estado]);
 

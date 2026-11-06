@@ -291,3 +291,20 @@ ALTER TABLE territorio_compartidos
   y al guardar el punto avisa que falta correr este archivo.
 - Las ubicaciones en vivo del link compartido no usan tablas: Supabase Realtime (presencia),
   canal `compartido:<id del link>`; nada se guarda.
+
+---
+
+## Migración 9 — Actividad de la congregación (inactivos ajustable)
+
+Archivo listo para pegar: `MIGRACION_9_ACTIVIDAD.sql` (re-ejecutable).
+
+```sql
+ALTER TABLE congregaciones
+  ADD COLUMN IF NOT EXISTS meses_inactividad SMALLINT NOT NULL DEFAULT 3;
+-- + CHECK chk_meses_inactividad (1 a 24)
+CREATE INDEX IF NOT EXISTS idx_historial_usuario_fecha ON historial_visitas(usuario_id, created_at);
+```
+
+- Informes → pestaña "Actividad": inactivo = `meses_inactividad` meses completos sin actividad (informe con
+  "Prediqué", horas de predicación o visitas en el mapa). Lo ajustan Anciano, Admin Principal y Super Admin.
+- Sin la migración la pestaña funciona igual con 3 meses y el ajuste se guarda solo en ese dispositivo.
