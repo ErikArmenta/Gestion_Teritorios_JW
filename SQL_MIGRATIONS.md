@@ -357,3 +357,23 @@ CREATE TABLE IF NOT EXISTS seguridad_config (clave TEXT PRIMARY KEY, valor TEXT 
 -- + disparador app_usuarios_cifrar_password() y función verificar_password(...) (ver el .sql)
 ```
 
+---
+
+## Migración 12 — Blindaje: permisos por congregación (RLS)
+
+Archivo: `MIGRACION_12_BLINDAJE.sql` (re-ejecutable). Para deshacerla: `MIGRACION_12_REVERTIR.sql`.
+Pasos completos y orden: `docs/SESION_SEGURA.md` (paso 3). Probada contra el esquema real (diagnóstico
+`DIAGNOSTICO_BLINDAJE.sql`) en Postgres: 70 casos (sin sesión, por rol, entre congregaciones, revertir).
+
+- **El proyecto de Supabase lo comparten otras apps**: la migración solo toca, por nombre, las 16 tablas de la app.
+- Quién eres: `jw_usuario_id()` (claim `usuario_id` del token firmado); `jw_rol()` / `jw_congregacion()` se leen de
+  `app_usuarios` (cuenta desactivada = sin acceso al instante). `jw_mis_territorios()`, `jw_mis_casas()`, `jw_mis_usuarios()`.
+- Políticas `jw_*`: todo por congregación (Super Admin ve todas); casas/manzanas/asignaciones/compartidos por territorio;
+  historial por casa; notificaciones las tuyas (puedes mandar a tu congregación); salidas e informes los tuyos, y
+  Admin Principal/Anciano/Ministerial ven los de su congregación; congregaciones: editar Admin Principal/Anciano.
+- `app_usuarios`: altas/bajas solo admins; disparador `trg_app_usuarios_proteger` limita qué columnas cambia cada rol;
+  la app **no puede leer** `password` ni `password_hash` (permisos por columna) → nunca `select('*')` ahí.
+- Link compartido sin sesión: `compartido_datos(p_id)` (solo ese territorio y solo si está vigente).
+- Rellena `congregacion_id` vacío donde se puede deducir y al final muestra un reporte.
+- `seguridad_config.blindaje = 'si'`: la app exige sesión con token.
+

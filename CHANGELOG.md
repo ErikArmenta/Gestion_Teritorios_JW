@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-06 — Blindaje paso 3: Migración 12 (RLS por congregación)
+
+- `MIGRACION_12_BLINDAJE.sql` (nuevo): permisos por congregación en las 16 tablas de la app (solo esas: el proyecto
+  lo comparten otras apps), contraseñas ilegibles, `compartido_datos`, relleno de `congregacion_id` vacío, reporte
+- `MIGRACION_12_REVERTIR.sql` (nuevo): deshace el blindaje en un paso
+- `SQL_MIGRATIONS.md`, `docs/SESION_SEGURA.md` (paso 3), `CLAUDE.md`
+
 ## 2026-11-06 — Blindaje paso 3 (preparación) + arreglo de Backup
 
 - `pages/Backup.jsx`: restaurar ya **no borra las casas de todas las congregaciones** ni borra usuarios (upsert);

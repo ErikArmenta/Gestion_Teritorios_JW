@@ -118,3 +118,44 @@ Desde ahí:
 - Ojo: el login de respaldo (directo a la tabla, el que se usa si la función `sesion` no responde) deja
   de servir. Por eso la función tiene que estar desplegada.
 
+---
+
+# Paso 3: blindaje de las tablas (Migración 12)
+
+Con esto, cada tabla solo deja ver y cambiar lo de **tu congregación**, y solo con la sesión firmada. La
+llave pública sola ya no ve nada. Super Admin ve todas. Nadie puede leer contraseñas. El link compartido
+solo enseña su territorio mientras siga vigente.
+
+> El proyecto de Supabase lo comparten otras apps. La migración solo toca, por nombre, las tablas de
+> Gestión Territorial.
+
+## Antes
+
+1. Vercel ya publicó la versión nueva.
+2. Edge Functions → vuelve a desplegar `sesion` y `webauthn` con el código nuevo.
+3. Sal y vuelve a entrar en la app. En Mi Perfil debe salir **"Sesión protegida por el servidor"**.
+   **Si no sale, no sigas:** sin token, nadie vería nada.
+
+## Correr
+
+SQL Editor → pega `MIGRACION_12_BLINDAJE.sql` → **Run**.
+
+Al final sale un reporte. Lo normal es `0` en todo lo que dice `_sin_` y `politicas_creadas = 27`.
+
+## Probar (con el celular y la compu)
+
+- Entrar con contraseña y con huella. Revisa el mapa, Registrar casa, una visita, Informes, Exhibidores,
+  Grupos y Usuarios.
+- Abre un link compartido en una ventana de incógnito: debe verse el territorio.
+- Las sesiones que no tenían token te piden "Por seguridad, vuelve a iniciar sesión" (pasa una sola vez).
+
+## Si algo falla
+
+SQL Editor → pega `MIGRACION_12_REVERTIR.sql` → **Run**. Todo queda abierto como antes en un segundo.
+Las contraseñas siguen cifradas. Luego me pasas qué pantalla falló.
+
+## Para cambios futuros
+
+- **Tabla nueva:** hay que darle su política `jw_*` (si no tiene, con RLS activo nadie la ve).
+- **Columna nueva en `app_usuarios`:** agregar `GRANT SELECT (columna) ON app_usuarios TO anon, authenticated;`.
+

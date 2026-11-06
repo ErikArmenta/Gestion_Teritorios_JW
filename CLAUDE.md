@@ -109,7 +109,11 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   (`entrar`, `cambiar-password`) y `webauthn`; sin la migración caen a la comparación de siempre.
   Nunca leer ni comparar `password` desde el navegador para algo nuevo. Usuarios: al editar, contraseña
   vacía = no cambiarla (no mandar `password`); sin texto plano se muestra "Cifrada".
-- **Blindaje paso 3 (en preparación, Migración 12)**: RLS por congregación leyendo el token. La app ya está lista:
+- **Blindaje paso 3 (Migración 12, `MIGRACION_12_BLINDAJE.sql`; deshacer: `MIGRACION_12_REVERTIR.sql`)**: RLS por
+  congregación leyendo el token (`jw_usuario_id()`; rol y congregación desde la BD con `jw_rol()`/`jw_congregacion()`;
+  políticas `jw_*`). **El proyecto de Supabase lo comparten otras apps**: nunca tocar tablas que no sean de esta app.
+  Tabla nueva → su política `jw_*` en una migración; columna nueva en `app_usuarios` → `GRANT SELECT (col)`.
+  Disparador `trg_app_usuarios_proteger` (qué columnas cambia cada rol). La app ya está lista:
   - **Nunca** `select('*')` en `app_usuarios`: la BD no dejará leer `password`/`password_hash`. Usar
     `seleccionarUsuarios()` / `COLUMNAS_USUARIO_BASE` de `utils/usuarios.js`.
   - El link compartido pide sus datos con la función `compartido_datos(p_id)` (sin sesión); sin ella, las
