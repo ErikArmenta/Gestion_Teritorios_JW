@@ -31,6 +31,7 @@ una queda en `pruebas/salida/<nombre>.txt`, junto con las capturas.
 | `passwords` | Contraseñas cifradas en la app y en las funciones |
 | `reportes` | Excel, PDF y reporte interactivo de cada pantalla, y la plantilla de casas |
 | `intentos` | Bloqueo por intentos, mínimo 6, importar Excel/CSV |
+| `s21` | S-21: la hoja, PDF de todos (sin encimarse, ligero), PDF editable de una persona, la ventana y quién la ve |
 | `respaldos` | Respaldos automáticos, reporte de errores, pantalla amable, Backup |
 
 **GitHub Actions** (`.github/workflows/pruebas.yml`) las corre en cada push a `main`. Si algo falla,

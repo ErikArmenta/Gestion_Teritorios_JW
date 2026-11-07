@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-06 — Registro de publicador (S-21) automático — Migración 15
+
+- Informes → Congregación → "S-21": llena el formulario oficial con los informes del año de servicio; "Descargar todos"
+  (una hoja por publicador, ~1 MB por 100, en menos de un segundo) o el de una persona (editable)
+- Captura de datos personales (fechas, sexo, esperanza, nombramiento, servicio especial) solo para secretario/ancianos/admins
+- `utils/s21.js`, `hooks/useRegistroS21.js`, `components/RegistroS21.jsx`, `public/formularios/S-21-S.pdf` (nuevos);
+  dependencia `pdf-lib`; `MIGRACION_15_REGISTRO_S21.sql`; prueba `s21` y permisos en `blindaje`; `i18n/en.js`
+
 ## 2026-11-06 — Respaldos automáticos, avisos de errores y pruebas en el repo — Migración 14
 
 - `supabase/functions/respaldo` (nuevo) + `MIGRACION_14_RESPALDOS_ERRORES.sql` + `MIGRACION_14B_PROGRAMAR_RESPALDO.sql`:

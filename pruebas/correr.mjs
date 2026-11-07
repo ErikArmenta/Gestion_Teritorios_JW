@@ -21,6 +21,7 @@ const PRUEBAS = [
   { nombre: 'passwords', archivo: 'e2e/probarPasswords.mjs', args: [SALIDA, RAIZ], app: true },
   { nombre: 'reportes', archivo: 'e2e/probarReportes.mjs', args: [SALIDA, RAIZ], app: true },
   { nombre: 'intentos', archivo: 'e2e/probarIntentos.mjs', args: [SALIDA, RAIZ], app: true },
+  { nombre: 's21', archivo: 'e2e/probarS21.mjs', args: [SALIDA, RAIZ], app: true },
   { nombre: 'respaldos', archivo: 'e2e/probarRespaldos.mjs', args: [SALIDA, RAIZ], app: true },
 ];
 

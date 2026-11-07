@@ -125,6 +125,12 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - **Storage y login (Migración 13)**: subir a `fotos_casas`/`notas_voz` exige sesión (`jw_storage_*`; ver por
   link público sigue abierto). `login_intentos`: 5 fallos por usuario / 20 por IP → 15 min (`sesion`, `webauthn`;
   429 `{ error: 'bloqueado', segundos }`). Contraseñas nuevas: mínimo 6.
+- **S-21 (Registro de publicador de la congregación)**: Informes → Congregación → botón "S-21" (Super Admin, Admin
+  Principal, Anciano; `components/RegistroS21.jsx`, `hooks/useRegistroS21.js`, `utils/s21.js`). Llena el formulario
+  oficial `public/formularios/S-21-S.pdf` (campos rellenables; nombres de campo en `F` de `utils/s21.js`) con los
+  `informes_servicio` del año de servicio (sept–ago). Una persona = campos llenos y editables (`s21Editable`); todos =
+  una hoja por persona sobre la misma página de fondo (`s21Todos`, ~1 MB por 100; cada hoja necesita su propia lista
+  `Contents` o el texto se encima). Datos personales en `publicador_registro` (Migración 15). pdf-lib con import dinámico.
 - **Respaldos y errores (Migración 14, `docs/RESPALDOS.md`)**: Edge Function `respaldo` (pg_cron semanal o "Respaldar
   ahora"; bucket privado `respaldos` con candado restrictivo; solo Super Admin lista/descarga) y `errores_app`
   (`utils/errores.js` reporta errores sueltos y de pantalla; `components/ErrorPantalla.jsx` envuelve las rutas en

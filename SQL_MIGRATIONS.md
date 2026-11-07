@@ -405,3 +405,16 @@ Archivos: `MIGRACION_14_RESPALDOS_ERRORES.sql` (re-ejecutable) y `MIGRACION_14B_
 - `errores_app` (agrupados por `firma`, `veces`, `resuelto`): la app reporta con `reportar_error(...)` (SECURITY
   DEFINER, también sin sesión; textos recortados; tope 300 distintos por día). Solo Super Admin los ve y marca resueltos.
 
+---
+
+## Migración 15 — Datos del Registro de publicador (S-21)
+
+Archivo: `MIGRACION_15_REGISTRO_S21.sql` (re-ejecutable; requiere la 12).
+
+- `publicador_registro` (una fila por usuario): `sexo`, `fecha_nacimiento`, `fecha_bautismo`, `esperanza`
+  (Otras ovejas/Ungido), `nombramiento` (Anciano/Siervo ministerial), `servicio_especial` (Precursor especial/Misionero
+  que sirve en el campo), `actualizado_en/por` (los pone un disparador).
+- Datos personales **aparte** de `app_usuarios`: los ven y editan solo Super Admin, Admin Principal y Anciano de la
+  misma congregación (el secretario); cada quien ve los suyos y no los puede cambiar.
+- Sin la migración el S-21 se genera igual, sin fechas ni datos personales.
+

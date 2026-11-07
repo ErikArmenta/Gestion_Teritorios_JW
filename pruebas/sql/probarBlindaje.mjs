@@ -292,6 +292,31 @@ await db.exec('RESET ROLE');
 revisar(Number((await filas(`SELECT count(*) n FROM errores_app WHERE firma = 'enuevo999'`))[0].n) === 0, 'errores: tope de 300 distintos por día (contra abusos)');
 
 
+// ── Migración 15: datos del S-21 (personales) ──
+await db.exec('RESET ROLE');
+const sql15 = leer('MIGRACION_15_REGISTRO_S21.sql');
+await db.exec(sql15);
+await db.exec(sql15); // re-ejecutable
+await db.exec(`UPDATE app_usuarios SET rol = 'Publicador' WHERE id = 4`); // (una prueba de arriba lo hizo Anciano)
+await como(3); // Anciano de A (el secretario)
+revisar(await afecta(`INSERT INTO publicador_registro (usuario_id, sexo, fecha_nacimiento, esperanza) VALUES (4, 'Mujer', '1990-02-03', 'Otras ovejas')`) === 1, 'S-21: el anciano (secretario) captura los datos de alguien de su congregación');
+revisar(!!(await falla(`INSERT INTO publicador_registro (usuario_id, sexo) VALUES (5, 'Hombre')`)), 'S-21: el anciano NO captura datos de otra congregación');
+revisar(await afecta(`UPDATE publicador_registro SET fecha_bautismo = '2004-06-07' WHERE usuario_id = 4`) === 1, 'S-21: el anciano corrige datos');
+revisar(Number((await filas(`SELECT actualizado_por FROM publicador_registro WHERE usuario_id = 4`))[0].actualizado_por) === 3, 'S-21: queda quién lo cambió (lo pone la BD)');
+await db.exec('RESET ROLE');
+await db.exec(`INSERT INTO publicador_registro (usuario_id, sexo) VALUES (5, 'Hombre'), (2, 'Hombre') ON CONFLICT DO NOTHING`);
+await como(4); // publicador de A
+revisar(await n('publicador_registro') === 1 && Number((await filas(`SELECT usuario_id FROM publicador_registro`))[0].usuario_id) === 4, 'S-21: el publicador solo ve SUS datos (no los de los demás)');
+revisar(await afecta(`UPDATE publicador_registro SET sexo = 'Hombre' WHERE usuario_id = 4`) === 0, 'S-21: el publicador no puede cambiar sus datos (solo el secretario)');
+await como(6); // Admin de B
+revisar(await n('publicador_registro WHERE usuario_id = 4') === 0 && await n('publicador_registro WHERE usuario_id = 5') === 1, 'S-21: otra congregación no ve los datos de A');
+await como(null);
+revisar(await n('publicador_registro') === 0, 'S-21: sin sesión, nada');
+await como(1);
+revisar(await n('publicador_registro') === 3, 'S-21: Super Admin ve todos');
+await db.exec('RESET ROLE');
+
+
 console.log('OK (' + ok.length + '):\n- ' + ok.join('\n- '));
 console.log('\nFALLOS:\n- ' + (fallo.join('\n- ') || '(ninguno)'));
 process.exitCode = fallo.length ? 1 : 0;

@@ -1,10 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import {
   ClipboardList, ChevronLeft, ChevronRight, Target, Plus, Minus, Trash2, Send, Check, Clock, BookOpen, Repeat,
   Wrench, Pencil, CloudOff, AlertTriangle, Users, Loader2,
-  Activity, UserCheck, UserX, Hourglass, Search, MapPin,
+  Activity, UserCheck, UserX, Hourglass, Search, MapPin, FileText,
 } from 'lucide-react';
 import BotonesExportar from '../components/BotonesExportar';
+import { ROLES_S21 } from '../utils/s21';
+// Registro de publicador (S-21): se carga solo al abrirlo
+const RegistroS21 = lazy(() => import('../components/RegistroS21'));
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
@@ -667,13 +670,26 @@ const InformeCongregacion = ({ mes, setMes }) => {
     filtro === 'todos' || (filtro === 'pendientes' && !f.enviado) || (filtro === 'precursores' && esPrecursor(f.tipo))),
   [filas, filtro]);
   const pendientes = filas.filter(f => !f.enviado).length;
+  const [verS21, setVerS21] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <NavegadorMes mes={mes} setMes={setMes} />
-        <BotonesExportar armar={() => reporteCongregacion(mes, filas, resumen, user)} disabled={!filas.length} />
+        <div className="flex flex-wrap gap-2">
+          <BotonesExportar armar={() => reporteCongregacion(mes, filas, resumen, user)} disabled={!filas.length} />
+          {ROLES_S21.includes(user?.rol) && (
+            <button type="button" className="btn btn-outline text-sm flex items-center gap-1.5" onClick={() => setVerS21(true)} title={t('Registro de publicador (S-21)')}>
+              <FileText size={15} /> S-21
+            </button>
+          )}
+        </div>
       </div>
+      {verS21 && (
+        <Suspense fallback={null}>
+          <RegistroS21 mes={mes} onClose={() => setVerS21(false)} />
+        </Suspense>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {TIPOS_PUBLICADOR.map(tp => {
