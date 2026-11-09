@@ -2,7 +2,7 @@
 // Corre el código REAL de las funciones `sesion` y `webauthn` en Node. Un "PostgREST" falso verifica
 // los tokens igual que Supabase (acepta solo la llave configurada). Supabase real NUNCA se toca.
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import http from 'http';
 import * as jose from 'jose';
 import { cargarFuncion, entorno } from '../apoyo/cargarFuncion.mjs';
@@ -63,7 +63,7 @@ const authREST = []; // Authorization de cada consulta de datos de la app
 let consultasPassword = 0;
 const browser = await puppeteer.launch({
   executablePath: NAVEGADOR, headless: 'new',
-  args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
+  args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
 });
 const page = await browser.newPage();
 await page.setBypassServiceWorker(true);

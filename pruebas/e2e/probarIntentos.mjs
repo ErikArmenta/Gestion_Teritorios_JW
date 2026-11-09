@@ -1,7 +1,7 @@
 // Límite de intentos de login (Migración 13) en las funciones REALES `sesion` y `webauthn` + mensajes en la app
 // + contraseñas nuevas de mínimo 6 + importar casas sin SheetJS (xlsx de la plantilla y CSV).
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import fs from 'fs';
 import path from 'path';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
@@ -81,7 +81,7 @@ revisar(r.status === 429 && r.body.error === 'bloqueado', 'activar huella: 5 fal
 reiniciar(true);
 const browser = await puppeteer.launch({
   executablePath: NAVEGADOR, headless: 'new',
-  args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
+  args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
 });
 const page = await browser.newPage();
 await page.setBypassServiceWorker(true);

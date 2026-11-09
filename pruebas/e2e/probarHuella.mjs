@@ -1,7 +1,7 @@
 // Entrar con huella (WebAuthn) de punta a punta: lector virtual de Edge (CDP) + el código REAL de la
 // Edge Function corriendo en Node con un Supabase en memoria. Supabase real NUNCA se toca.
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
 
 const [, , OUT, INDEX] = process.argv;
@@ -24,7 +24,7 @@ const llamadas = [];
 
 const browser = await puppeteer.launch({
   executablePath: NAVEGADOR, headless: 'new',
-  args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
+  args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
 });
 const page = await browser.newPage();
 await page.setBypassServiceWorker(true);

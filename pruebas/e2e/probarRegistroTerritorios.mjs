@@ -1,6 +1,6 @@
 // 8) Registro de asignación de territorios: lógica del reporte y descargas (Excel, PDF, reporte interactivo) desde Grupos.
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
@@ -51,7 +51,7 @@ revisar(graf.series[0].valores[1] === 1 && graf.series[0].valores[5] === 1 && gr
 revisar(r.kpis.find((k) => k.etiqueta.startsWith('Terminados')).valor === 1 && r.kpis.find((k) => k.etiqueta === 'Días por vuelta').valor === 35, 'indicadores: 1 territorio terminado (2 vueltas), 35 días por vuelta');
 
 // ── Descargas desde Grupos ──
-const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
+const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
 const page = await browser.newPage();
 const cdp = await page.createCDPSession();
 await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: DESC });

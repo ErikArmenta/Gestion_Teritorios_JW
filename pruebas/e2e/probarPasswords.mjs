@@ -1,7 +1,7 @@
 // Blindaje paso 2: contraseñas cifradas. Funciones REALES (sesion, webauthn) en Node con Supabase falso
 // (+ verificar_password simulado), y la app real en el navegador (Mi Perfil y Usuarios).
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
 
 const [, , OUT, RAIZ] = process.argv;
@@ -62,7 +62,7 @@ reiniciar(true); // fase 2: nadie tiene texto plano
 const escrituras = [];
 const browser = await puppeteer.launch({
   executablePath: NAVEGADOR, headless: 'new',
-  args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
+  args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
 });
 const page = await browser.newPage();
 await page.setBypassServiceWorker(true);

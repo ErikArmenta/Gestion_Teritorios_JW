@@ -1,6 +1,6 @@
 // 5) Respaldos automáticos (función REAL `respaldo`) y 7) errores de la app (reporte + pantalla amable + Backup).
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import zlib from 'zlib';
 import * as jose from 'jose';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
@@ -67,7 +67,7 @@ revisar(r.status === 200 && r.body.url.includes(nombre) && r.body.url.includes('
 // ── 7) App: reporte de errores, pantalla amable y Backup ──
 const rpcs = [];
 const parches = [];
-const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
+const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
 const page = await browser.newPage();
 await page.setBypassServiceWorker(true);
 page.on('pageerror', e => logs.push(`[pageerror] ${e.message.slice(0, 120)}`));

@@ -1,7 +1,7 @@
 // 10) Recordatorios (función REAL `recordatorios` en Node con Supabase falso y OneSignal interceptado):
 // qué toca cada día, a quién, sin repetir, permisos, y la vista previa en Backup.
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import * as jose from 'jose';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
 
@@ -115,7 +115,7 @@ const bvp = await vp.json();
 revisar(vp.status === 200 && bvp.porEnviar === 5 && bvp.enviados === 0 && pushes.length === 0 && db.recordatorios_enviados.length === 0, 'vista previa: dice a quién, sin mandar ni anotar');
 
 // ── Backup: "Ver quién recibiría hoy" ──
-const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
+const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
 const page = await browser.newPage();
 await page.setBypassServiceWorker(true);
 page.on('pageerror', e => logs.push(`[pageerror] ${e.message}`));

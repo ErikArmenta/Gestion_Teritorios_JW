@@ -1,7 +1,7 @@
 // Registro de publicador (S-21): lógica de la hoja, PDF de todos (1 hoja por persona, sin encimarse, ligero),
 // PDF de una persona (campos editables) y la ventana en Informes → Congregación.
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
@@ -72,7 +72,7 @@ const mesAct = (() => { const d = new Date(); return `${d.getFullYear()}-${Strin
 const informesBD = [{ usuario_id: 2, mes: mesAct, tipo_publicador: 'Precursor auxiliar', predico: true, estudios: 1, horas: 31, horas_servicio_sagrado: 0, comentarios: '' }];
 const escrituras = [];
 let sinMigracion15 = false;
-const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
+const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
 const page = await browser.newPage();
 const cdp = await page.createCDPSession();
 await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: DESC });

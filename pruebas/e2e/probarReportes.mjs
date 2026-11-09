@@ -1,7 +1,7 @@
 // Reportes: Excel / PDF / Reporte interactivo desde Estadísticas, Informes (Congregación y Actividad), Alertas
 // y la plantilla de casas. Descarga real de archivos y revisión de su contenido. Supabase interceptado.
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
@@ -71,7 +71,7 @@ const tablas = {
 
 const browser = await puppeteer.launch({
   executablePath: NAVEGADOR, headless: 'new',
-  args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
+  args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'],
 });
 const page = await browser.newPage();
 const cdp = await page.createCDPSession();

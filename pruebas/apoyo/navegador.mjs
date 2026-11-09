@@ -14,6 +14,10 @@ const CANDIDATOS = [
 ].filter(Boolean);
 
 export const NAVEGADOR = CANDIDATOS.find((r) => fs.existsSync(r));
+
+// En GitHub Actions (Linux) Chrome no arranca con su sandbox (el sistema no deja crear los espacios de nombres que
+// usa) y /dev/shm es chico: ahí se lanza sin sandbox. En la compu de siempre no cambia nada.
+export const ARGS_EXTRA = process.env.CI ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] : [];
 if (!NAVEGADOR) {
   console.error('No encontré Chrome ni Edge. Pon la ruta en la variable CHROME_PATH.');
   process.exit(1);

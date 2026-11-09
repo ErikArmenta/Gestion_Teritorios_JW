@@ -1,7 +1,7 @@
 // Congregaciones (Super Admin): lista con conteos SIN conteo embebido (con el blindaje fallaba y salía vacía),
 // crear refresca la lista y un error se muestra en vez de esconderse.
 import puppeteer from 'puppeteer-core';
-import { NAVEGADOR } from '../apoyo/navegador.mjs';
+import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 
 const [, , OUT] = process.argv;
 const BASE = 'http://localhost:4173';
@@ -13,7 +13,7 @@ const congregaciones = [{ id: 'c1', nombre: 'Centro', clave: 'CEN' }, { id: 'c2'
 const conteos = { app_usuarios: { c1: 12, c2: 5 }, territorios: { c1: 30, c2: 0 } };
 const consultas = [];
 let falla = false;
-const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: ['--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
+const browser = await puppeteer.launch({ executablePath: NAVEGADOR, headless: 'new', args: [...ARGS_EXTRA, '--host-resolver-rules=MAP *.supabase.co 127.0.0.1'] });
 const page = await browser.newPage();
 await page.setBypassServiceWorker(true);
 page.on('pageerror', e => logs.push(`[pageerror] ${e.message}`));
