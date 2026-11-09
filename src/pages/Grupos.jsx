@@ -10,6 +10,10 @@ import ConfirmModal from '../components/ConfirmModal';
 import { formatFechaCorta } from '../utils/territoryProgress';
 // "t" se usa para territorios/trabajos en los filtros, por eso la función de traducción es tx
 import { t as tx } from '../i18n';
+import BotonesExportar from '../components/BotonesExportar';
+import { reporteRegistroTerritorios } from '../utils/registroTerritorios';
+import { anioServicioDe } from '../utils/s21';
+import { mesActual } from '../utils/informes';
 
 const COLORES = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -48,6 +52,20 @@ const Grupos = () => {
   const [guardando, setGuardando] = useState(false);
   const [borrar, setBorrar] = useState(null);
   const [busqueda, setBusqueda] = useState('');
+
+  // Registro de asignación de territorios (Excel / PDF / reporte interactivo) del año de servicio elegido
+  const anioServicio = anioServicioDe(mesActual());
+  const [anioRegistro, setAnioRegistro] = useState(anioServicio);
+  const armarRegistro = () => {
+    const terrs = territorios.filter(t => String(t.congregacion_id) === String(congSel));
+    const ids = new Set(terrs.map(t => t.id));
+    return reporteRegistroTerritorios({
+      territorios: terrs,
+      trabajos: trabajos.filter(w => ids.has(w.territorio_id)),
+      grupos, miembros, anio: anioRegistro, usuario: user?.nombre,
+      congregacion: congFija ? user?.congregacion_nombre : congregaciones.find(c => String(c.id) === String(congSel))?.nombre,
+    });
+  };
 
   const anioActual = String(new Date().getFullYear());
 
@@ -130,6 +148,14 @@ const Grupos = () => {
             <option value="">{tx('Selecciona una congregación...')}</option>
             {congregaciones.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </select>
+        )}
+        {congSel && (
+          <div className="flex flex-wrap items-center gap-2" title={tx('Registro de asignación de territorios')}>
+            <select value={anioRegistro} onChange={e => setAnioRegistro(Number(e.target.value))} style={{ width: 'auto' }} aria-label={tx('Año de servicio')}>
+              {[anioServicio, anioServicio - 1, anioServicio - 2].map(a => <option key={a} value={a}>{tx('Año de servicio {a}', { a })}</option>)}
+            </select>
+            <BotonesExportar armar={armarRegistro} />
+          </div>
         )}
         {puedeGestionar && congSel && (
           <button className="btn btn-primary" onClick={() => setForm({ nombre: '', color: COLORES[grupos.length % COLORES.length], encargado_id: '' })}>

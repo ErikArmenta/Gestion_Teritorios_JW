@@ -966,6 +966,7 @@ const en = {
   'bautismo': "baptism",
   'esperanza': "hope",
   'Error al cargar: ': "Error loading: ",
+  'Registro de asignación de territorios': "Territory assignment record",
 };
 
 export default en;

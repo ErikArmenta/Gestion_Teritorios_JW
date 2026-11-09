@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-09 — Registro de asignación de territorios + PDFs 40 veces más ligeros
+
+- Grupos → Excel / PDF / Reporte interactivo del **Registro de asignación de territorios** (año de servicio): por territorio
+  (estado, grupo, última vez terminado, días sin trabajar, vueltas, días por vuelta), historial (quién lo tomó, cuándo
+  lo terminó, quién asignó/terminó) y los que llevan más de 4 meses sin trabajarse — `utils/registroTerritorios.js`
+- `utils/reportes/pdf.js`: gráficas y logo comprimidos (los PDF pasaban de 3–8 MB; ahora ~100–200 KB)
+- Pruebas: `registro` (nueva) y `reportes` revisa que ningún PDF pase de 1 MB
+
 ## 2026-11-09 — Fix: Congregaciones salía vacía
 
 - `pages/CongregacionesList.jsx`: los conteos de usuarios/territorios van aparte (el conteo embebido `app_usuarios(count)`

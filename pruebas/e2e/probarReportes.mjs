@@ -143,7 +143,12 @@ async function revisarExcel(ruta, nombre, { hojas = [], filaMin = 1 } = {}) {
   }
   return wb;
 }
-const paginasPDF = (ruta) => (fs.readFileSync(ruta, 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+// Cuenta las páginas y, de paso, revisa que el PDF no venga inflado (imágenes sin comprimir = varios MB)
+const paginasPDF = (ruta) => {
+  const kb = Math.round(fs.statSync(ruta).size / 1024);
+  revisar(kb < 1024, `${path.basename(ruta)}: pesa ${kb} KB (menos de 1 MB)`);
+  return (fs.readFileSync(ruta, 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+};
 
 async function revisarHTML(ruta, nombre, { buscar, filasMin = 1 } = {}) {
   const p = await browser.newPage();

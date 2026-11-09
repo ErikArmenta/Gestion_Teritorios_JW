@@ -27,7 +27,7 @@ export async function exportarPDF(reporte) {
   doc.rect(0, 46, W, 2.2, 'F');
   let xt = M;
   if (logo) {
-    doc.addImage(logo, 'PNG', M, 9.5, 27, 27);
+    doc.addImage(logo, 'PNG', M, 9.5, 27, 27, 'logo', 'FAST'); // comprimido (sin esto, PDFs de varios MB)
     xt = M + 33;
   }
   doc.setTextColor(255, 255, 255);
@@ -125,7 +125,7 @@ export async function exportarPDF(reporte) {
       const x = (W - ancho) / 2;
       doc.setDrawColor(...hexARgb(MARCA.borde));
       doc.roundedRect(x, y - 1, ancho, alto + 2, 3, 3, 'S');
-      doc.addImage(png.url, 'PNG', x + 1, y, ancho - 2, (alto * (ancho - 2)) / ancho);
+      doc.addImage(png.url, 'PNG', x + 1, y, ancho - 2, (alto * (ancho - 2)) / ancho, undefined, 'FAST');
       y += alto + 9;
     } else if (s.tipo === 'tabla') {
       if (!s.filas.length) continue;

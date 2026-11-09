@@ -126,6 +126,8 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - **Storage y login (Migración 13)**: subir a `fotos_casas`/`notas_voz` exige sesión (`jw_storage_*`; ver por
   link público sigue abierto). `login_intentos`: 5 fallos por usuario / 20 por IP → 15 min (`sesion`, `webauthn`;
   429 `{ error: 'bloqueado', segundos }`). Contraseñas nuevas: mínimo 6.
+- **Registro de asignación de territorios**: Grupos → `BotonesExportar` con `reporteRegistroTerritorios()`
+  (`utils/registroTerritorios.js`, de `territorio_trabajos`; `MESES_SIN_TRABAJAR` = 4 también lo usan los recordatorios).
 - **S-21 (Registro de publicador de la congregación)**: Informes → Congregación → botón "S-21" (Super Admin, Admin
   Principal, Anciano; `components/RegistroS21.jsx`, `hooks/useRegistroS21.js`, `utils/s21.js`). Llena el formulario
   oficial `public/formularios/S-21-S.pdf` (campos rellenables; nombres de campo en `F` de `utils/s21.js`) con los
