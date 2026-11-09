@@ -26,6 +26,7 @@ import OfflineIndicator from './components/OfflineIndicator';
 import ErrorPantalla from './components/ErrorPantalla';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
+import AvisoAseo from './components/AvisoAseo';
 import BottomNav from './components/BottomNav';
 import { DataProvider } from './context/DataContext';
 import { GruposProvider } from './context/GruposContext';
@@ -230,6 +231,7 @@ const AppLayout = () => {
       {/* Panic module — always visible when authenticated */}
       <PanicButton />
       <PanicAlert />
+      <AvisoAseo />
       <BottomNav />
     </div>
   );

@@ -29,7 +29,7 @@ de las Edge Functions tarda 4 s más).
 |---|---|
 | `textos` | Todo texto `t('…')` tiene su traducción en `en.js` y no hay llaves repetidas |
 | `migracion11` | Contraseñas cifradas (bcrypt) en dos fases |
-| `blindaje` | Migraciones 12, 13 y 14: quién ve y cambia qué, sin sesión, por rol, entre congregaciones, Storage, respaldos, errores, revertir |
+| `blindaje` | Migraciones 12–17: quién ve y cambia qué, sin sesión, por rol, entre congregaciones, Storage, respaldos, errores, revertir |
 | `candados` | Storage con políticas abiertas de otras apps |
 | `huella` | Entrar con huella / Face ID (lector virtual) |
 | `sesion` | Sesión firmada, renovación, llave cambiada, token falso |
@@ -41,6 +41,7 @@ de las Edge Functions tarda 4 s más).
 | `recordatorios` | Qué toca cada día y a quién, sin repetir, permisos, sin OneSignal, vista previa en Backup |
 | `congregaciones` | La lista de Super Admin con conteos, crear y que los errores se avisen |
 | `respaldos` | Respaldos automáticos, reporte de errores, pantalla amable, Backup |
+| `aseo` | Aseo del Salón: rotación por semana, avisos de la función (igual que la app), planear en Grupos y la ventana del aviso |
 
 **GitHub Actions** (`.github/workflows/pruebas.yml`) las corre en cada push a `main`. Si algo falla,
 el push sale en rojo y los resultados se pueden descargar desde la ejecución.

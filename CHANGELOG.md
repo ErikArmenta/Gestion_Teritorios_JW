@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-09 — Aseo del Salón por grupos con avisos automáticos — Migración 17
+
+- Grupos → **Aseo del Salón del Reino**: cada congregación planea sus reuniones (días y hora), el orden de los grupos y
+  desde qué semana; un grupo por semana, recurrente; cambios de una sola semana (otro grupo, sin aseo, otros días)
+- La función `recordatorios` avisa al grupo un día antes (7 p. m.) y el mismo día (8 a. m., `MIGRACION_17B`); al abrir
+  la app sale una ventana con el versículo (solo el texto) — `components/AvisoAseo.jsx`
+- `utils/aseo.js`, `hooks/useAseo.js`, `components/AseoSalon.jsx`, `MIGRACION_17_ASEO.sql`; Backup muestra la regla
+- Pruebas: `aseo` (nueva: lógica, función igual que la app en 280 casos, pantalla) y permisos en `blindaje`
+
 ## 2026-11-09 — Recordatorios automáticos por notificación — Migración 16
 
 - `supabase/functions/recordatorios` (nueva) + `MIGRACION_16_RECORDATORIOS.sql` + `MIGRACION_16B_PROGRAMAR_RECORDATORIOS.sql`:

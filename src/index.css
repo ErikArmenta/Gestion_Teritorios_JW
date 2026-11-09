@@ -1310,3 +1310,14 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 }
 .m3d-compartido__persona.is-viejo { opacity: 0.55; }
 .m3d-compartido__persona-punto { width: 9px; height: 9px; border-radius: 9999px; flex-shrink: 0; }
+
+/* ── Aviso del aseo del Salón (components/AvisoAseo.jsx): chispitas que titilan ── */
+.aseo-brillo {
+  position: absolute; font-size: 18px; color: rgba(255,255,255,0.85); pointer-events: none;
+  animation: aseoBrillo 2.4s ease-in-out infinite;
+}
+@keyframes aseoBrillo {
+  0%, 100% { opacity: 0.25; transform: scale(0.8) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.15) rotate(20deg); }
+}
+@media (prefers-reduced-motion: reduce) { .aseo-brillo { animation: none; } }

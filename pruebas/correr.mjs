@@ -26,6 +26,7 @@ const PRUEBAS = [
   { nombre: 'recordatorios', archivo: 'e2e/probarRecordatorios.mjs', args: [SALIDA, RAIZ], app: true },
   { nombre: 'congregaciones', archivo: 'e2e/probarCongregaciones.mjs', args: [SALIDA], app: true },
   { nombre: 'respaldos', archivo: 'e2e/probarRespaldos.mjs', args: [SALIDA, RAIZ], app: true },
+  { nombre: 'aseo', archivo: 'e2e/probarAseo.mjs', args: [SALIDA, RAIZ], app: true },
 ];
 
 const filtro = process.argv.slice(2);

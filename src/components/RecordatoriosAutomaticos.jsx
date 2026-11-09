@@ -52,6 +52,7 @@ const RecordatoriosAutomaticos = () => {
         <li>{t('Informe: el último día del mes y los días 1 y 2, a quien no lo ha enviado.')}</li>
         <li>{t('Exhibidor: un día antes del turno, a quien le toca.')}</li>
         <li>{t('Territorios: los lunes, a ancianos y admins, los que llevan más de 4 meses sin trabajarse.')}</li>
+        <li>{t('Aseo del Salón: un día antes de cada reunión (7 p. m.) y el mismo día (8 a. m.), al grupo que le toca (se planea en Grupos).')}</li>
       </ul>
       <button type="button" className="btn btn-outline text-sm" onClick={verVistaPrevia} disabled={estado === 'cargando'}>
         {estado === 'cargando' ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />} {t('Ver quién los recibiría hoy')}
@@ -62,7 +63,7 @@ const RecordatoriosAutomaticos = () => {
         <div className="mt-3 text-sm text-secondary">
           <p className="m-0 mb-1"><strong className="text-primary">{t('Por mandar hoy:')} {estado.porEnviar}</strong> · {t('ya enviados:')} {estado.yaEnviados} · {estado.hoy}</p>
           <p className="m-0 mb-2 text-xs">
-            {t('Informe')}: {estado.informe?.avisos || 0} · {t('Exhibidor')}: {estado.turnos || 0} · {t('Territorios')}: {estado.territorios?.avisos || 0}
+            {t('Informe')}: {estado.informe?.avisos || 0} · {t('Exhibidor')}: {estado.turnos || 0} · {t('Territorios')}: {estado.territorios?.avisos || 0} · {t('Aseo')}: {estado.aseo?.avisos || 0}
           </p>
           {estado.muestra?.length > 0 && (
             <ul className="m-0 p-0 flex flex-col gap-1" style={{ listStyle: 'none' }}>

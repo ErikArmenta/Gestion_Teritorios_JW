@@ -426,3 +426,18 @@ Archivos: `MIGRACION_16_RECORDATORIOS.sql` (bitácora `recordatorios_enviados`, 
 `MIGRACION_16B_PROGRAMAR_RECORDATORIOS.sql` (pg_cron diario 01:00 UTC = 19:00 México; mismo secreto que el respaldo).
 Edge Function `supabase/functions/recordatorios`. Pasos y reglas: `docs/RECORDATORIOS.md`.
 
+---
+
+## Migración 17 — Aseo del Salón del Reino por grupos
+
+Archivos: `MIGRACION_17_ASEO.sql` (re-ejecutable; requiere la 5 y la 12) y `MIGRACION_17B_AVISO_ASEO_MANANA.sql`
+(pg_cron 14:00 UTC = 8:00 a. m. México, `{ "accion": "enviar", "momento": "manana" }`; mismo secreto que el respaldo).
+
+- `aseo_planes` (una por congregación, PK `congregacion_id`): `reuniones` JSONB `[{ dia: 0-6, hora: 'HH:MM' }]`
+  (0 = domingo), `orden_grupos` BIGINT[], `inicio` (se guarda el lunes de esa semana), `avisos`, `actualizado_en/por`.
+- `aseo_cambios` (una por congregación y semana): `semana` (lunes), `grupo_id` o `sin_aseo`, `reuniones` (si esa
+  semana cambian los días), `nota`.
+- Disparador `aseo_validar`: ningún grupo de otra congregación (ni en el orden ni en un cambio); los grupos borrados
+  salen del orden solos; fechas al lunes. RLS `jw_*`: ve la congregación; cambian Super Admin, Admin Principal,
+  Anciano y Ministerial de esa congregación.
+- Rotación: un grupo por semana, recurrente (`utils/aseo.js`, copiada en la función `recordatorios`).

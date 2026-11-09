@@ -14,6 +14,7 @@ import BotonesExportar from '../components/BotonesExportar';
 import { reporteRegistroTerritorios } from '../utils/registroTerritorios';
 import { anioServicioDe } from '../utils/s21';
 import { mesActual } from '../utils/informes';
+import AseoSalon from '../components/AseoSalon';
 
 const COLORES = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -259,6 +260,9 @@ const Grupos = () => {
           ))}
         </div>
       )}
+
+      {/* Aseo del Salón del Reino (Migración 17) */}
+      {congSel && disponible && <AseoSalon congregacionId={congSel} grupos={grupos} puedeGestionar={puedeGestionar} />}
 
       {/* Publicadores → grupo */}
       {grupos.length > 0 && (

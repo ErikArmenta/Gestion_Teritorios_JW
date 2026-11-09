@@ -3,10 +3,13 @@
 //   1. Informe: el último día del mes y los días 1 y 2 → a quien no ha enviado su informe de ese mes.
 //   2. Exhibidor: un día antes del turno → a quien le toca (si no está rechazado ni cancelado).
 //   3. Territorios: los lunes → a ancianos y admins, los territorios con más de 4 meses sin trabajarse.
+//   4. Aseo del Salón (Migración 17): un día antes de cada reunión (7 p. m.) y el mismo día (8 a. m., MIGRACION_17B
+//      con { momento: 'manana' }) → a los hermanos del grupo al que le toca esa semana. Se guarda en `notificaciones`
+//      (la app muestra el mensaje con el versículo y el webhook `push-notificaciones` manda el push).
 // Nunca repite: cada aviso se anota en recordatorios_enviados (Migración 16). Push por OneSignal (mismos secretos
 // que `enviar-push`). Un Super Admin puede pedir la vista previa (quién lo recibiría hoy) sin mandar nada.
 //
-// Acciones (POST { accion, hoy? }):
+// Acciones (POST { accion, hoy?, momento? }):   momento = 'tarde' (7 p. m., todo) | 'manana' (8 a. m., solo aseo)
 //   enviar        (encabezado x-cron-secreto = RECORDATORIOS_SECRETO o RESPALDO_SECRETO) → resumen
 //   vista_previa  { token } de Super Admin → resumen sin mandar nada
 // Secretos: ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY, APP_URL, RESPALDO_SECRETO (o RECORDATORIOS_SECRETO),
@@ -162,6 +165,102 @@ async function avisosTerritorios(hoy: string): Promise<{ porCongregacion: Record
   return { porCongregacion, avisos };
 }
 
+// ── 4. Aseo del Salón (copia de src/utils/aseo.js: si cambias una, cambia la otra) ──
+const VERSICULO = '“Porque Dios no es un Dios de desorden, sino de paz.”';
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const lunesDe = (s: string) => masDias(s, -((fechaD(s).getUTCDay() + 6) % 7));
+const semanasEntre = (a: string, b: string) => Math.round((fechaD(b).getTime() - fechaD(a).getTime()) / (7 * 86400000));
+type Reunion = { dia: number; hora: string };
+type PlanAseo = { congregacion_id: string; reuniones: unknown; orden_grupos: (number | string)[] | null; inicio: string | null };
+type CambioAseo = { congregacion_id: string; semana: string; grupo_id: number | null; sin_aseo: boolean | null; reuniones: unknown };
+const limpiarReuniones = (lista: unknown): Reunion[] => (Array.isArray(lista) ? lista : [])
+  // deno-lint-ignore no-explicit-any
+  .filter((r: any) => r && Number.isInteger(Number(r.dia)) && Number(r.dia) >= 0 && Number(r.dia) <= 6)
+  // deno-lint-ignore no-explicit-any
+  .map((r: any) => ({ dia: Number(r.dia), hora: /^\d{2}:\d{2}/.test(String(r.hora || '')) ? String(r.hora).slice(0, 5) : '' }))
+  .sort((a, b) => ((a.dia + 6) % 7) - ((b.dia + 6) % 7));
+function aseoDelDia(plan: PlanAseo, cambios: CambioAseo[], grupos: { id: number | string }[], fecha: string) {
+  const lunes = lunesDe(fecha);
+  const cambio = cambios.find((c) => String(c.semana).slice(0, 10) === lunes) || null;
+  const ids = new Set(grupos.map((g) => String(g.id)));
+  const orden = (plan.orden_grupos || []).map(String).filter((id) => ids.has(id));
+  let grupo_id: string | null = null;
+  if (cambio) grupo_id = cambio.sin_aseo ? null : (cambio.grupo_id != null ? String(cambio.grupo_id) : null);
+  else if (orden.length && plan.inicio) {
+    const n = semanasEntre(lunesDe(String(plan.inicio).slice(0, 10)), lunes);
+    grupo_id = orden[((n % orden.length) + orden.length) % orden.length];
+  }
+  const base = Array.isArray(cambio?.reuniones) && (cambio?.reuniones as unknown[]).length ? cambio?.reuniones : plan.reuniones;
+  const reunion = limpiarReuniones(base).find((r) => masDias(lunes, (r.dia + 6) % 7) === fecha);
+  return reunion && grupo_id ? { grupo_id, hora: reunion.hora } : null;
+}
+const hora12 = (h: string) => {
+  if (!/^\d{2}:\d{2}/.test(String(h || ''))) return '';
+  const [hh, mm] = String(h).split(':').map(Number);
+  return `${hh % 12 || 12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'a. m.' : 'p. m.'}`;
+};
+const fechaLarga = (s: string) => { const d = fechaD(s); return `${DIAS[d.getUTCDay()]} ${d.getUTCDate()} de ${MESES[d.getUTCMonth()]}`; };
+const textoAvisoAseo = ({ grupo, fecha, hora, cuando }: { grupo: string; fecha: string; hora: string; cuando: string }) => {
+  const dia = `${cuando === 'hoy' ? 'hoy' : 'mañana'} ${fechaLarga(fecha)}`;
+  return {
+    titulo: `🧹 ${grupo}: aseo del Salón ${cuando === 'hoy' ? 'hoy' : 'mañana'}`,
+    mensaje: `${VERSICULO} ¡${grupo}, tienen el increíble privilegio de realizar el aseo del Salón del Reino ${dia}${hora ? ` (reunión de las ${hora12(hora)})` : ''}! Gracias por su amor y su esfuerzo. 💙`,
+  };
+};
+
+type AvisoAseo = { clave: string; usuario_id: number; titulo: string; mensaje: string; metadata: Record<string, unknown> };
+async function avisosAseo(hoy: string, momento: string): Promise<{ sinMigracion?: boolean; grupos: number; avisos: AvisoAseo[] }> {
+  const fecha = momento === 'manana' ? hoy : masDias(hoy, 1);
+  const cuando = momento === 'manana' ? 'hoy' : 'manana';
+  const { data: planes, error } = await supabase.from('aseo_planes').select('*').eq('avisos', true);
+  if (error) return { sinMigracion: true, grupos: 0, avisos: [] }; // sin la Migración 17 los demás recordatorios siguen
+  const congs = (planes ?? []).map((p) => p.congregacion_id);
+  if (!congs.length) return { grupos: 0, avisos: [] };
+  const [{ data: cambios }, { data: grupos }] = await Promise.all([
+    supabase.from('aseo_cambios').select('*').in('congregacion_id', congs).eq('semana', lunesDe(fecha)),
+    supabase.from('grupos_predicacion').select('id, nombre, color, congregacion_id').in('congregacion_id', congs),
+  ]);
+  const toca: { grupo: { id: number; nombre: string; color: string | null; congregacion_id: string }; hora: string }[] = [];
+  for (const plan of planes as PlanAseo[]) {
+    const suyos = (grupos ?? []).filter((g) => g.congregacion_id === plan.congregacion_id);
+    const r = aseoDelDia(plan, ((cambios ?? []) as CambioAseo[]).filter((c) => c.congregacion_id === plan.congregacion_id), suyos, fecha);
+    const grupo = r && suyos.find((g) => String(g.id) === r.grupo_id);
+    if (grupo) toca.push({ grupo, hora: r.hora });
+  }
+  if (!toca.length) return { grupos: 0, avisos: [] };
+  const { data: miembros, error: errM } = await supabase.from('app_usuarios')
+    .select('id, activo, grupo_id, congregacion_id').in('grupo_id', toca.map((x) => x.grupo.id));
+  if (errM) throw errM;
+  const avisos: AvisoAseo[] = [];
+  for (const { grupo, hora } of toca) {
+    const { titulo, mensaje } = textoAvisoAseo({ grupo: grupo.nombre, fecha, hora, cuando });
+    for (const u of (miembros ?? []).filter((m) => String(m.grupo_id) === String(grupo.id) && m.congregacion_id === grupo.congregacion_id && m.activo !== false)) {
+      avisos.push({
+        clave: `aseo:${fecha}:${cuando}:${u.id}`,
+        usuario_id: Number(u.id),
+        titulo, mensaje,
+        metadata: { tipo: 'aseo', grupo: grupo.nombre, grupo_id: grupo.id, color: grupo.color || null, fecha, hora, cuando },
+      });
+    }
+  }
+  return { grupos: toca.length, avisos };
+}
+
+// Aseo: se guarda en `notificaciones` (la app lo muestra en pantalla y el webhook manda el push)
+async function mandarAseo(avisos: AvisoAseo[]) {
+  let enviados = 0;
+  for (let i = 0; i < avisos.length; i += 200) {
+    const lote = avisos.slice(i, i + 200);
+    const { error } = await supabase.from('notificaciones').insert(lote.map((a) => ({
+      usuario_destino_id: a.usuario_id, tipo: 'sistema', titulo: a.titulo, mensaje: a.mensaje, metadata: a.metadata,
+    })));
+    if (error) { console.error('notificaciones aseo', error); continue; }
+    enviados += lote.length;
+    await supabase.from('recordatorios_enviados').insert(lote.map((a) => ({ clave: a.clave, usuario_id: a.usuario_id })));
+  }
+  return enviados;
+}
+
 // ── Envío (agrupa los avisos con el mismo texto en una sola llamada a OneSignal) ──
 async function mandar(avisos: Aviso[]) {
   if (!env('ONESIGNAL_APP_ID') || !env('ONESIGNAL_REST_API_KEY')) return { enviados: 0, sinOneSignal: true };
@@ -202,26 +301,43 @@ async function atender(accion: string, d: Record<string, unknown>, secreto: stri
   const { error: errTabla } = await supabase.from('recordatorios_enviados').select('clave', { head: true, count: 'exact' }).limit(1);
   if (errTabla) throw new Fallo('falta_migracion_16', 503);
 
-  const [informe, turnos, territorios] = await Promise.all([avisosInforme(hoy), avisosTurnos(hoy), avisosTerritorios(hoy)]);
+  // 'manana' (8 a. m.) = solo el aviso del aseo de ese día; 'tarde' (7 p. m., lo de siempre) = todo
+  const momento = d.momento === 'manana' ? 'manana' : 'tarde';
+  const vacio = { mes: null, avisos: [] as Aviso[] };
+  const [informe, turnos, territorios, aseo] = await Promise.all([
+    momento === 'tarde' ? avisosInforme(hoy) : vacio,
+    momento === 'tarde' ? avisosTurnos(hoy) : [] as Aviso[],
+    momento === 'tarde' ? avisosTerritorios(hoy) : { porCongregacion: {}, avisos: [] as Aviso[] },
+    avisosAseo(hoy, momento),
+  ]);
   const todos = [...informe.avisos, ...turnos, ...territorios.avisos];
   // Quitar los que ya se mandaron
   const yaEnviados = new Set<string>();
-  for (let i = 0; i < todos.length; i += 200) {
-    const { data } = await supabase.from('recordatorios_enviados').select('clave').in('clave', todos.slice(i, i + 200).map((a) => a.clave));
+  const claves = [...todos.map((a) => a.clave), ...aseo.avisos.map((a) => a.clave)];
+  for (let i = 0; i < claves.length; i += 200) {
+    const { data } = await supabase.from('recordatorios_enviados').select('clave').in('clave', claves.slice(i, i + 200));
     (data ?? []).forEach((r) => yaEnviados.add(r.clave));
   }
   const pendientes = todos.filter((a) => !yaEnviados.has(a.clave));
+  const aseoPendientes = aseo.avisos.filter((a) => !yaEnviados.has(a.clave));
   const resumen = {
     hoy,
+    momento,
     informe: { mes: informe.mes, avisos: informe.avisos.length },
     turnos: turnos.length,
     territorios: { congregaciones: Object.keys(territorios.porCongregacion).length, avisos: territorios.avisos.length },
-    yaEnviados: todos.length - pendientes.length,
-    porEnviar: pendientes.length,
-    muestra: pendientes.slice(0, 20).map((a) => ({ usuario_id: a.usuario_id, titulo: a.titulo.es, mensaje: a.mensaje.es })),
+    aseo: { grupos: aseo.grupos, avisos: aseo.avisos.length, ...(aseo.sinMigracion ? { sinMigracion: true } : {}) },
+    yaEnviados: claves.length - pendientes.length - aseoPendientes.length,
+    porEnviar: pendientes.length + aseoPendientes.length,
+    muestra: [
+      ...aseoPendientes.map((a) => ({ usuario_id: a.usuario_id, titulo: a.titulo, mensaje: a.mensaje })),
+      ...pendientes.map((a) => ({ usuario_id: a.usuario_id, titulo: a.titulo.es, mensaje: a.mensaje.es })),
+    ].slice(0, 20),
   };
   if (accion === 'vista_previa') return { ...resumen, enviados: 0 };
-  return { ...resumen, ...(await mandar(pendientes)) };
+  const push = await mandar(pendientes);
+  const enviadosAseo = await mandarAseo(aseoPendientes);
+  return { ...resumen, ...push, enviados: push.enviados + enviadosAseo, aseoEnviados: enviadosAseo };
 }
 
 Deno.serve(async (req) => {

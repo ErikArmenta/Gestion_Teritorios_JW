@@ -328,6 +328,46 @@ revisar(!!(await falla(`SELECT * FROM recordatorios_enviados`)) && !!(await fall
 await db.exec('RESET ROLE');
 
 
+// ── Migración 17: aseo del Salón por grupos ──
+await db.exec('RESET ROLE');
+const sql17 = leer('MIGRACION_17_ASEO.sql');
+await db.exec(sql17);
+await db.exec(sql17); // re-ejecutable
+revisar(true, 'aseo: la Migración 17 se puede correr dos veces');
+await db.exec(`INSERT INTO grupos_predicacion (id, congregacion_id, nombre) VALUES (3, '${A}', 'G-A2'), (4, '${A}', 'G-A3') ON CONFLICT DO NOTHING`);
+await db.exec(`UPDATE app_usuarios SET rol = 'Publicador' WHERE id = 4; UPDATE app_usuarios SET rol = 'Ministerial', activo = true WHERE id = 8`);
+await como(4);
+revisar(!!(await falla(`INSERT INTO aseo_planes (congregacion_id, reuniones, orden_grupos) VALUES ('${A}', '[]', '{1}')`)), 'aseo: un publicador no puede planear');
+await como(8); // Ministerial de A
+revisar(await afecta(`INSERT INTO aseo_planes (congregacion_id, reuniones, orden_grupos, inicio) VALUES ('${A}', '[{"dia":4,"hora":"19:30"},{"dia":0,"hora":"10:00"}]', '{3,1,4}', '2026-11-05')`) === 1, 'aseo: el ministerial planea su congregación');
+let pl = (await filas(`SELECT inicio::text, actualizado_por FROM aseo_planes WHERE congregacion_id = '${A}'`))[0];
+revisar(pl.inicio === '2026-11-02' && Number(pl.actualizado_por) === 8, `aseo: la semana empieza en lunes (${pl.inicio}) y queda quién lo planeó`);
+revisar(/otra congregación/.test(await falla(`UPDATE aseo_planes SET orden_grupos = '{1,2}' WHERE congregacion_id = '${A}'`) || ''), 'aseo: no deja meter un grupo de otra congregación en la rotación');
+revisar(!!(await falla(`INSERT INTO aseo_planes (congregacion_id, orden_grupos) VALUES ('${B}', '{2}')`)), 'aseo: no puede planear otra congregación');
+revisar(!!(await falla(`UPDATE aseo_planes SET reuniones = '{"dia":4}' WHERE congregacion_id = '${A}'`)), 'aseo: reuniones tiene que ser una lista');
+revisar(await afecta(`INSERT INTO aseo_cambios (congregacion_id, semana, sin_aseo, nota) VALUES ('${A}', '2026-11-18', true, 'Asamblea')`) === 1, 'aseo: cambio de una semana (sin aseo)');
+revisar((await filas(`SELECT semana::text s FROM aseo_cambios`))[0].s === '2026-11-16', 'aseo: el cambio se guarda en el lunes de esa semana');
+revisar(/otra congregación/.test(await falla(`INSERT INTO aseo_cambios (congregacion_id, semana, grupo_id) VALUES ('${A}', '2026-11-23', 2)`) || ''), 'aseo: cambio con grupo de otra congregación → rechazado');
+revisar(!!(await falla(`INSERT INTO aseo_cambios (congregacion_id, semana, sin_aseo) VALUES ('${A}', '2026-11-17', true)`)), 'aseo: un solo cambio por semana');
+revisar(await afecta(`INSERT INTO aseo_cambios (congregacion_id, semana, grupo_id) VALUES ('${A}', '2026-11-17', 1) ON CONFLICT (congregacion_id, semana) DO UPDATE SET grupo_id = 1, sin_aseo = false`) === 1, 'aseo: el cambio se puede reemplazar (upsert)');
+await como(4);
+revisar(await n('aseo_planes') === 1 && await n('aseo_cambios') === 1, 'aseo: el publicador VE la planeación de su congregación');
+revisar(await afecta(`UPDATE aseo_planes SET avisos = false`) === 0 && await afecta(`DELETE FROM aseo_cambios`) === 0, 'aseo: el publicador no la cambia');
+await como(6); // Admin de B
+revisar(await n('aseo_planes') === 0 && await n('aseo_cambios') === 0, 'aseo: otra congregación no ve la planeación de A');
+revisar(await afecta(`INSERT INTO aseo_planes (congregacion_id, orden_grupos) VALUES ('${B}', '{2}')`) === 1, 'aseo: el admin de B planea la suya');
+await como(null);
+revisar(await n('aseo_planes') === 0, 'aseo: sin sesión, nada');
+await db.exec('RESET ROLE');
+await db.exec(`DELETE FROM grupos_predicacion WHERE id = 4`);
+await como(3); // Anciano de A
+revisar(await afecta(`UPDATE aseo_planes SET avisos = false WHERE congregacion_id = '${A}'`) === 1, 'aseo: si borran un grupo, la planeación no se traba');
+revisar((await filas(`SELECT orden_grupos::text o FROM aseo_planes WHERE congregacion_id = '${A}'`))[0].o === '{3,1}', 'aseo: el grupo borrado sale de la rotación (el orden de los demás se queda)');
+await como(1);
+revisar(await n('aseo_planes') === 2, 'aseo: Super Admin ve todas');
+await db.exec('RESET ROLE');
+
+
 console.log('OK (' + ok.length + '):\n- ' + ok.join('\n- '));
 console.log('\nFALLOS:\n- ' + (fallo.join('\n- ') || '(ninguno)'));
 process.exitCode = fallo.length ? 1 : 0;

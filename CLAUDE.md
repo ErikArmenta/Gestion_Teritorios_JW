@@ -138,6 +138,12 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   informe (último día y días 1–2, a quien no lo ha enviado), turno de exhibidor (un día antes), territorios con más de
   4 meses sin trabajarse (lunes, a ancianos/admins). Push directo por OneSignal; no repite (`recordatorios_enviados`).
   Vista previa en Backup (`components/RecordatoriosAutomaticos.jsx`).
+- **Aseo del Salón (Migración 17, `MIGRACION_17_ASEO.sql` + `17B`)**: Grupos → `components/AseoSalon.jsx` (`hooks/useAseo.js`).
+  `aseo_planes` (una por congregación: reuniones, orden de grupos, semana de inicio) y `aseo_cambios` (una semana).
+  Un grupo por semana, recurrente: lógica en `utils/aseo.js` **copiada** en `recordatorios` (si cambias una, cambia la
+  otra; la prueba `aseo` las compara). Avisos un día antes (7 p. m.) y el mismo día (8 a. m., `momento: 'manana'`):
+  se insertan en `notificaciones` (`tipo 'sistema'`, `metadata.tipo = 'aseo'`) → push por el webhook y ventana con
+  el versículo (solo el texto, **sin cita**: la app no es oficial) en la app (`components/AvisoAseo.jsx`, montado en `App.jsx`).
 - **Respaldos y errores (Migración 14, `docs/RESPALDOS.md`)**: Edge Function `respaldo` (pg_cron semanal o "Respaldar
   ahora"; bucket privado `respaldos` con candado restrictivo; solo Super Admin lista/descarga) y `errores_app`
   (`utils/errores.js` reporta errores sueltos y de pantalla; `components/ErrorPantalla.jsx` envuelve las rutas en
