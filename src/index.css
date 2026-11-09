@@ -868,6 +868,16 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   align-self: center; padding: 6px 30px; background: none; border: 0; cursor: pointer;
 }
 .m3d-sheet__asa span { display: block; width: 40px; height: 5px; border-radius: 9999px; background: var(--border-color); }
+/* Panel colapsado (components/PanelMapa.jsx): solo la rayita y una barrita con el título; el mapa ocupa el resto */
+.m3d-sheet.is-colapsado { gap: 0; padding-bottom: 8px; }
+.m3d-sheet__barra {
+  display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 40px;
+  margin-right: 84px; /* esquina del botón de pánico */
+  padding: 0 2px; background: none; border: 0; cursor: pointer; text-align: left; color: var(--text-primary);
+}
+.m3d-sheet__barra-titulo { flex-shrink: 0; max-width: 60%; font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m3d-sheet__barra-resumen { flex: 1 1 auto; min-width: 0; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m3d-sheet__barra-flecha { flex-shrink: 0; margin-left: auto; color: var(--text-muted); }
 .m3d-fila { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
 .m3d .m3d-input,

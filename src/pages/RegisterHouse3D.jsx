@@ -268,6 +268,8 @@ const RegisterHouse3D = () => {
     <>
       <PanelMapa
         abierto={expandido}
+        titulo={t('Registrar Casa')}
+        resumen={territorioObj ? [territorioObj.numero, territorioObj.nombre].filter(Boolean).join(' · ') : null}
         cabecera={(
           <div className="m3d-titulo">
             <span className="m3d-titulo__icono"><MapPin size={16} /></span>
@@ -278,15 +280,6 @@ const RegisterHouse3D = () => {
           </div>
         )}
       >
-        <button
-          type="button"
-          className="m3d-sheet__asa"
-          onClick={() => setExpandido(v => !v)}
-          aria-label={expandido ? t('Menos detalles') : t('Más detalles')}
-        >
-          <span />
-        </button>
-
         {/* Territorio detectado */}
         <div className="m3d-fila">
           <span className="legend-dot shrink-0" style={{ width: 10, height: 10, borderRadius: 9999, background: colorTerr }} />

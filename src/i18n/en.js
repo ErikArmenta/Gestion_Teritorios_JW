@@ -1028,6 +1028,7 @@ const en = {
   '¡Ahí estaremos! 💪': "We'll be there! 💪",
   'Aseo del Salón: un día antes de cada reunión (7 p. m.) y el mismo día (8 a. m.), al grupo que le toca (se planea en Grupos).': "Hall cleaning: the day before each meeting (7 p.m.) and the same day (8 a.m.), to the group whose turn it is (planned in Groups).",
   'Aseo': "Cleaning",
+  'Nuevo exhibidor': "New display",
 };
 
 export default en;

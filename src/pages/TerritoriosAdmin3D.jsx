@@ -515,6 +515,11 @@ const TerritoriosAdmin3D = () => {
           </div>
         ))}
       </div>
+      {manzanasTerr.length > 3 && (
+        <button type="button" className="m3d-link self-start" onClick={() => setExpandido(v => !v)}>
+          {expandido ? t('Ver menos') : t('Ver más')}
+        </button>
+      )}
       <div className="m3d-acciones">
         <button type="button" className="btn btn-primary flex-1" onClick={() => iniciarSesion({ tipo: 'manzana-nueva', modo: 'polygon', territorioId: terrSel.id })}>
           <Plus size={16} /> {t('Dibujar manzana')}
@@ -534,6 +539,8 @@ const TerritoriosAdmin3D = () => {
     <>
       <PanelMapa
         abierto={expandido}
+        titulo={sesion ? t('Dibujando…') : terrSel && panel !== 'lista' ? nombreTerritorio(terrSel) : t('Gestión de Territorios')}
+        abrirCon={sesion ? `dibujo:${sesion.tipo}` : manzanaNueva ? 'manzana-nueva' : panel === 'lista' ? null : `${panel}:${terrSel?.id ?? ''}`}
         cabecera={(
           <div className="m3d-titulo">
             <span className="m3d-titulo__icono"><Shapes size={16} /></span>
@@ -544,9 +551,6 @@ const TerritoriosAdmin3D = () => {
           </div>
         )}
       >
-        <button type="button" className="m3d-sheet__asa" onClick={() => setExpandido(v => !v)} aria-label={expandido ? t('Ver menos') : t('Ver más')}>
-          <span />
-        </button>
         {contenido}
       </PanelMapa>
 

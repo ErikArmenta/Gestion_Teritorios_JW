@@ -41,6 +41,7 @@ de las Edge Functions tarda 4 s más).
 | `recordatorios` | Qué toca cada día y a quién, sin repetir, permisos, sin OneSignal, vista previa en Backup |
 | `congregaciones` | La lista de Super Admin con conteos, crear y que los errores se avisen |
 | `respaldos` | Respaldos automáticos, reporte de errores, pantalla amable, Backup |
+| `panel` | Panel del mapa en el celular: colapsado al inicio, abrir/cerrar (rayita, barrita, deslizar), se recuerda, se abre solo |
 | `aseo` | Aseo del Salón: rotación por semana, avisos de la función (igual que la app), planear en Grupos y la ventana del aviso |
 
 **GitHub Actions** (`.github/workflows/pruebas.yml`) las corre en cada push a `main`. Si algo falla,

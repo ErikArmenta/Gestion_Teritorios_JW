@@ -256,6 +256,8 @@ const Exhibidores3D = () => {
     <>
       <PanelMapa
         abierto={expandido}
+        titulo={creando ? tx('Nuevo exhibidor') : sel ? sel.nombre : tx('Exhibidores')}
+        abrirCon={creando ? 'nuevo' : (selId ?? null)}
         cabecera={(
           <div className="m3d-titulo">
             <span className="m3d-titulo__icono"><ExhibidorIcon size={16} /></span>
@@ -266,9 +268,6 @@ const Exhibidores3D = () => {
           </div>
         )}
       >
-        <button type="button" className="m3d-sheet__asa" onClick={() => setExpandido(v => !v)} aria-label={expandido ? tx('Ver menos') : tx('Ver más')}>
-          <span />
-        </button>
         {contenido}
       </PanelMapa>
 

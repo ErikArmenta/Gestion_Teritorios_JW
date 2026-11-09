@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-09 — Panel del mapa colapsable en el celular
+
+- `components/PanelMapa.jsx`: en Mapa, Registrar casa, Territorios y Exhibidores el panel de abajo empieza colapsado
+  (barrita con título y resumen; el mapa ocupa casi toda la pantalla). Se abre/cierra con la rayita, la barrita o
+  deslizando; se recuerda por pantalla; se abre solo al elegir una casa, territorio o exhibidor. Escritorio sin cambios
+- Prueba nueva `panel` (mapa 3D real con WebGL por software)
+
 ## 2026-11-09 — Aseo del Salón por grupos con avisos automáticos — Migración 17
 
 - Grupos → **Aseo del Salón del Reino**: cada congregación planea sus reuniones (días y hora), el orden de los grupos y

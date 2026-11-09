@@ -276,6 +276,9 @@ const TerritoriesMap3D = () => {
     <>
       <PanelMapa
         abierto={expandido}
+        titulo={casaSel ? casaSel.direccion : exhSel ? exhSel.nombre : vista === 'ruta' ? t('Ruta de Visitas') : terrSel ? [terrSel.numero, terrSel.nombre].filter(Boolean).join(' · ') : (filtroMisTerr ? t('Mis territorios') : t('Territorios'))}
+        resumen={vista === 'resumen' ? `${t('{n} territorios', { n: territoriosFiltrados.length })} · ${t('{n} casas', { n: casasFiltradas.length })}` : null}
+        abrirCon={vista === 'resumen' ? null : `${vista}:${panel.id ?? ''}`}
         cabecera={(
           <div className="m3d-cabecera__busqueda">
             <div className="m3d-buscador">
@@ -319,15 +322,6 @@ const TerritoriesMap3D = () => {
           </div>
         )}
       >
-        <button
-          type="button"
-          className="m3d-sheet__asa"
-          onClick={() => setExpandido(v => !v)}
-          aria-label={expandido ? t('Menos detalles') : t('Más detalles')}
-        >
-          <span />
-        </button>
-
         {/* ── Resumen: filtros + lista de territorios ── */}
         {vista === 'resumen' && (
           <>
