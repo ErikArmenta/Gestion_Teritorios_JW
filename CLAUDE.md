@@ -115,7 +115,8 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   políticas `jw_*`). **El proyecto de Supabase lo comparten otras apps**: nunca tocar tablas que no sean de esta app.
   Tabla nueva → su política `jw_*` en una migración; columna nueva en `app_usuarios` → `GRANT SELECT (col)`.
   Disparador `trg_app_usuarios_proteger` (qué columnas cambia cada rol). La app ya está lista:
-  - **Nunca** `select('*')` en `app_usuarios`: la BD no dejará leer `password`/`password_hash`. Usar
+  - **Nunca** `select('*')` ni conteos embebidos (`app_usuarios(count)`) sobre `app_usuarios`: la BD no deja leer
+    `password`/`password_hash` (permisos por columna). Para contar: `select('id', { count: 'exact', head: true })`. Usar
     `seleccionarUsuarios()` / `COLUMNAS_USUARIO_BASE` de `utils/usuarios.js`.
   - El link compartido pide sus datos con la función `compartido_datos(p_id)` (sin sesión); sin ella, las
     consultas de siempre.

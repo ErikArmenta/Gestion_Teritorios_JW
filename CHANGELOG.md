@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-09 — Fix: Congregaciones salía vacía
+
+- `pages/CongregacionesList.jsx`: los conteos de usuarios/territorios van aparte (el conteo embebido `app_usuarios(count)`
+  falla desde el blindaje por los permisos por columna) y los errores ahora se avisan en vez de mostrar la lista vacía
+- Prueba nueva `congregaciones`; `i18n/en.js`
+
 ## 2026-11-06 — Registro de publicador (S-21) automático — Migración 15
 
 - Informes → Congregación → "S-21": llena el formulario oficial con los informes del año de servicio; "Descargar todos"

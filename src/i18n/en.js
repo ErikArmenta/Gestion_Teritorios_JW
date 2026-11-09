@@ -965,6 +965,7 @@ const en = {
   'nacimiento': "birth",
   'bautismo': "baptism",
   'esperanza': "hope",
+  'Error al cargar: ': "Error loading: ",
 };
 
 export default en;

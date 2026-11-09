@@ -21,13 +21,29 @@ const CongregacionesList = () => {
   const [formData, setFormData]             = useState({ id: null, nombre: '', clave: '' });
   const [saving, setSaving]                 = useState(false);
 
+  // La lista y los conteos van aparte: con el blindaje (Migración 12) app_usuarios tiene permisos por columna y el
+  // conteo "embebido" (app_usuarios(count)) falla. Antes ese error se ignoraba y la lista salía vacía.
   const fetchCongregaciones = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('congregaciones')
-      .select('id, nombre, clave, app_usuarios(count), territorios(count)')
+      .select('id, nombre, clave')
       .order('nombre');
-    if (!error) setCongregaciones(data || []);
+    if (error) {
+      toast.error(tx('Error al cargar: ') + error.message);
+      setLoading(false);
+      return;
+    }
+    const contar = async (tabla, id) => {
+      const { count } = await supabase.from(tabla).select('id', { count: 'exact', head: true }).eq('congregacion_id', id);
+      return count ?? 0;
+    };
+    const conConteos = await Promise.all((data || []).map(async (c) => {
+      const [usuarios, territorios] = await Promise.all([contar('app_usuarios', c.id), contar('territorios', c.id)]);
+      // Misma forma que antes ({ app_usuarios: [{ count }] }) para no tocar la tabla ni el borrado
+      return { ...c, app_usuarios: [{ count: usuarios }], territorios: [{ count: territorios }] };
+    }));
+    setCongregaciones(conConteos);
     setLoading(false);
   };
 
