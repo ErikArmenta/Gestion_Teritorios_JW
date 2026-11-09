@@ -8,6 +8,7 @@ import { t as tx } from '../i18n';
 import { seleccionarUsuarios } from '../utils/usuarios';
 import RespaldosAutomaticos from '../components/RespaldosAutomaticos';
 import ErroresApp from '../components/ErroresApp';
+import RecordatoriosAutomaticos from '../components/RecordatoriosAutomaticos';
 
 const Backup = () => {
   const { user } = useAuth();
@@ -232,6 +233,7 @@ const Backup = () => {
 
       {/* Respaldos semanales en el servidor y errores reportados por los teléfonos (Migración 14) */}
       <RespaldosAutomaticos />
+      <RecordatoriosAutomaticos />
       <ErroresApp />
 
       {/* Export Section */}

@@ -418,3 +418,11 @@ Archivo: `MIGRACION_15_REGISTRO_S21.sql` (re-ejecutable; requiere la 12).
   misma congregación (el secretario); cada quien ve los suyos y no los puede cambiar.
 - Sin la migración el S-21 se genera igual, sin fechas ni datos personales.
 
+---
+
+## Migración 16 — Recordatorios automáticos
+
+Archivos: `MIGRACION_16_RECORDATORIOS.sql` (bitácora `recordatorios_enviados`, RLS sin políticas) y
+`MIGRACION_16B_PROGRAMAR_RECORDATORIOS.sql` (pg_cron diario 01:00 UTC = 19:00 México; mismo secreto que el respaldo).
+Edge Function `supabase/functions/recordatorios`. Pasos y reglas: `docs/RECORDATORIOS.md`.
+

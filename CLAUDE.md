@@ -134,6 +134,10 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   `informes_servicio` del año de servicio (sept–ago). Una persona = campos llenos y editables (`s21Editable`); todos =
   una hoja por persona sobre la misma página de fondo (`s21Todos`, ~1 MB por 100; cada hoja necesita su propia lista
   `Contents` o el texto se encima). Datos personales en `publicador_registro` (Migración 15). pdf-lib con import dinámico.
+- **Recordatorios (Migración 16, `docs/RECORDATORIOS.md`)**: Edge Function `recordatorios` (pg_cron diario 7 p. m. México):
+  informe (último día y días 1–2, a quien no lo ha enviado), turno de exhibidor (un día antes), territorios con más de
+  4 meses sin trabajarse (lunes, a ancianos/admins). Push directo por OneSignal; no repite (`recordatorios_enviados`).
+  Vista previa en Backup (`components/RecordatoriosAutomaticos.jsx`).
 - **Respaldos y errores (Migración 14, `docs/RESPALDOS.md`)**: Edge Function `respaldo` (pg_cron semanal o "Respaldar
   ahora"; bucket privado `respaldos` con candado restrictivo; solo Super Admin lista/descarga) y `errores_app`
   (`utils/errores.js` reporta errores sueltos y de pantalla; `components/ErrorPantalla.jsx` envuelve las rutas en

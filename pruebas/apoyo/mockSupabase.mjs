@@ -12,6 +12,7 @@ class Q {
   eq(c, v) { this.filtros.push((f) => f[c] === v); return this; }
   lt(c, v) { this.filtros.push((f) => f[c] < v); return this; }
   in(c, vs) { this.filtros.push((f) => vs.includes(f[c])); return this; }
+  not(c, op, v) { if (op === 'is' && v === null) this.filtros.push((f) => f[c] != null); return this; }
   upsert(v, o) { this.op = 'upsert'; this.valor = v; this.conflicto = o?.onConflict || 'id'; return this; }
   limit() { return this; }
   order() { return this; }

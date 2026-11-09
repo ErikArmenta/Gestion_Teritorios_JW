@@ -317,6 +317,17 @@ revisar(await n('publicador_registro') === 3, 'S-21: Super Admin ve todos');
 await db.exec('RESET ROLE');
 
 
+// ── Migración 16: bitácora de recordatorios ──
+await db.exec('RESET ROLE');
+const sql16 = leer('MIGRACION_16_RECORDATORIOS.sql');
+await db.exec(sql16);
+await db.exec(sql16); // re-ejecutable
+await db.exec(`INSERT INTO recordatorios_enviados (clave, usuario_id) VALUES ('turno:1', 3)`);
+await como(1);
+revisar(!!(await falla(`SELECT * FROM recordatorios_enviados`)) && !!(await falla(`INSERT INTO recordatorios_enviados (clave) VALUES ('x')`)), 'recordatorios: ni el Super Admin desde la app lee o escribe la bitácora (solo la función)');
+await db.exec('RESET ROLE');
+
+
 console.log('OK (' + ok.length + '):\n- ' + ok.join('\n- '));
 console.log('\nFALLOS:\n- ' + (fallo.join('\n- ') || '(ninguno)'));
 process.exitCode = fallo.length ? 1 : 0;

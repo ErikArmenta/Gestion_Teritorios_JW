@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-09 — Recordatorios automáticos por notificación — Migración 16
+
+- `supabase/functions/recordatorios` (nueva) + `MIGRACION_16_RECORDATORIOS.sql` + `MIGRACION_16B_PROGRAMAR_RECORDATORIOS.sql`:
+  informe (último día del mes y días 1–2), turno de exhibidor (un día antes) y territorios sin trabajar (lunes, ancianos)
+- `components/RecordatoriosAutomaticos.jsx` en Backup: reglas y "Ver quién los recibiría hoy" (sin mandar)
+- `docs/RECORDATORIOS.md`; prueba `recordatorios` (23 casos) y bitácora en `blindaje`; `i18n/en.js`
+
 ## 2026-11-09 — Registro de asignación de territorios + PDFs 40 veces más ligeros
 
 - Grupos → Excel / PDF / Reporte interactivo del **Registro de asignación de territorios** (año de servicio): por territorio

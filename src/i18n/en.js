@@ -967,6 +967,18 @@ const en = {
   'esperanza': "hope",
   'Error al cargar: ': "Error loading: ",
   'Registro de asignación de territorios': "Territory assignment record",
+  'Aún no está configurado en el servidor (función "recordatorios"; pasos en docs/RECORDATORIOS.md).': "Not set up on the server yet (the \"recordatorios\" function; steps in docs/RECORDATORIOS.md).",
+  'Falta correr la Migración 16 en Supabase.': "Migration 16 still needs to be run in Supabase.",
+  'Solo el Super Admin puede ver esto.': "Only the Super Admin can see this.",
+  'Recordatorios automáticos': "Automatic reminders",
+  'Todos los días a las 7 p. m. se revisa qué toca avisar. Nunca se repite un aviso.': "Every day at 7 p.m. it checks what to remind. A reminder is never repeated.",
+  'Informe: el último día del mes y los días 1 y 2, a quien no lo ha enviado.': "Report: on the last day of the month and on days 1 and 2, to whoever hasn't sent it.",
+  'Exhibidor: un día antes del turno, a quien le toca.': "Cart: the day before the shift, to whoever has it.",
+  'Territorios: los lunes, a ancianos y admins, los que llevan más de 4 meses sin trabajarse.': "Territories: on Mondays, to elders and admins, those not worked for more than 4 months.",
+  'Ver quién los recibiría hoy': "See who would get them today",
+  'No se pudo consultar.': "Couldn't check.",
+  'Por mandar hoy:': "To send today:",
+  'ya enviados:': "already sent:",
 };
 
 export default en;
