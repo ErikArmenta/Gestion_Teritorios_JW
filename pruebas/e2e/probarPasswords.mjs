@@ -3,6 +3,7 @@
 import puppeteer from 'puppeteer-core';
 import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
+import { hastaQue, hastaQueNode, escribir, clicSel } from '../apoyo/esperas.mjs';
 
 const [, , OUT, RAIZ] = process.argv;
 const BASE = 'http://localhost:4173';
@@ -100,15 +101,16 @@ await page.evaluateOnNewDocument(() => {
 const ir = async (ruta) => { await page.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle2' }); await espera(1200); };
 const texto = () => page.evaluate(() => document.body.innerText);
 const clic = (txt) => page.evaluate((x) => { const b = [...document.querySelectorAll('button')].find(e => e.textContent.trim().includes(x)); b?.click(); return !!b; }, txt);
-const tipear = async (sel, v) => { await page.click(sel, { clickCount: 3 }); await page.keyboard.press('Backspace'); if (v) await page.type(sel, v); };
+const tipear = (sel, v) => escribir(page, sel, v || '');
+const conTexto = (x) => hastaQue(page, (y) => document.body.innerText.includes(y), x);
 
 // Entrar con contraseña cifrada
 await prep(390);
 await ir('/login');
-await page.type('input[autocomplete=username]', 'dani');
-await page.type('input[type=password]', '1234');
-await page.click('button[type=submit]');
-await espera(2500);
+await escribir(page, 'input[autocomplete=username]', 'dani');
+await escribir(page, 'input[type=password]', '1234');
+await clicSel(page, 'button[type=submit]');
+await hastaQue(page, () => !location.pathname.endsWith('/login'));
 revisar(!page.url().endsWith('/login'), 'app: entra con contraseña cifrada (fase 2)');
 
 // Mi Perfil → cambiar contraseña por el servidor
@@ -117,11 +119,13 @@ await tipear('input[placeholder="Ingresa tu contraseña actual"]', 'mala');
 await tipear('input[placeholder="Mínimo 6 caracteres"]', 'nueva99');
 await tipear('input[placeholder="Repite la nueva contraseña"]', 'nueva99');
 await clic('Actualizar Contraseña');
-await espera(1500);
+await conTexto('La contraseña actual es incorrecta');
+await espera(300);
 revisar((await texto()).includes('La contraseña actual es incorrecta') && db.app_usuarios[0].password === null, 'perfil: actual mala → aviso, no cambia');
 await tipear('input[placeholder="Ingresa tu contraseña actual"]', '1234');
 await clic('Actualizar Contraseña');
-await espera(1500);
+await conTexto('Contraseña actualizada correctamente');
+await hastaQueNode(() => db.app_usuarios[0].password === 'nueva99');
 revisar((await texto()).includes('Contraseña actualizada correctamente') && db.app_usuarios[0].password === 'nueva99', 'perfil: cambio por el servidor');
 revisar(!escrituras.some(e => e.includes('password')), 'perfil: el navegador no escribe la contraseña directo en la tabla');
 db.app_usuarios[0].password = null; db.app_usuarios[0].password_hash = 'h:nueva99';
@@ -138,21 +142,25 @@ await prep(1280);
 await ir('/users');
 const n0 = escrituras.length;
 await clic('Editar');
-await espera(800);
+await page.waitForSelector('input[placeholder="Déjala vacía para no cambiarla"]', { timeout: 20000 }).catch(() => {});
 const ph = await page.evaluate(() => [...document.querySelectorAll('input')].find(i => i.placeholder.includes('vacía'))?.required);
 revisar(ph === false, 'editar usuario: la contraseña no es obligatoria');
 await page.screenshot({ path: `${OUT}/usuarios-editar.png` });
 await page.evaluate(() => document.querySelector('form button[type=submit]')?.click());
-await espera(1500);
+await hastaQueNode(() => escrituras.slice(n0).some(e => e.startsWith('PATCH /rest/v1/app_usuarios')));
+await hastaQue(page, () => !document.querySelector('input[placeholder="Déjala vacía para no cambiarla"]'));
+await espera(300);
 const patch = escrituras.slice(n0).find(e => e.startsWith('PATCH /rest/v1/app_usuarios'));
 revisar(!!patch && !patch.includes('"password"'), `editar sin escribir contraseña: no se manda (${patch?.slice(0, 140)})`);
 // Editar escribiendo una nueva → sí se manda
 const n1 = escrituras.length;
 await clic('Editar');
-await espera(800);
-await page.type('input[placeholder="Déjala vacía para no cambiarla"]', 'reset1');
+await page.waitForSelector('input[placeholder="Déjala vacía para no cambiarla"]', { timeout: 20000 }).catch(() => {});
+await escribir(page, 'input[placeholder="Déjala vacía para no cambiarla"]', 'reset1');
 await page.evaluate(() => document.querySelector('form button[type=submit]')?.click());
-await espera(1500);
+await hastaQueNode(() => escrituras.slice(n1).some(e => e.startsWith('PATCH /rest/v1/app_usuarios')));
+await hastaQue(page, () => !document.querySelector('input[placeholder="Déjala vacía para no cambiarla"]'));
+await espera(300);
 const patch2 = escrituras.slice(n1).find(e => e.startsWith('PATCH /rest/v1/app_usuarios'));
 revisar(!!patch2 && patch2.includes('"password":"reset1"'), 'editar con contraseña nueva: sí se manda');
 // Alta: obligatoria

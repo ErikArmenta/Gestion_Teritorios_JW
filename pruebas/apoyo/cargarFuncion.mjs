@@ -22,5 +22,11 @@ export async function cargarFuncion(rutaIndex, extra = {}) {
   globalThis.Deno.serve = (h) => { handler = h; };
   await import(pathToFileURL(destino).href + `?v=${Date.now()}${Math.random()}`);
   const { db } = await import('./mockSupabase.mjs');
+  // PRUEBAS_DEMORA=4000 → cada respuesta tarda 4 s más (simula un servidor lento, como en GitHub Actions)
+  const demora = Number(process.env.PRUEBAS_DEMORA) || 0;
+  if (demora) {
+    const real = handler;
+    handler = async (req) => { const r = await real(req); await new Promise((ok) => setTimeout(ok, demora)); return r; };
+  }
   return { handler, db };
 }

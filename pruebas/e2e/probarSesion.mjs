@@ -6,6 +6,7 @@ import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import http from 'http';
 import * as jose from 'jose';
 import { cargarFuncion, entorno } from '../apoyo/cargarFuncion.mjs';
+import { hastaQue, hastaQueNode, escribir, clicSel } from '../apoyo/esperas.mjs';
 
 const [, , OUT, RAIZ] = process.argv;
 const BASE = 'http://localhost:4173';
@@ -112,10 +113,12 @@ const ir = async (ruta) => { await page.goto(`${BASE}${ruta}`, { waitUntil: 'net
 const salir = () => page.evaluate(() => { localStorage.removeItem('territorial_user'); localStorage.removeItem('territorial_token'); sessionStorage.removeItem('biometria_estado'); });
 const entrar = async (usuario, pass) => {
   await ir('/login');
-  await page.type('input[autocomplete=username]', usuario);
-  await page.type('input[type=password]', pass);
-  await page.click('button[type=submit]');
-  await espera(2500);
+  await escribir(page, 'input[autocomplete=username]', usuario);
+  await escribir(page, 'input[type=password]', pass);
+  await clicSel(page, 'button[type=submit]');
+  // Hasta que entre o salga el error (en GitHub Actions el servidor de prueba es más lento)
+  await hastaQue(page, () => !!localStorage.getItem('territorial_user') || [...document.querySelectorAll('div')].some(d => d.className.includes('animate-fade-in') && d.style.color && d.innerText.trim()));
+  await espera(1500); // que la app haga sus consultas con la sesión nueva
 };
 const errorLogin = () => page.evaluate(() => [...document.querySelectorAll('div')].find(d => d.className.includes('animate-fade-in') && d.style.color)?.innerText || '');
 const sesion = () => page.evaluate(() => ({ user: JSON.parse(localStorage.getItem('territorial_user') || 'null'), tok: JSON.parse(localStorage.getItem('territorial_token') || 'null') }));
@@ -198,10 +201,12 @@ db.app_usuarios[0].activo = true;
 await entrar('dani', '1234');
 s = await sesion();
 const viejo = s.tok?.token;
-await page.evaluate(() => { const t = JSON.parse(localStorage.getItem('territorial_token')); t.obtenido = Date.now() - 2 * 86400000; localStorage.setItem('territorial_token', JSON.stringify(t)); });
+await page.evaluate(() => { const t = JSON.parse(localStorage.getItem('territorial_token')); if (!t) return; t.obtenido = Date.now() - 2 * 86400000; localStorage.setItem('territorial_token', JSON.stringify(t)); });
 db.app_usuarios[0].rol = 'Admin Principal';
 await espera(1100); // iat distinto
 await ir('/');
+await hastaQue(page, (v) => { const t = JSON.parse(localStorage.getItem('territorial_token') || 'null'); return !!t?.token && t.token !== v; }, viejo);
+await espera(300);
 s = await sesion();
 revisar(s.tok?.token && s.tok.token !== viejo && decodificar(s.tok.token).p.app_rol === 'Admin Principal' && s.user.rol === 'Admin Principal', `G renovación: token nuevo y rol al día (${s.user?.rol})`);
 // Sin pasar un día no renueva
@@ -211,10 +216,10 @@ revisar(!llamadas.slice(nLlam).some(l => l.includes('renovar')), 'G: no renueva 
 db.app_usuarios[0].rol = 'Anciano';
 
 // H) Cuenta desactivada mientras tenía sesión → al renovar se cierra
-await page.evaluate(() => { const t = JSON.parse(localStorage.getItem('territorial_token')); t.obtenido = 0; localStorage.setItem('territorial_token', JSON.stringify(t)); });
+await page.evaluate(() => { const t = JSON.parse(localStorage.getItem('territorial_token')); if (!t) return; t.obtenido = 0; localStorage.setItem('territorial_token', JSON.stringify(t)); });
 db.app_usuarios[0].activo = false;
 await ir('/');
-await espera(1000);
+await hastaQue(page, () => !localStorage.getItem('territorial_user') && location.pathname.endsWith('/login'));
 s = await sesion();
 revisar(!s.user && !s.tok && page.url().includes('/login'), `H desactivada: sesión cerrada (${page.url()})`);
 db.app_usuarios[0].activo = true;
@@ -240,14 +245,17 @@ const cdp = await page.createCDPSession();
 await cdp.send('WebAuthn.enable', { enableUI: false });
 await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
 await ir('/profile');
-await page.type('input[placeholder="Tu contraseña actual"]', '1234');
+await page.waitForSelector('input[placeholder="Tu contraseña actual"]', { timeout: 20000 }).catch(() => null);
+await escribir(page, 'input[placeholder="Tu contraseña actual"]', '1234');
 await page.evaluate(() => [...document.querySelectorAll('button')].find(b => /Activar (huella|Face ID)/.test(b.textContent))?.click());
-await espera(2500);
+await hastaQueNode(() => db.webauthn_credenciales.length === 1);
+await hastaQue(page, () => !!localStorage.getItem('biometria:7'));
 revisar(db.webauthn_credenciales.length === 1, 'K: huella activada');
 await salir();
 await ir('/login');
-await page.click('button[aria-label^="Entrar con"]');
-await espera(3000);
+await page.waitForSelector('button[aria-label^="Entrar con"]', { timeout: 20000 }).catch(() => null);
+await clicSel(page, 'button[aria-label^="Entrar con"]');
+await hastaQue(page, () => !!localStorage.getItem('territorial_user') && !!localStorage.getItem('territorial_token'));
 s = await sesion();
 const dk = s.tok?.token && decodificar(s.tok.token);
 revisar(s.user?.id === 7 && dk?.h.alg === 'ES256' && dk.p.usuario_id === 7, 'K: entrar con huella guarda el token firmado');

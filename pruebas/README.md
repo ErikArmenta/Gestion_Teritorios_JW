@@ -20,6 +20,11 @@ npm run pruebas -- sesion huella   # solo algunas
 Busca Edge o Chrome solo. Si no lo encuentra, pon su ruta en `CHROME_PATH`. El resultado de cada
 una queda en `pruebas/salida/<nombre>.txt`, junto con las capturas.
 
+**Nada de esperas fijas** para lo que depende del servidor: usa `hastaQue` / `hastaQueNode` y `escribir`
+(`apoyo/esperas.mjs`). En GitHub Actions todo es más lento y "esperar 2 s y revisar" fallaba. Para probar
+que una prueba aguanta un servidor lento: `PRUEBAS_DEMORA=4000 npm run pruebas -- huella` (cada respuesta
+de las Edge Functions tarda 4 s más).
+
 | Nombre | Qué revisa |
 |---|---|
 | `textos` | Todo texto `t('…')` tiene su traducción en `en.js` y no hay llaves repetidas |

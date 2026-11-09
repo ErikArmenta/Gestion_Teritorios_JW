@@ -72,7 +72,11 @@ export async function estadoBiometria() {
   const guardado = (() => { try { return sessionStorage.getItem('biometria_estado'); } catch { return null; } })();
   if (guardado) return guardado === '1';
   let ok;
-  try { ok = !!(await llamar('estado'))?.ok; } catch { ok = false; }
+  try { ok = !!(await llamar('estado'))?.ok; } catch (err) {
+    // Sin respuesta (microcorte, o se cambió de página a media petición): no se recuerda, se vuelve a preguntar
+    if (err?.codigo === 'red') return false;
+    ok = false;
+  }
   try { sessionStorage.setItem('biometria_estado', ok ? '1' : '0'); } catch { /* nada */ }
   return ok;
 }

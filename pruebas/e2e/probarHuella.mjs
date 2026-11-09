@@ -3,6 +3,7 @@
 import puppeteer from 'puppeteer-core';
 import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
+import { hastaQue, hastaQueNode, escribir, clicSel } from '../apoyo/esperas.mjs';
 
 const [, , OUT, INDEX] = process.argv;
 const BASE = 'http://localhost:4173';
@@ -78,9 +79,15 @@ const prep = async (ancho, tema = 'light', usuario = null) => {
 };
 const ir = async (ruta) => { await page.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle2' }); await espera(1200); };
 const botonBio = () => page.$('button[aria-label^="Entrar con"]');
+// El botón sale cuando el servidor responde `estado` (en una máquina lenta tarda)
+const esperarBotonBio = () => page.waitForSelector('button[aria-label^="Entrar con"]', { timeout: 20000 }).catch(() => null);
+const esperarCampo = (ph) => page.waitForSelector(`input[placeholder="${ph}"]`, { timeout: 20000 }).catch(() => null);
 const errorLogin = () => page.evaluate(() => [...document.querySelectorAll('div')].find(d => d.className.includes('animate-fade-in') && d.style.color)?.innerText || '');
 const textoPag = () => page.evaluate(() => document.body.innerText);
 const clic = (txt) => page.evaluate((x) => { const b = [...document.querySelectorAll('button')].find(e => e.textContent.trim().includes(x)); b?.click(); return !!b; }, txt);
+const conSesion = () => hastaQue(page, () => !!localStorage.getItem('territorial_user'));
+const conError = () => hastaQue(page, () => [...document.querySelectorAll('div')].some(d => d.className.includes('animate-fade-in') && d.style.color && d.innerText.trim()));
+const conTexto = (x) => hastaQue(page, (y) => document.body.innerText.includes(y), x);
 const limpiarSesion = () => page.evaluate(() => { localStorage.removeItem('territorial_user'); sessionStorage.removeItem('biometria_estado'); });
 
 // 1) Sin lector en el aparato → sin botón
@@ -99,13 +106,14 @@ const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', {
 db.sinMigracion = true;
 await page.evaluate(() => sessionStorage.removeItem('biometria_estado'));
 await ir('/login');
+await hastaQue(page, () => sessionStorage.getItem('biometria_estado') !== null); // que el servidor ya haya contestado
 revisar(!(await botonBio()), 'sin migración: no hay botón');
 db.sinMigracion = false;
 
 // 3) Todo listo → botón junto a "Iniciar Sesión"
 await page.evaluate(() => sessionStorage.removeItem('biometria_estado'));
 await ir('/login');
-const b = await botonBio();
+const b = await esperarBotonBio();
 revisar(!!b, 'con lector y migración: aparece el botón');
 const geo = await page.evaluate(() => {
   const bio = document.querySelector('button[aria-label^="Entrar con"]').getBoundingClientRect();
@@ -116,32 +124,32 @@ revisar(geo.mismaFila && geo.izq && !geo.scroll, `botón a la izquierda en la mi
 await page.screenshot({ path: `${OUT}/huella-login-360.png` });
 
 // 4) Tocar sin haberla activado → aviso
-await b.click();
-await espera(2500);
+await clicSel(page, 'button[aria-label^="Entrar con"]');
+await conError();
 const e1 = await errorLogin();
 revisar(/activa|huella/i.test(e1), `sin activar: aviso "${e1}"`);
 
 // 5) Entrar con contraseña → Mi Perfil → activar
-await page.type('input[autocomplete=username]', 'dani');
-await page.type('input[type=password]', '1234');
-await page.click('button[type=submit]');
-await espera(2000);
+await escribir(page, 'input[autocomplete=username]', 'dani');
+await escribir(page, 'input[type=password]', '1234');
+await clicSel(page, 'button[type=submit]');
+await conSesion();
 await ir('/profile');
+await esperarCampo('Tu contraseña actual');
 let t = await textoPag();
 revisar(t.includes('Entrar con huella o Face ID'), 'perfil: aparece la tarjeta');
 await clic('Face ID');
 revisar(await page.evaluate(() => localStorage.getItem('biometria_icono')) === 'rostro', 'elegir Face ID se guarda');
-await page.type('input[placeholder="Tu contraseña actual"]', '9999');
+await escribir(page, 'input[placeholder="Tu contraseña actual"]', '9999');
 await clic('Activar Face ID');
-await espera(1500);
+await conTexto('La contraseña no es correcta');
+await espera(300);
 t = await textoPag();
 revisar(t.includes('La contraseña no es correcta') && db.webauthn_credenciales.length === 0, 'contraseña mala: no se activa');
-await page.$eval('input[placeholder="Tu contraseña actual"]', (i) => { i.value = ''; });
-await page.click('input[placeholder="Tu contraseña actual"]', { clickCount: 3 });
-await page.keyboard.press('Backspace');
-await page.type('input[placeholder="Tu contraseña actual"]', '1234');
+await escribir(page, 'input[placeholder="Tu contraseña actual"]', '1234');
 await clic('Activar Face ID');
-await espera(2500);
+await conTexto('Activada en este dispositivo');
+await hastaQue(page, () => !!localStorage.getItem('biometria:7'));
 t = await textoPag();
 const cred = db.webauthn_credenciales[0];
 revisar(t.includes('Activada en este dispositivo') && cred?.usuario_id === 7 && cred.llave_publica?.length > 50, `activada: credencial guardada (${cred?.dispositivo})`);
@@ -152,14 +160,17 @@ await page.screenshot({ path: `${OUT}/huella-perfil-360.png`, fullPage: true });
 // 6) Cerrar sesión → entrar con Face ID
 await limpiarSesion();
 await ir('/login');
+await esperarBotonBio();
 const icono = await page.evaluate(() => document.querySelector('button[aria-label^="Entrar con"]')?.getAttribute('aria-label'));
 revisar(icono === 'Entrar con Face ID', `botón dice Face ID (${icono})`);
-await (await botonBio()).click();
-await espera(3000);
+await clicSel(page, 'button[aria-label^="Entrar con"]');
+await conSesion();
+await hastaQue(page, () => !location.pathname.endsWith('/login'));
+await hastaQueNode(() => !!db.webauthn_credenciales[0]?.usado_en);
 const sesion = await page.evaluate(() => JSON.parse(localStorage.getItem('territorial_user') || 'null'));
 revisar(sesion?.id === 7 && sesion.congregacion_nombre === 'Centro' && sesion.rol === 'Anciano' && !('password' in sesion), `entró con huella: ${JSON.stringify(sesion)}`);
 revisar(!page.url().endsWith('/login'), `salió del login (${page.url()})`);
-revisar(db.webauthn_credenciales[0].usado_en && db.webauthn_retos.length === 1, `usado_en actualizado; solo queda el reto abandonado del paso 4 (${db.webauthn_retos.length})`);
+revisar(db.webauthn_credenciales[0]?.usado_en && db.webauthn_retos.length === 1, `usado_en actualizado; solo queda el reto abandonado del paso 4 (${db.webauthn_retos.length})`);
 db.webauthn_retos.forEach(r => { r.expira_en = new Date(Date.now() - 60000).toISOString(); });
 const vencidos = db.webauthn_retos.map(r => r.id);
 await handler(new Request('https://x/f', { method: 'POST', headers: { origin: BASE }, body: '{"accion":"login-opciones"}' }));
@@ -181,8 +192,9 @@ revisar(r9.status === 400 || r9.status === 401, `registro sin contraseña rechaz
 await limpiarSesion();
 db.app_usuarios[0].activo = false;
 await ir('/login');
-await (await botonBio()).click();
-await espera(2500);
+await esperarBotonBio();
+await clicSel(page, 'button[aria-label^="Entrar con"]');
+await conError();
 const e10 = await errorLogin();
 revisar(/desactivada/.test(e10) && !(await page.evaluate(() => localStorage.getItem('territorial_user'))), `desactivada: "${e10}"`);
 db.app_usuarios[0].activo = true;
@@ -191,8 +203,9 @@ db.app_usuarios[0].activo = true;
 const respaldo = [...db.webauthn_credenciales];
 db.webauthn_credenciales = [];
 await ir('/login');
-await (await botonBio()).click();
-await espera(2500);
+await esperarBotonBio();
+await clicSel(page, 'button[aria-label^="Entrar con"]');
+await conError();
 const e11 = await errorLogin();
 revisar(/ya no está registrada/.test(e11), `huella borrada: "${e11}"`);
 db.webauthn_credenciales = respaldo;
@@ -200,12 +213,14 @@ db.webauthn_credenciales = respaldo;
 // 12) Quitar desde Mi Perfil (modo oscuro)
 await prep(360, 'dark', { id: 7, nombre: 'Daniel', usuario: 'dani', rol: 'Anciano', congregacion_id: 'c1', congregacion_nombre: 'Centro' });
 await ir('/profile');
+await conTexto('Quitar');
 await page.evaluate(() => document.querySelector('.card:nth-of-type(2)')?.scrollIntoView());
 await page.screenshot({ path: `${OUT}/huella-perfil-oscuro-360.png`, fullPage: true });
 await clic('Quitar');
 await espera(500);
 await page.evaluate(() => { const bs = [...document.querySelectorAll('button')].filter(e => e.textContent.trim() === 'Quitar'); bs[bs.length - 1]?.click(); });
-await espera(1500);
+await hastaQueNode(() => db.webauthn_credenciales.length === 0);
+await conTexto('Activar Face ID');
 revisar(db.webauthn_credenciales.length === 0 && !(await page.evaluate(() => localStorage.getItem('biometria:7'))), 'quitar: borrada en servidor y en el aparato');
 revisar((await textoPag()).includes('Activar Face ID'), 'quitar: vuelve a ofrecer activar');
 
