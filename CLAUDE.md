@@ -251,8 +251,8 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
     panel abajo; reporta su alto para que el mapa termine encima. En móvil **empieza colapsado** (barrita con
     `titulo` + `resumen`); la rayita (la pone `PanelMapa`, no la pantalla), tocar la barrita o deslizar lo abre/cierra;
     se recuerda por pantalla (`localStorage panel_mapa:<ruta>`); `abrirCon` (clave de lo elegido) lo abre solo.
-  - Celular: quién eres (nombre en neón por rol, rol, congregación) = `components/IdentidadUsuario.jsx` (arriba en las
-    pantallas sin mapa y en el menú "Más"; colores `NEON_ROL` de `utils/menu.js`). Con el menú "Más" abierto,
+  - Celular: quién eres (nombre en neón por rol, rol, congregación) = `components/IdentidadUsuario.jsx` (**solo** en el menú "Más":
+    el dueño no lo quiere arriba de las pantallas; colores `NEON_ROL` de `utils/menu.js`). Con el menú "Más" abierto,
     `html.menu-mas-abierto` deja el mapa sin toques. La campana del mapa (`.m3d-campana`) va encima de los botones. Escritorio: va por portal dentro del
     **menú flotante** (`components/MenuFlotante.jsx`, `enMapa`): iconos (`utils/menu.js`) + panel; se arrastra (posición en `localStorage menu_flotante_pos`),
     se oculta, y con **clic derecho** regresa a su lugar. En las pantallas sin mapa el mismo menú flota

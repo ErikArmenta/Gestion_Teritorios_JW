@@ -27,7 +27,6 @@ import ErrorPantalla from './components/ErrorPantalla';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
 import AvisoAseo from './components/AvisoAseo';
-import IdentidadUsuario from './components/IdentidadUsuario';
 import BottomNav from './components/BottomNav';
 import { DataProvider } from './context/DataContext';
 import { GruposProvider } from './context/GruposContext';
@@ -117,9 +116,8 @@ const AppLayout = () => {
       <main
         className="flex-1 min-w-0 p-4 pb-24 md:p-8 md:pb-8 md:pl-[100px] overflow-y-auto flex flex-col"
       >
-        {/* Top bar: en el celular, quién eres (nombre en neón, rol y congregación) + NotificationBell */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          {esMovil && <IdentidadUsuario className="mr-auto" />}
+        {/* Top bar: NotificationBell (en el celular, quién eres va en el menú "Más") */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
           <NotificationBell />
         </div>
         {/* Si una pantalla truena: aviso amable en vez de pantalla en blanco (y se reporta el error) */}

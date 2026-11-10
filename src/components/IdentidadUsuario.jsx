@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { NEON_ROL } from '../utils/menu';
 import { t } from '../i18n';
 
-// Nombre del usuario en neón (color según el rol), su rol y su congregación. En el celular va arriba en las
-// pantallas sin mapa (App.jsx) y en el menú "Más" (BottomNav); en escritorio lo muestra el menú flotante.
+// Nombre del usuario en neón (color según el rol), su rol y su congregación. En el celular va SOLO en el menú
+// "Más" (BottomNav; el usuario no lo quiere arriba de las pantallas); en escritorio lo muestra el menú flotante.
 const IdentidadUsuario = ({ className = '' }) => {
   const { user } = useAuth();
   if (!user) return null;

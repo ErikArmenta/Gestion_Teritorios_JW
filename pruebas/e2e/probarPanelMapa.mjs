@@ -174,14 +174,12 @@ if (hay3D) {
   await page.screenshot({ path: `${OUT}/panel-notificaciones-390.png` });
 }
 
-// 9. Pantalla sin mapa en el celular: arriba el nombre en neón, rol y congregación
+// 9. Pantalla sin mapa en el celular: arriba solo la campana (quién eres va únicamente en el menú "Más")
 await page.goto(`${BASE}/informes`, { waitUntil: 'networkidle2' });
-await hastaQue(page, () => !!document.querySelector('main [data-identidad]'));
-const ident = await page.evaluate(() => {
-  const e = document.querySelector('main [data-identidad]'); const r = e?.getBoundingClientRect();
-  return { txt: e?.innerText.replace(/\s+/g, ' '), top: r && Math.round(r.top), scroll: document.documentElement.scrollWidth > innerWidth + 1 };
-});
-revisar(ident.txt?.includes('Súper') && ident.txt.includes('Centro') && ident.top < 80 && !ident.scroll, `celular sin mapa: arriba quién eres ("${ident.txt}", sin scroll horizontal)`);
+await hastaQue(page, () => document.body.innerText.includes('Informes'));
+await espera(500);
+revisar(!(await page.evaluate(() => !!document.querySelector('main [data-identidad]'))) && !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)),
+  'celular sin mapa: arriba NO sale el nombre ni la congregación (solo en el menú Más)');
 await page.screenshot({ path: `${OUT}/panel-identidad-390.png` });
 
 // 10. Escritorio: sin cambios (el panel va dentro del menú flotante)
