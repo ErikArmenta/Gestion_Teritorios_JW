@@ -20,6 +20,15 @@ export const MENU_ITEMS = [
   { path: '/backup', name: 'Backup', Icon: Database, roles: ['Super Admin'] },
 ];
 
+// Color neón del nombre según el rol (menú flotante de escritorio y components/IdentidadUsuario.jsx)
+export const NEON_ROL = {
+  'Super Admin': '#F472B6',
+  'Admin Principal': '#A78BFA',
+  Anciano: '#22D3EE',
+  Ministerial: '#34D399',
+  Publicador: '#FACC15',
+};
+
 export const menuDe = (rol) => MENU_ITEMS.filter(item => item.roles.includes(rol));
 
 // Pantallas que usan el mapa 3D de fondo (un solo mapa para todas; ver context/MapaFondoContext.jsx)

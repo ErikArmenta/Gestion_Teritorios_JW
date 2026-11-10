@@ -8,6 +8,7 @@ import ExhibidorIcon from './ExhibidorIcon';
 import { t, useLanguage } from '../i18n';
 import NotificacionesToggle from './NotificacionesToggle';
 import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
+import IdentidadUsuario from './IdentidadUsuario';
 
 const menuItems = [
   { path: '/', name: 'Mapa', icon: <Map size={20} />, roles: ['Super Admin', 'Admin Principal', 'Anciano', 'Ministerial', 'Publicador'] },
@@ -69,6 +70,14 @@ const BottomNav = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expandedPhoto, setExpandedPhoto] = useState(null);
   const [confirmarSalir, setConfirmarSalir] = useState(false); // "¿Cerrar sesión?"
+
+  // Con el menú "Más" abierto nada de atrás recibe toques (el mapa se movía al deslizar sobre el menú)
+  useEffect(() => {
+    if (!sheetOpen) return undefined;
+    const raiz = document.documentElement;
+    raiz.classList.add('menu-mas-abierto');
+    return () => raiz.classList.remove('menu-mas-abierto');
+  }, [sheetOpen]);
 
   useEffect(() => {
     if (!expandedPhoto) return;
@@ -138,18 +147,24 @@ const BottomNav = () => {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[60] md:hidden"
-            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}
+            className="fixed inset-0 z-[60] md:hidden menu-mas-fondo"
+            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)', touchAction: 'none' }}
             onClick={() => setSheetOpen(false)}
+            onTouchMove={e => e.stopPropagation()}
           />
 
           {/* Sheet panel */}
           <div
-            className="fixed bottom-0 left-0 right-0 z-[70] md:hidden rounded-t-2xl"
+            className="fixed bottom-0 left-0 right-0 z-[70] md:hidden rounded-t-2xl menu-mas"
             style={{
               backgroundColor: 'var(--bg-card)',
               boxShadow: '0 -8px 40px rgba(0,0,0,0.15)',
               paddingBottom: 'env(safe-area-inset-bottom)',
+              // Si no cabe (muchas opciones o teléfono chico) se desliza DENTRO del menú, no lo de atrás
+              maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 12px)',
+              overflowY: 'auto',
+              overscrollBehavior: 'contain',
+              touchAction: 'pan-y',
             }}
           >
             {/* Handle */}
@@ -183,10 +198,7 @@ const BottomNav = () => {
                   <User size={22} style={{ color: BLUE }} />
                 </div>
               )}
-              <div>
-                <div className="text-sm font-bold text-primary">{user.nombre}</div>
-                <div className="text-xs font-medium mt-0.5 text-muted">{t(user.rol)}</div>
-              </div>
+              <IdentidadUsuario className="min-w-0 flex-1 pr-8" />
             </div>
 
             {/* Divider */}
@@ -201,7 +213,7 @@ const BottomNav = () => {
                 onClick={() => setSheetOpen(false)}
                 className="flex items-center gap-3 px-5 py-3 transition-colors duration-150"
                 style={({ isActive }) => ({
-                  color: isActive ? BLUE : '#475569',
+                  color: isActive ? BLUE : 'var(--text-secondary)',
                   background: isActive ? BLUE_BG : 'transparent',
                 })}
               >

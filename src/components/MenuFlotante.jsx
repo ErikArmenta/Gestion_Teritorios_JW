@@ -4,7 +4,7 @@ import { GripHorizontal, Sun, Moon, Languages, User, LogOut, PanelLeftClose, Pan
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useMapaFondo } from '../context/MapaFondoContext';
-import { menuDe } from '../utils/menu';
+import { menuDe, NEON_ROL } from '../utils/menu';
 import ConfirmarCerrarSesion from './ConfirmarCerrarSesion';
 import NotificacionesToggle from './NotificacionesToggle';
 import { t, useLanguage } from '../i18n';
@@ -30,15 +30,6 @@ const limitar = (p) => ({
   x: Math.min(Math.max(MARGEN, p.x), Math.max(MARGEN, window.innerWidth - 120)),
   y: Math.min(Math.max(MARGEN, p.y), Math.max(MARGEN, window.innerHeight - 80)),
 });
-
-// Color neón del nombre según el rol
-const NEON_ROL = {
-  'Super Admin': '#F472B6',
-  'Admin Principal': '#A78BFA',
-  Anciano: '#22D3EE',
-  Ministerial: '#34D399',
-  Publicador: '#FACC15',
-};
 
 const esCampoDeTexto =(el) => !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
 

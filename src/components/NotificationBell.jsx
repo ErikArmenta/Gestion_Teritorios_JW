@@ -211,7 +211,7 @@ export default function NotificationBell() {
           </div>
 
           {/* Lista */}
-          <div style={{ maxHeight: '384px', overflowY: 'auto' }}>
+          <div style={{ maxHeight: 'min(384px, calc(100dvh - 240px))', overflowY: 'auto', overscrollBehavior: 'contain' }}>
             {notificaciones.length === 0 ? (
               <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                 {tx('Sin notificaciones')}

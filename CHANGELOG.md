@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-09 — Celular: quién eres, menú "Más" sin pasar toques al mapa, notificaciones encima
+
+- `components/IdentidadUsuario.jsx`: nombre en neón (color del rol), rol y congregación arriba en las pantallas sin
+  mapa y en el menú "Más" (`NEON_ROL` ahora en `utils/menu.js`)
+- Menú "Más": con scroll propio si no cabe; mientras está abierto el mapa y su panel no reciben toques
+  (`html.menu-mas-abierto`); opciones con el color del tema (en oscuro se veían apagadas)
+- La lista de notificaciones del mapa queda encima de los botones 3D/satélite (`.m3d-campana` z-index 5)
+- Prueba `panel` ampliada
+
 ## 2026-11-09 — Panel del mapa colapsable en el celular
 
 - `components/PanelMapa.jsx`: en Mapa, Registrar casa, Territorios y Exhibidores el panel de abajo empieza colapsado

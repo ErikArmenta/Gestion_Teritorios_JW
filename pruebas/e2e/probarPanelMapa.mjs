@@ -134,7 +134,57 @@ if (!hay3D) {
   revisar((await textoPanel()).includes('Guardar Casa'), 'Registrar casa: al abrirlo sale el formulario');
 }
 
-// 7. Escritorio: sin cambios (el panel va dentro del menú flotante)
+// 7. Menú "Más": quién eres (neón, rol, congregación) y el mapa NO recibe toques mientras está abierto
+if (hay3D) {
+  await ir('/');
+  await espera(1000);
+  await page.evaluate(() => { window.__toquesMapa = 0; document.querySelector('.maplibregl-canvas')?.addEventListener('touchstart', () => window.__toquesMapa++, { passive: true }); });
+  await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Más')?.click());
+  await hastaQue(page, () => !!document.querySelector('.menu-mas'));
+  const mas = await page.evaluate(() => {
+    const m = document.querySelector('.menu-mas'); const r = m.getBoundingClientRect();
+    const id = m.querySelector('[data-identidad]');
+    return { top: Math.round(r.top), bottom: Math.round(r.bottom), alto: innerHeight, id: id?.innerText.replace(/\s+/g, ' '), neon: id && getComputedStyle(id.querySelector('.identidad__nombre')).textShadow !== 'none',
+      clase: document.documentElement.classList.contains('menu-mas-abierto'), arriba: document.elementFromPoint(195, Math.max(5, r.top - 30))?.className || '' };
+  });
+  revisar(mas.id?.includes('Súper') && mas.id.includes('Super Admin') && mas.id.includes('Centro') && mas.neon, `menú Más: nombre en neón, rol y congregación ("${mas.id}")`);
+  revisar(mas.top >= 0 && mas.bottom <= mas.alto + 1, `menú Más: cabe en la pantalla y se desliza por dentro (${mas.top}–${mas.bottom} de ${mas.alto})`);
+  revisar(mas.clase, 'menú Más abierto: el mapa queda bloqueado');
+  await espera(300);
+  await page.screenshot({ path: `${OUT}/panel-menu-mas-390.png` });
+  const y = mas.top + 150;
+  await page.touchscreen.touchStart(195, y); for (let i = 1; i <= 5; i++) await page.touchscreen.touchMove(195, y - i * 30); await page.touchscreen.touchEnd();
+  await page.touchscreen.touchStart(195, 20); for (let i = 1; i <= 5; i++) await page.touchscreen.touchMove(195, 20 + i * 30); await page.touchscreen.touchEnd();
+  revisar(await page.evaluate(() => window.__toquesMapa) === 0, 'deslizar sobre el menú o el fondo oscuro: el mapa no recibe el toque');
+  await page.evaluate(() => document.querySelector('.menu-mas-fondo')?.click());
+  await hastaQue(page, () => !document.querySelector('.menu-mas'));
+  revisar(!(await page.evaluate(() => document.documentElement.classList.contains('menu-mas-abierto'))), 'al cerrar el menú, el mapa vuelve a recibir toques');
+  await page.screenshot({ path: `${OUT}/panel-sin-menu-390.png` });
+
+  // 8. La lista de notificaciones queda encima de los botones 3D/satélite
+  await page.evaluate(() => document.querySelector('.m3d-campana button')?.click());
+  await espera(500);
+  const enc = await page.evaluate(() => {
+    const fab = document.querySelector('.m3d-flotantes .m3d-fab'); if (!fab) return 'sin botones';
+    const r = fab.getBoundingClientRect();
+    const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return e && !fab.contains(e) && !!e.closest('.m3d-campana') ? 'campana' : `tapada por ${e?.className}`;
+  });
+  revisar(enc === 'campana', `notificaciones: la lista queda encima de los botones del mapa (${enc})`);
+  await page.screenshot({ path: `${OUT}/panel-notificaciones-390.png` });
+}
+
+// 9. Pantalla sin mapa en el celular: arriba el nombre en neón, rol y congregación
+await page.goto(`${BASE}/informes`, { waitUntil: 'networkidle2' });
+await hastaQue(page, () => !!document.querySelector('main [data-identidad]'));
+const ident = await page.evaluate(() => {
+  const e = document.querySelector('main [data-identidad]'); const r = e?.getBoundingClientRect();
+  return { txt: e?.innerText.replace(/\s+/g, ' '), top: r && Math.round(r.top), scroll: document.documentElement.scrollWidth > innerWidth + 1 };
+});
+revisar(ident.txt?.includes('Súper') && ident.txt.includes('Centro') && ident.top < 80 && !ident.scroll, `celular sin mapa: arriba quién eres ("${ident.txt}", sin scroll horizontal)`);
+await page.screenshot({ path: `${OUT}/panel-identidad-390.png` });
+
+// 10. Escritorio: sin cambios (el panel va dentro del menú flotante)
 await page.setViewport({ width: 1280, height: 900 });
 await page.goto(`${BASE}/`, { waitUntil: 'networkidle2' });
 await hastaQue(page, () => !!document.querySelector('.m3d-menu'), null, 20000);
