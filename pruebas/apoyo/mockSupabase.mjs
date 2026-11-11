@@ -27,6 +27,11 @@ class Q {
     const coincide = (f) => this.filtros.every((fn) => fn(f));
     let res = [];
     if (this.op === 'select') { res = filas.filter(coincide).map((f) => ({ ...f })); if (this.rango) res = res.slice(this.rango[0], this.rango[1] + 1); }
+    // db.sinColumnas = { tabla: ['col'] } → como la BD real cuando falta una columna
+    const faltan = (db.sinColumnas?.[this.tabla] || []).filter((c) => (Array.isArray(this.valor) ? this.valor : [this.valor]).some((v) => v && c in v));
+    if (faltan.length && ['insert', 'upsert', 'update'].includes(this.op)) {
+      return { data: null, error: { code: 'PGRST204', message: `Could not find the '${faltan[0]}' column of '${this.tabla}' in the schema cache` } };
+    }
     if (this.op === 'insert') {
       const nuevas = (Array.isArray(this.valor) ? this.valor : [this.valor]).map((v) => ({
         id: this.tabla === 'webauthn_retos' ? crypto.randomUUID() : db.seq++, ...v,

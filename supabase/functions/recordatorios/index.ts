@@ -247,18 +247,29 @@ async function avisosAseo(hoy: string, momento: string): Promise<{ sinMigracion?
 }
 
 // Aseo: se guarda en `notificaciones` (la app lo muestra en pantalla y el webhook manda el push)
+// Si la tabla no tiene `metadata` (falta la Migración 17C) se guarda sin ella: el push sale igual (sin la ventana).
+const faltaColumna = (e: { code?: string; message?: string } | null) =>
+  !!e && (e.code === 'PGRST204' || e.code === '42703' || /metadata/.test(e.message || ''));
 async function mandarAseo(avisos: AvisoAseo[]) {
   let enviados = 0;
+  let error: string | null = null;
+  let sinMetadata = false;
   for (let i = 0; i < avisos.length; i += 200) {
     const lote = avisos.slice(i, i + 200);
-    const { error } = await supabase.from('notificaciones').insert(lote.map((a) => ({
+    const filas = lote.map((a) => ({
       usuario_destino_id: a.usuario_id, tipo: 'sistema', titulo: a.titulo, mensaje: a.mensaje, metadata: a.metadata,
-    })));
-    if (error) { console.error('notificaciones aseo', error); continue; }
+    }));
+    let res = await supabase.from('notificaciones').insert(filas);
+    if (faltaColumna(res.error)) {
+      sinMetadata = true;
+      res = await supabase.from('notificaciones').insert(filas.map(({ metadata: _m, ...resto }) => resto));
+    }
+    if (res.error) { console.error('notificaciones aseo', res.error); error = `${res.error.code ?? ''} ${res.error.message ?? ''}`.trim(); continue; }
     enviados += lote.length;
     await supabase.from('recordatorios_enviados').insert(lote.map((a) => ({ clave: a.clave, usuario_id: a.usuario_id })));
   }
-  return enviados;
+  // Se reporta en la respuesta (la guarda pg_net): así se ve en DIAGNOSTICO_ASEO.sql si algo falló
+  return { enviados, ...(error ? { error } : {}), ...(sinMetadata ? { sinMetadata: true } : {}) };
 }
 
 // ── Envío (agrupa los avisos con el mismo texto en una sola llamada a OneSignal) ──
@@ -336,8 +347,11 @@ async function atender(accion: string, d: Record<string, unknown>, secreto: stri
   };
   if (accion === 'vista_previa') return { ...resumen, enviados: 0 };
   const push = await mandar(pendientes);
-  const enviadosAseo = await mandarAseo(aseoPendientes);
-  return { ...resumen, ...push, enviados: push.enviados + enviadosAseo, aseoEnviados: enviadosAseo };
+  const aseoRes = await mandarAseo(aseoPendientes);
+  return {
+    ...resumen, ...push, enviados: push.enviados + aseoRes.enviados, aseoEnviados: aseoRes.enviados,
+    ...(aseoRes.error ? { aseoError: aseoRes.error } : {}), ...(aseoRes.sinMetadata ? { aseoSinMetadata: true } : {}),
+  };
 }
 
 Deno.serve(async (req) => {

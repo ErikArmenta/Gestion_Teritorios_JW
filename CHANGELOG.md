@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-11 — Fix: no llegaban los avisos del aseo (ni los de turno de exhibidor) — Migración 17C
+
+- La tabla `notificaciones` real no tenía la columna `metadata`: guardar el aviso fallaba y no salía nada. También
+  fallaba en silencio el aviso de turno de exhibidor (la app manda `metadata`)
+- `MIGRACION_17C_NOTIFICACIONES_METADATA.sql` agrega la columna; `recordatorios` guarda sin ella si falta (el push sale
+  igual) y reporta `aseoError` / `aseoSinMetadata`; `DIAGNOSTICO_ASEO.sql` (solo lee) para revisarlo
+- Pruebas: `aseo` (sin la columna, error al guardar) y la 17C en `blindaje`
+
 ## 2026-11-09 — Celular: quién eres, menú "Más" sin pasar toques al mapa, notificaciones encima
 
 - `components/IdentidadUsuario.jsx`: nombre en neón (color del rol), rol y congregación en el menú "Más"

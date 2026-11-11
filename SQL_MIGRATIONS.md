@@ -441,3 +441,5 @@ Archivos: `MIGRACION_17_ASEO.sql` (re-ejecutable; requiere la 5 y la 12) y `MIGR
   salen del orden solos; fechas al lunes. RLS `jw_*`: ve la congregación; cambian Super Admin, Admin Principal,
   Anciano y Ministerial de esa congregación.
 - Rotación: un grupo por semana, recurrente (`utils/aseo.js`, copiada en la función `recordatorios`).
+- **17C** (`MIGRACION_17C_NOTIFICACIONES_METADATA.sql`): agrega `notificaciones.metadata` (JSONB, `'{}'`). La tabla real no
+  la tenía y fallaba guardar los avisos del aseo y los de turno de exhibidor. Diagnóstico: `DIAGNOSTICO_ASEO.sql` (solo lee).

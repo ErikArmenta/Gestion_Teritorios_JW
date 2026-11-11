@@ -44,6 +44,13 @@ Requisito: ya debe estar configurado OneSignal en la función `enviar-push` (`do
    muestra a quién le llegaría.
 5. **Aseo:** corre `MIGRACION_17_ASEO.sql`; vuelve a desplegar `recordatorios` (pega el código nuevo); abre
    `MIGRACION_17B_AVISO_ASEO_MANANA.sql`, pon el mismo secreto en ▶ y **Run** (debe salir `aseo-manana`, `active = true`).
+   Y `MIGRACION_17C_NOTIFICACIONES_METADATA.sql` (la tabla `notificaciones` necesita la columna `metadata`).
+
+## Si no llegan los avisos del aseo
+
+Corre `DIAGNOSTICO_ASEO.sql` (solo lee): dice si los dos horarios están programados, qué contestó la función
+(`aseoError` / `aseoSinMetadata`), cuántos hermanos activos tiene cada grupo (a ellos les llega) y si
+`notificaciones` tiene la columna `metadata`.
 
 ## Revisar que corre
 

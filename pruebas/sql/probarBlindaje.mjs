@@ -367,6 +367,16 @@ await como(1);
 revisar(await n('aseo_planes') === 2, 'aseo: Super Admin ve todas');
 await db.exec('RESET ROLE');
 
+// ── Migración 17C: metadata en notificaciones (la tabla real no la tenía) ──
+const sql17c = leer('MIGRACION_17C_NOTIFICACIONES_METADATA.sql');
+const r17c = await db.exec(sql17c);
+await db.exec(sql17c); // re-ejecutable
+revisar(r17c[r17c.length - 1].rows[0].ya_tiene_metadata === true, '17C: notificaciones ya tiene metadata');
+revisar(Number((await filas(`SELECT count(*) n FROM notificaciones WHERE metadata = '{}'::jsonb`))[0].n) === Number((await filas(`SELECT count(*) n FROM notificaciones`))[0].n), '17C: las notificaciones que ya había quedan igual (metadata vacía)');
+await como(4);
+revisar(await n('notificaciones') === 1 && (await filas(`SELECT metadata FROM notificaciones`))[0].metadata !== undefined, '17C: el publicador sigue viendo solo las suyas, con metadata');
+await db.exec('RESET ROLE');
+
 
 console.log('OK (' + ok.length + '):\n- ' + ok.join('\n- '));
 console.log('\nFALLOS:\n- ' + (fallo.join('\n- ') || '(ninguno)'));

@@ -64,6 +64,7 @@ const reiniciar = () => {
   db.notificaciones = [];
   db.recordatorios_enviados = [];
   db.informes_servicio = []; db.exhibidor_turnos = []; db.territorios = []; db.territorio_trabajos = [];
+  db.sinColumnas = {};
   pushes.length = 0;
 };
 const llamar = async (cuerpo, cab = { 'x-cron-secreto': 'cron-123' }) => {
@@ -105,6 +106,20 @@ reiniciar();
 delete db.aseo_planes;
 r = await llamar({ accion: 'enviar', hoy: '2026-11-04' });
 revisar(r.status === 200 && r.body.aseo.sinMigracion === true, 'sin la Migración 17: los demás recordatorios siguen igual');
+// Como la BD real antes de la 17C: notificaciones SIN la columna metadata (así no llegaba nada)
+reiniciar();
+db.sinColumnas = { notificaciones: ['metadata'] };
+r = await llamar({ accion: 'enviar', hoy: '2026-11-05', momento: 'manana' });
+revisar(para() === '3' && !('metadata' in db.notificaciones[0]) && r.body.aseoSinMetadata === true && r.body.aseoEnviados === 1 && db.recordatorios_enviados.length === 1,
+  `sin la columna metadata: igual se guarda el aviso (sale el push) y lo reporta (${JSON.stringify({ enviados: r.body.aseoEnviados, sinMetadata: r.body.aseoSinMetadata })})`);
+// Si guardar falla por otra cosa: no se anota (se reintenta en la siguiente corrida) y el error sale en la respuesta
+reiniciar();
+db.sinColumnas = { notificaciones: ['titulo'] };
+r = await llamar({ accion: 'enviar', hoy: '2026-11-05', momento: 'manana' });
+revisar(db.notificaciones.length === 0 && db.recordatorios_enviados.length === 0 && /titulo/.test(r.body.aseoError || ''), `si no se pudo guardar: no se anota y avisa el error ("${r.body.aseoError}")`);
+db.sinColumnas = {};
+r = await llamar({ accion: 'enviar', hoy: '2026-11-05', momento: 'manana' });
+revisar(para() === '3' && !r.body.aseoError, 'ya arreglado: la siguiente corrida sí lo manda');
 
 // Igual que la app: 140 días seguidos, tarde y mañana, con cambios
 reiniciar();
