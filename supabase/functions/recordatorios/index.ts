@@ -12,6 +12,7 @@
 // Acciones (POST { accion, hoy?, momento? }):   momento = 'tarde' (7 p. m., todo) | 'manana' (8 a. m., solo aseo)
 //   enviar        (encabezado x-cron-secreto = RECORDATORIOS_SECRETO o RESPALDO_SECRETO) → resumen
 //   vista_previa  { token } de Super Admin → resumen sin mandar nada
+//   probar        { token } de Super Admin → le manda a ÉL una prueba (push directo + aviso del aseo)
 // Secretos: ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY, APP_URL, RESPALDO_SECRETO (o RECORDATORIOS_SECRETO),
 // y la llave de sesión (SESION_JWT_SECRET o SESION_JWK_PRIVADA) para la vista previa. "Verify JWT" desactivado.
 
@@ -73,6 +74,7 @@ async function superAdmin(token: unknown) {
   } catch { throw new Fallo('sin_permiso', 403); }
   const { data } = await supabase.from('app_usuarios').select('rol, activo').eq('id', id).maybeSingle();
   if (!data || data.activo === false || data.rol !== 'Super Admin') throw new Fallo('sin_permiso', 403);
+  return id;
 }
 
 async function todas<T>(armar: () => { range: (a: number, b: number) => PromiseLike<{ data: T[] | null; error: unknown }> }) {
@@ -180,6 +182,11 @@ const limpiarReuniones = (lista: unknown): Reunion[] => (Array.isArray(lista) ? 
   .map((r: any) => ({ dia: Number(r.dia), hora: /^\d{2}:\d{2}/.test(String(r.hora || '')) ? String(r.hora).slice(0, 5) : '' }))
   .sort((a, b) => ((a.dia + 6) % 7) - ((b.dia + 6) % 7));
 function aseoDelDia(plan: PlanAseo, cambios: CambioAseo[], grupos: { id: number | string }[], fecha: string) {
+  const s = semanaDeAseo(plan, cambios, grupos, fecha);
+  const reunion = s.reuniones.find((r) => masDias(s.lunes, (r.dia + 6) % 7) === fecha);
+  return reunion && s.grupo_id ? { grupo_id: s.grupo_id, hora: reunion.hora } : null;
+}
+function semanaDeAseo(plan: PlanAseo, cambios: CambioAseo[], grupos: { id: number | string }[], fecha: string) {
   const lunes = lunesDe(fecha);
   const cambio = cambios.find((c) => String(c.semana).slice(0, 10) === lunes) || null;
   const ids = new Set(grupos.map((g) => String(g.id)));
@@ -191,8 +198,7 @@ function aseoDelDia(plan: PlanAseo, cambios: CambioAseo[], grupos: { id: number 
     grupo_id = orden[((n % orden.length) + orden.length) % orden.length];
   }
   const base = Array.isArray(cambio?.reuniones) && (cambio?.reuniones as unknown[]).length ? cambio?.reuniones : plan.reuniones;
-  const reunion = limpiarReuniones(base).find((r) => masDias(lunes, (r.dia + 6) % 7) === fecha);
-  return reunion && grupo_id ? { grupo_id, hora: reunion.hora } : null;
+  return { lunes, grupo_id, reuniones: limpiarReuniones(base) };
 }
 const hora12 = (h: string) => {
   if (!/^\d{2}:\d{2}/.test(String(h || ''))) return '';
@@ -272,6 +278,62 @@ async function mandarAseo(avisos: AvisoAseo[]) {
   return { enviados, ...(error ? { error } : {}), ...(sinMetadata ? { sinMetadata: true } : {}) };
 }
 
+// ── Prueba (Super Admin, SOLO a sí mismo; no se anota en la bitácora) ──
+//   1. Push directo por OneSignal (el camino del informe, los turnos y los territorios): dice si OneSignal
+//      conoce este usuario (external_id) o si su teléfono no está suscrito.
+//   2. Aviso del aseo como el de verdad: se guarda en notificaciones → push por el webhook + ventana en la app.
+async function probar(usuarioId: number, hoy: string) {
+  const app = env('APP_URL').replace(/\/$/, '');
+  let push: Record<string, unknown>;
+  if (!env('ONESIGNAL_APP_ID') || !env('ONESIGNAL_REST_API_KEY')) push = { ok: false, motivo: 'sin_onesignal' };
+  else {
+    try {
+      const res = await fetch('https://api.onesignal.com/notifications?c=push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Key ${env('ONESIGNAL_REST_API_KEY')}` },
+        body: JSON.stringify({
+          app_id: env('ONESIGNAL_APP_ID'), target_channel: 'push',
+          include_aliases: { external_id: [String(usuarioId)] },
+          headings: { es: '🔔 Prueba de recordatorios', en: '🔔 Reminders test' },
+          contents: { es: 'Si ves esto, los recordatorios automáticos sí te llegan a este teléfono.', en: 'If you see this, automatic reminders reach this phone.' },
+          url: `${app}/backup`, chrome_web_icon: `${app}/icons/notification-icon.png`,
+        }),
+      });
+      // deno-lint-ignore no-explicit-any
+      const cuerpo: any = await res.json().catch(() => ({}));
+      const errores = cuerpo?.errors ?? null;
+      push = { ok: res.ok && !!cuerpo?.id && !errores, status: res.status, id: cuerpo?.id || null, ...(errores ? { errores } : {}) };
+    } catch (e) { push = { ok: false, motivo: 'red', detalle: String(e) }; }
+  }
+
+  // Aviso del aseo: el grupo de esta semana en su congregación (o uno genérico si no hay planeación)
+  const { data: yo } = await supabase.from('app_usuarios').select('congregacion_id').eq('id', usuarioId).maybeSingle();
+  let grupo = 'Tu grupo', color: string | null = null, hora = '';
+  if (yo?.congregacion_id) {
+    const { data: plan } = await supabase.from('aseo_planes').select('*').eq('congregacion_id', yo.congregacion_id).maybeSingle();
+    if (plan) {
+      const [{ data: cambios }, { data: grupos }] = await Promise.all([
+        supabase.from('aseo_cambios').select('*').eq('congregacion_id', yo.congregacion_id).eq('semana', lunesDe(hoy)),
+        supabase.from('grupos_predicacion').select('id, nombre, color, congregacion_id').eq('congregacion_id', yo.congregacion_id),
+      ]);
+      const s = semanaDeAseo(plan as PlanAseo, (cambios ?? []) as CambioAseo[], grupos ?? [], hoy);
+      const g = (grupos ?? []).find((x) => String(x.id) === s.grupo_id);
+      if (g) { grupo = g.nombre; color = g.color || null; }
+      hora = s.reuniones.find((r) => masDias(s.lunes, (r.dia + 6) % 7) >= hoy)?.hora ?? s.reuniones[0]?.hora ?? '';
+    }
+  }
+  const t = textoAvisoAseo({ grupo, fecha: hoy, hora, cuando: 'hoy' });
+  const fila = {
+    usuario_destino_id: usuarioId, tipo: 'sistema', titulo: `🧪 Prueba — ${t.titulo}`, mensaje: t.mensaje,
+    metadata: { tipo: 'aseo', prueba: true, grupo, color, fecha: hoy, hora, cuando: 'hoy' },
+  };
+  let res = await supabase.from('notificaciones').insert([fila]);
+  let sinMetadata = false;
+  if (faltaColumna(res.error)) { sinMetadata = true; const { metadata: _m, ...resto } = fila; res = await supabase.from('notificaciones').insert([resto]); }
+  const aseo = { ok: !res.error, grupo, ...(res.error ? { error: `${res.error.code ?? ''} ${res.error.message ?? ''}`.trim() } : {}), ...(sinMetadata ? { sinMetadata: true } : {}) };
+  return { usuario_id: usuarioId, hoy, push, aseo };
+}
+
 // ── Envío (agrupa los avisos con el mismo texto en una sola llamada a OneSignal) ──
 async function mandar(avisos: Aviso[]) {
   if (!env('ONESIGNAL_APP_ID') || !env('ONESIGNAL_REST_API_KEY')) return { enviados: 0, sinOneSignal: true };
@@ -305,9 +367,10 @@ async function atender(accion: string, d: Record<string, unknown>, secreto: stri
   const conSecreto = !!secretoBueno && secreto === secretoBueno;
   if (accion === 'enviar' && !conSecreto) throw new Fallo('sin_permiso', 403);
   if (accion === 'vista_previa' && !conSecreto) await superAdmin(d.token);
+  const hoy = typeof d.hoy === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.hoy) ? d.hoy : hoyMexico();
+  if (accion === 'probar') return await probar(await superAdmin(d.token), hoy);
   if (accion !== 'enviar' && accion !== 'vista_previa') throw new Fallo('accion_desconocida');
 
-  const hoy = typeof d.hoy === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.hoy) ? d.hoy : hoyMexico();
   // Sin la bitácora no se manda nada (se repetirían)
   const { error: errTabla } = await supabase.from('recordatorios_enviados').select('clave', { head: true, count: 'exact' }).limit(1);
   if (errTabla) throw new Fallo('falta_migracion_16', 503);

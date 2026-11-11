@@ -7,6 +7,8 @@
 - `MIGRACION_17C_NOTIFICACIONES_METADATA.sql` agrega la columna; `recordatorios` guarda sin ella si falta (el push sale
   igual) y reporta `aseoError` / `aseoSinMetadata`; `DIAGNOSTICO_ASEO.sql` (solo lee) para revisarlo
 - Pruebas: `aseo` (sin la columna, error al guardar) y la 17C en `blindaje`
+- Backup → Recordatorios → **"Mandarme una prueba"** (acción `probar` de `recordatorios`, solo Super Admin y solo a él):
+  push directo por OneSignal + aviso del aseo como el de verdad; dice si OneSignal no encuentra el teléfono
 
 ## 2026-11-09 — Celular: quién eres, menú "Más" sin pasar toques al mapa, notificaciones encima
 

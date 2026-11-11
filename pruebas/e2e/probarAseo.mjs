@@ -9,6 +9,7 @@ import { pathToFileURL } from 'url';
 import { NAVEGADOR, ARGS_EXTRA } from '../apoyo/navegador.mjs';
 import { cargarFuncion } from '../apoyo/cargarFuncion.mjs';
 import { hastaQue, hastaQueNode, escribir } from '../apoyo/esperas.mjs';
+import * as jose from 'jose';
 
 const [, , OUT, RAIZ] = process.argv;
 const BASE = 'http://localhost:4173';
@@ -46,8 +47,9 @@ const entorno = { SUPABASE_URL: 'x', SUPABASE_SERVICE_ROLE_KEY: 'x', RESPALDO_SE
 const { handler, db } = await cargarFuncion(`${RAIZ}/supabase/functions/recordatorios/index.ts`, entorno);
 const pushes = [];
 const fetchReal = globalThis.fetch;
+let respuestaOneSignal = '{"id":"x"}';
 globalThis.fetch = async (url, init) => {
-  if (String(url).startsWith('https://api.onesignal.com/')) { pushes.push(JSON.parse(init.body)); return new Response('{"id":"x"}', { status: 200 }); }
+  if (String(url).startsWith('https://api.onesignal.com/')) { pushes.push(JSON.parse(init.body)); return new Response(respuestaOneSignal, { status: 200 }); }
   return fetchReal(url, init);
 };
 const reiniciar = () => {
@@ -120,6 +122,31 @@ revisar(db.notificaciones.length === 0 && db.recordatorios_enviados.length === 0
 db.sinColumnas = {};
 r = await llamar({ accion: 'enviar', hoy: '2026-11-05', momento: 'manana' });
 revisar(para() === '3' && !r.body.aseoError, 'ya arreglado: la siguiente corrida sí lo manda');
+
+// "Mandarme una prueba" (Backup): solo el Super Admin, solo a él, sin anotarse en la bitácora
+const token = (id) => new jose.SignJWT({ role: 'anon', usuario_id: id }).setProtectedHeader({ alg: 'HS256' }).setIssuer('gestion-territorial').setExpirationTime('1d').sign(new TextEncoder().encode(entorno.SESION_JWT_SECRET));
+reiniciar();
+db.app_usuarios.push({ id: 1, nombre: 'Súper', rol: 'Super Admin', activo: true, congregacion_id: 'c1', grupo_id: null });
+r = await llamar({ accion: 'probar', token: await token(3), hoy: '2026-11-04' }, {});
+revisar(r.status === 403 && db.notificaciones.length === 0 && pushes.length === 0, 'prueba: un publicador no puede mandarla');
+r = await llamar({ accion: 'probar', token: await token(1), hoy: '2026-11-04' }, {});
+const np = db.notificaciones[0];
+revisar(r.status === 200 && r.body.push.ok === true && pushes.length === 1 && pushes[0].include_aliases.external_id.join() === '1' && pushes[0].headings.es.includes('Prueba'),
+  `prueba: push directo SOLO al Super Admin (${JSON.stringify(r.body.push)})`);
+revisar(db.notificaciones.length === 1 && np.usuario_destino_id === 1 && np.titulo === '🧪 Prueba — 🧹 Grupo Juárez: aseo del Salón hoy' && np.metadata.tipo === 'aseo' && np.metadata.prueba === true && np.metadata.hora === '19:30' && r.body.aseo.ok && r.body.aseo.grupo === 'Grupo Juárez',
+  `prueba: aviso del aseo como el de verdad, con el grupo de esta semana (${np?.titulo})`);
+revisar(db.recordatorios_enviados.length === 0, 'prueba: no se anota en la bitácora (no afecta los avisos de verdad)');
+reiniciar();
+db.app_usuarios.push({ id: 1, nombre: 'Súper', rol: 'Super Admin', activo: true, congregacion_id: 'c1', grupo_id: null });
+respuestaOneSignal = '{"id":"","errors":{"invalid_aliases":{"external_id":["1"]}}}';
+db.sinColumnas = { notificaciones: ['metadata'] };
+r = await llamar({ accion: 'probar', token: await token(1), hoy: '2026-11-04' }, {});
+revisar(r.body.push.ok === false && !!r.body.push.errores && r.body.aseo.ok && r.body.aseo.sinMetadata, 'prueba: dice si OneSignal no encuentra tu teléfono y si falta la 17C');
+respuestaOneSignal = '{"id":"x"}';
+db.sinColumnas = {};
+const sinOS = await cargarFuncion(`${RAIZ}/supabase/functions/recordatorios/index.ts`, { ...entorno, ONESIGNAL_APP_ID: '', ONESIGNAL_REST_API_KEY: '' });
+const rso = await (await sinOS.handler(new Request('https://x/f', { method: 'POST', body: JSON.stringify({ accion: 'probar', token: await token(1), hoy: '2026-11-04' }) }))).json();
+revisar(rso.push.motivo === 'sin_onesignal' && rso.aseo.ok, 'prueba: sin OneSignal lo dice (y el aviso del aseo se guarda igual)');
 
 // Igual que la app: 140 días seguidos, tarde y mañana, con cambios
 reiniciar();

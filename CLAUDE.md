@@ -137,7 +137,8 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
 - **Recordatorios (Migración 16, `docs/RECORDATORIOS.md`)**: Edge Function `recordatorios` (pg_cron diario 7 p. m. México):
   informe (último día y días 1–2, a quien no lo ha enviado), turno de exhibidor (un día antes), territorios con más de
   4 meses sin trabajarse (lunes, a ancianos/admins). Push directo por OneSignal; no repite (`recordatorios_enviados`).
-  Vista previa en Backup (`components/RecordatoriosAutomaticos.jsx`).
+  Vista previa en Backup (`components/RecordatoriosAutomaticos.jsx`) y "Mandarme una prueba" (acción `probar`: solo al
+  Super Admin que la toca, push directo + aviso del aseo; no se anota en la bitácora).
 - **Aseo del Salón (Migración 17, `MIGRACION_17_ASEO.sql` + `17B`)**: Grupos → `components/AseoSalon.jsx` (`hooks/useAseo.js`).
   `aseo_planes` (una por congregación: reuniones, orden de grupos, semana de inicio) y `aseo_cambios` (una semana).
   Un grupo por semana, recurrente: lógica en `utils/aseo.js` **copiada** en `recordatorios` (si cambias una, cambia la

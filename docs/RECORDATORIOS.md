@@ -46,6 +46,14 @@ Requisito: ya debe estar configurado OneSignal en la función `enviar-push` (`do
    `MIGRACION_17B_AVISO_ASEO_MANANA.sql`, pon el mismo secreto en ▶ y **Run** (debe salir `aseo-manana`, `active = true`).
    Y `MIGRACION_17C_NOTIFICACIONES_METADATA.sql` (la tabla `notificaciones` necesita la columna `metadata`).
 
+## Probar que llegan a tu teléfono
+
+**Backup → Recordatorios automáticos → "Mandarme una prueba"** (Super Admin; le llega SOLO a quien la toca y no se
+anota en la bitácora):
+1. Push directo por OneSignal (el camino del informe, los turnos y los territorios). Si dice que OneSignal no encontró
+   tu teléfono: activa las notificaciones en ese teléfono (menú → Activar notificaciones) y vuelve a probar.
+2. Aviso del aseo como el de verdad (notificación guardada → push por el webhook → ventana al abrir la app).
+
 ## Si no llegan los avisos del aseo
 
 Corre `DIAGNOSTICO_ASEO.sql` (solo lee): dice si los dos horarios están programados, qué contestó la función

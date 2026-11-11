@@ -51,6 +51,7 @@ const reiniciar = () => {
     { id: 3, territorio_id: 4, estado: 'completado', fecha_fin: '2026-10-20' }, // reciente → no
   ];                                                                            // 3 · Sur: nunca → olvidado
   db.recordatorios_enviados = [];
+  db.notificaciones = [];
   pushes.length = 0;
 };
 const llamar = async (cuerpo, cab = {}) => {
@@ -153,6 +154,10 @@ await espera(1500);
 t = await page.evaluate(() => document.body.innerText);
 revisar(/Por mandar hoy:\s*\d+/.test(t), `vista previa en la app (${(t.match(/Por mandar hoy:\s*\d+/) || [''])[0]})`);
 revisar(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'Backup 390px: sin scroll horizontal');
+await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.includes('Mandarme una prueba'))?.click());
+await page.waitForSelector('[data-prueba-recordatorios]', { timeout: 20000 }).catch(() => null);
+t = await page.evaluate(() => document.querySelector('[data-prueba-recordatorios]')?.innerText || '');
+revisar(t.includes('Push directo enviado') && t.includes('Aviso del aseo guardado'), `Backup: "Mandarme una prueba" dice cómo le fue a cada camino ("${t.replace(/\s+/g, ' ').slice(0, 120)}")`);
 await page.screenshot({ path: `${OUT}/recordatorios-backup-390.png`, fullPage: true });
 await browser.close();
 

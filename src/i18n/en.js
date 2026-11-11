@@ -1029,6 +1029,15 @@ const en = {
   'Aseo del Salón: un día antes de cada reunión (7 p. m.) y el mismo día (8 a. m.), al grupo que le toca (se planea en Grupos).': "Hall cleaning: the day before each meeting (7 p.m.) and the same day (8 a.m.), to the group whose turn it is (planned in Groups).",
   'Aseo': "Cleaning",
   'Nuevo exhibidor': "New display",
+  'La función "recordatorios" del servidor es una versión anterior: vuelve a desplegarla con el código nuevo.': "The server's \"recordatorios\" function is an older version: deploy it again with the new code.",
+  'Push directo enviado: debe llegarte en unos segundos.': "Direct push sent: it should arrive in a few seconds.",
+  'Faltan los secretos de OneSignal en la función (ONESIGNAL_APP_ID y ONESIGNAL_REST_API_KEY).': "The function is missing the OneSignal secrets (ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY).",
+  'OneSignal no encontró tu teléfono: activa las notificaciones en este teléfono (menú → Activar notificaciones) y vuelve a probar.': "OneSignal did not find your phone: turn on notifications on this phone (menu → Turn on notifications) and try again.",
+  'No se pudo mandar el push directo.': "The direct push could not be sent.",
+  'Aviso del aseo guardado, pero sin datos extra: corre la Migración 17C para que salga la ventana.': "Cleaning reminder saved, but without extra data: run Migration 17C so the window shows.",
+  'Aviso del aseo guardado ({grupo}): llega por push y al abrir la app sale la ventana.': "Cleaning reminder saved ({grupo}): it arrives as a push and the window shows when you open the app.",
+  'No se pudo guardar el aviso del aseo: {error}': "The cleaning reminder could not be saved: {error}",
+  'Mandarme una prueba': "Send me a test",
 };
 
 export default en;
