@@ -1038,6 +1038,11 @@ const en = {
   'Aviso del aseo guardado ({grupo}): llega por push y al abrir la app sale la ventana.': "Cleaning reminder saved ({grupo}): it arrives as a push and the window shows when you open the app.",
   'No se pudo guardar el aviso del aseo: {error}': "The cleaning reminder could not be saved: {error}",
   'Mandarme una prueba': "Send me a test",
+  // ── Inactividad ──
+  '¿Sigues ahí?': "Are you still there?",
+  'Por seguridad, tu sesión se cerrará en {n} segundos si no contestas.': "For security, your session will close in {n} seconds if you don't respond.",
+  'Sí, aquí sigo': "Yes, I'm still here",
+  'Tu sesión se cerró por inactividad. Vuelve a entrar.': "Your session was closed due to inactivity. Please sign in again.",
 };
 
 export default en;

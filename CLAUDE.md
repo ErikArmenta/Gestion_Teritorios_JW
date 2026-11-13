@@ -155,6 +155,10 @@ Tablas principales: `app_usuarios`, `congregaciones`, `territorios`, `territorio
   Functions reales en Node; SQL de las migraciones en PGlite. GitHub Actions las corre en cada push a `main`.
   **Toda función nueva lleva su prueba** (regístrala en `pruebas/correr.mjs`). Si cambias un texto que una prueba
   busca, actualiza la prueba.
+- **Cierre por inactividad**: `components/AvisoInactividad.jsx` (montado en `AppLayout`) + `utils/inactividad.js`. 14 min
+  sin actividad → "¿Sigues ahí?" (60 s; "Sí, aquí sigo" = `renovarSesion()` de `AuthContext`, token nuevo); 15 min →
+  `cerrarPorInactividad()` (**no** desvincula OneSignal: los push siguen llegando). Reloj en `localStorage territorial_actividad`
+  (compartido entre pestañas; `guardarSesion` lo reinicia). Sin internet o con `pendingCount > 0` no cierra.
 - Importar casas: `utils/leerTabla.js` (exceljs para .xlsx, lector propio de .csv). Ya **no** se usa SheetJS (`xlsx`).
 - Backup: solo exporta/restaura la congregación del usuario; restaurar **no** borra usuarios (upsert; borrar
   un usuario borra en cascada informes, huellas y asignaciones).

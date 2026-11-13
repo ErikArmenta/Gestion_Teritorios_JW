@@ -4,9 +4,10 @@ import { t } from '../i18n';
 import { olvidarUsuario } from '../utils/onesignal';
 import { entrarConBiometria } from '../utils/webauthn';
 import {
-  entrarEnServidor, renovarSiToca, guardarToken, olvidarToken, tokenVigente,
+  entrarEnServidor, renovarSiToca, renovarAhora, guardarToken, olvidarToken, tokenVigente,
   anotarBlindaje, blindajeActivo, consultarBlindaje, EVENTO_SESION_INVALIDA, minutosBloqueo,
 } from '../utils/sesion';
+import { anotarActividad } from '../utils/inactividad';
 
 const AuthContext = createContext();
 
@@ -24,13 +25,10 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Sesión firmada: al abrir la app (una vez al día, con internet) se renueva el token y se traen
-  // rol/congregación al día. Cuenta desactivada o borrada → se cierra la sesión.
-  useEffect(() => {
-    if (!localStorage.getItem('territorial_user')) return;
-    let vivo = true;
-    renovarSiToca().then((r) => {
-      if (!vivo || !r) return;
+  // Lo que llega de renovar el token: se guarda y trae rol/congregación al día.
+  // Cuenta desactivada o borrada → se cierra la sesión.
+  const procesarRenovacion = (promesa, sigueVivo = () => true) => promesa.then((r) => {
+      if (!sigueVivo() || !r) return;
       guardarToken(r);
       actualizarTokenRealtime();
       if (!r.token && blindajeActivo()) { cerrarSesion(); return; }
@@ -42,15 +40,24 @@ export const AuthProvider = ({ children }) => {
         return nuevo;
       });
     }).catch((err) => {
-      if (!vivo) return;
+      if (!sigueVivo()) return;
       if (err?.codigo === 'desactivada' || err?.codigo === 'credenciales') cerrarSesion();
       else if (err?.codigo === 'token_invalido') {
         olvidarToken();
         if (blindajeActivo()) cerrarSesion();
       }
     });
+
+  // Sesión firmada: al abrir la app (una vez al día, con internet) se renueva el token
+  useEffect(() => {
+    if (!localStorage.getItem('territorial_user')) return;
+    let vivo = true;
+    procesarRenovacion(renovarSiToca(), () => vivo);
     return () => { vivo = false; };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // "Sí, aquí sigo" (aviso de inactividad): token nuevo en ese momento (sin internet no hace nada)
+  const renovarSesion = () => procesarRenovacion(Promise.resolve().then(renovarAhora));
 
   // Blindaje (paso 3): con la BD blindada una sesión sin token válido no ve nada → pedir entrar otra vez.
   // Mientras la BD no esté blindada no hace nada (todo sigue como antes).
@@ -91,6 +98,7 @@ export const AuthProvider = ({ children }) => {
       congregacion_nombre: u.congregacion_nombre || null,
     };
     guardarToken(firma); // sin token (función sin secreto) = llave pública, como antes
+    anotarActividad(); // el reloj de inactividad empieza al entrar
     actualizarTokenRealtime();
     setUser(sessionUser);
     localStorage.setItem('territorial_user', JSON.stringify(sessionUser));
@@ -160,14 +168,20 @@ export const AuthProvider = ({ children }) => {
     return guardarSesion(r.usuario, r);
   };
 
-  function cerrarSesion() {
-    olvidarUsuario(); // el dispositivo deja de recibir push de este usuario
+  // mantenerPush: al cerrar por inactividad el teléfono sigue recibiendo sus avisos (aseo, recordatorios, pánico);
+  // solo "Cerrar sesión" a mano lo desvincula.
+  function cerrarSesion({ mantenerPush = false } = {}) {
+    if (!mantenerPush) olvidarUsuario(); // el dispositivo deja de recibir push de este usuario
     olvidarToken();
     actualizarTokenRealtime();
     setUser(null);
     localStorage.removeItem('territorial_user');
   }
-  const logout = cerrarSesion;
+  const logout = () => cerrarSesion();
+  const cerrarPorInactividad = () => {
+    try { sessionStorage.setItem('aviso_login', 'Tu sesión se cerró por inactividad. Vuelve a entrar.'); } catch { /* nada */ }
+    cerrarSesion({ mantenerPush: true });
+  };
 
   const updateProfile = async (updates) => {
     const { error } = await supabase
@@ -188,7 +202,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginConBiometria, logout, loading, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, loginConBiometria, logout, cerrarPorInactividad, renovarSesion, loading, updateProfile }}>
       {!loading && children}
     </AuthContext.Provider>
   );

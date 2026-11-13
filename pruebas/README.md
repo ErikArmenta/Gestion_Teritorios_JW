@@ -42,6 +42,7 @@ de las Edge Functions tarda 4 s más).
 | `congregaciones` | La lista de Super Admin con conteos, crear y que los errores se avisen |
 | `respaldos` | Respaldos automáticos, reporte de errores, pantalla amable, Backup |
 | `panel` | Panel del mapa en el celular: colapsado al inicio, abrir/cerrar (rayita, barrita, deslizar), se recuerda, se abre solo |
+| `inactividad` | Cierre por inactividad: aviso a los 14 min con cuenta regresiva, "Sí, aquí sigo" renueva el token, cierre a los 15, sin internet no cierra |
 | `aseo` | Aseo del Salón: rotación por semana, avisos de la función (igual que la app), planear en Grupos y la ventana del aviso |
 
 **GitHub Actions** (`.github/workflows/pruebas.yml`) las corre en cada push a `main`. Si algo falla,

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-13 — Cierre de sesión por inactividad ("¿Sigues ahí?")
+
+- A los 14 min sin tocar la app sale **"¿Sigues ahí?"** con cuenta regresiva de 60 s. "Sí, aquí sigo" renueva el token
+  (acción `renovar` de `sesion`, `renovarAhora`); sin respuesta, a los 15 min se cierra la sesión y el login lo explica
+- `components/AvisoInactividad.jsx` + `utils/inactividad.js`: la última actividad va en `localStorage territorial_actividad`
+  (reloj compartido entre pestañas; abrir la app horas después = entrar otra vez). Mover el mouse no quita el aviso
+- No cierra **sin internet** ni con cambios por subir (no podrían volver a entrar); al reconectarse el reloj empieza de cero
+- Al cerrar por inactividad el teléfono **sigue recibiendo los push** (aseo, recordatorios, pánico); "Cerrar sesión" a mano
+  sí lo desvincula como siempre
+- Prueba nueva `inactividad`
+
 ## 2026-11-11 — Fix: no llegaban los avisos del aseo (ni los de turno de exhibidor) — Migración 17C
 
 - La tabla `notificaciones` real no tenía la columna `metadata`: guardar el aviso fallaba y no salía nada. También

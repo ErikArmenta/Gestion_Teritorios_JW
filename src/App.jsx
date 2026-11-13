@@ -27,6 +27,7 @@ import ErrorPantalla from './components/ErrorPantalla';
 import PanicButton from './components/PanicButton';
 import PanicAlert from './components/PanicAlert';
 import AvisoAseo from './components/AvisoAseo';
+import AvisoInactividad from './components/AvisoInactividad';
 import BottomNav from './components/BottomNav';
 import { DataProvider } from './context/DataContext';
 import { GruposProvider } from './context/GruposContext';
@@ -232,6 +233,7 @@ const AppLayout = () => {
       <PanicButton />
       <PanicAlert />
       <AvisoAseo />
+      <AvisoInactividad />
       <BottomNav />
     </div>
   );

@@ -95,3 +95,10 @@ export async function renovarSiToca() {
   if (Date.now() - (s.obtenido || 0) < RENOVAR_CADA_MS && s.expira * 1000 > Date.now() + 7 * 86400_000) return null;
   return conUsuario(await llamar('renovar', { token: s.token }));
 }
+
+// Renueva el token ya (al contestar "Sí, aquí sigo" en el aviso de inactividad). null si no hay token o internet.
+export async function renovarAhora() {
+  const s = leer();
+  if (!s?.token || (typeof navigator !== 'undefined' && navigator.onLine === false)) return null;
+  return conUsuario(await llamar('renovar', { token: s.token }));
+}
